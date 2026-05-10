@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1565C0">
+  <title>YPP ERP — Master Data</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/masters.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="back-btn" id="back-to-app" style="color:#fff;font-size:1.1rem;">←</button>
+      <span class="header-title" data-i18n="masters.title">Master Data</span>
+    </div>
+    <div class="header-actions">
+      <button class="lang-toggle" id="lang-toggle">EN</button>
+    </div>
+  </header>
+
+  <!-- Entity Tab Bar -->
+  <div class="entity-tabs" id="entity-tabs"></div>
+
+  <!-- Content Area -->
+  <div class="masters-content">
+
+    <!-- List Panel -->
+    <div class="list-panel" id="list-panel">
+      <div class="search-bar">
+        <input class="search-input" id="search-input" type="text" placeholder="Search…" data-i18n-placeholder="masters.search">
+      </div>
+      <div class="record-list" id="record-list"></div>
+    </div>
+
+    <!-- Form Panel -->
+    <div class="form-panel" id="form-panel">
+      <div class="form-header">
+        <button class="back-btn" id="form-back" data-i18n="masters.back">← Back</button>
+        <span class="form-title" id="form-title"></span>
+      </div>
+      <div class="form-body" id="form-body"></div>
+      <div class="form-actions" id="form-actions"></div>
+    </div>
+
+  </div>
+
+  <!-- FAB -->
+  <button class="fab hidden" id="fab">+</button>
+
+  <!-- Spinner -->
+  <div class="spinner-overlay hidden" id="spinner">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/lang.js"></script>
+  <script src="js/masters.js"></script>
+  <script>
+    (async () => {
+      await Api.init();
+      await Masters.init();
+    })();
+  </script>
+</body>
+</html>
