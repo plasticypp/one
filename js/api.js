@@ -18,7 +18,8 @@ const Api = (() => {
   async function post(action, data = {}) {
     const res = await fetch(apiUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action, ...data })
     });
     return res.json();
