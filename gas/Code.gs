@@ -3,9 +3,20 @@
 function doGet(e) {
   const action = e.parameter.action;
   try {
+    // Read actions
     if (action === 'getUsers')          return respond(getUsers());
     if (action === 'getMasterList')     return respond(getMasterList(e.parameter.entity));
     if (action === 'getMasterDropdown') return respond(getMasterDropdown(e.parameter.entity));
+
+    // Write actions tunnelled via GET to avoid CORS preflight
+    if (e.parameter.payload) {
+      const data = JSON.parse(e.parameter.payload);
+      if (action === 'login')            return respond(login(data));
+      if (action === 'updateLanguage')   return respond(updateLanguage(data));
+      if (action === 'saveMaster')       return respond(saveMaster(data));
+      if (action === 'deactivateMaster') return respond(deactivateMaster(data));
+    }
+
     return respond({ success: false, error: 'unknown_action' });
   } catch (err) {
     return respond({ success: false, error: err.message });
@@ -270,6 +281,16 @@ function createWorkbookSkeleton() {
 }
 
 // ── Seed Data ────────────────────────────────────────────────────────────────
+
+function setInitialPins() {
+  setupPins([
+    { username: 'tarun',   pin: '1234' },
+    { username: 'pradhan', pin: '1234' },
+    { username: 'ramesh',  pin: '1234' },
+    { username: 'suresh',  pin: '1234' },
+    { username: 'mahesh',  pin: '1234' }
+  ]);
+}
 
 function seedMasterData() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();

@@ -16,12 +16,10 @@ const Api = (() => {
   }
 
   async function post(action, data = {}) {
-    const res = await fetch(apiUrl, {
-      method: 'POST',
-      redirect: 'follow',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action, ...data })
-    });
+    const url = new URL(apiUrl);
+    url.searchParams.set('action', action);
+    url.searchParams.set('payload', JSON.stringify(data));
+    const res = await fetch(url.toString());
     return res.json();
   }
 
