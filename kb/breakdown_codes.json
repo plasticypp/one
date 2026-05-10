@@ -1,0 +1,230 @@
+[
+  {
+    "id": "BD001",
+    "equipment_id": "EQ001",
+    "failure_mode": "Heating Element Failure",
+    "symptoms": [
+      "Temperature zone not reaching setpoint",
+      "Uneven parison thickness",
+      "Burnt smell or visible scorching on barrel"
+    ],
+    "probable_causes": [
+      "End-of-life burnout due to continuous high-temperature operation",
+      "Moisture ingress or short circuit in heating band connection",
+      "Thermocouple failure causing runaway temperature"
+    ],
+    "immediate_action": "Stop machine, isolate power to affected zone, identify failed band using resistance check, replace heating element before restarting.",
+    "spare_ids": ["SP007"],
+    "avg_downtime_hours": "[TO BE ENTERED]",
+    "prevention_check": "Quarterly heating element resistance check (MP007); daily heating band inspection (MP003)"
+  },
+  {
+    "id": "BD002",
+    "equipment_id": "EQ001",
+    "failure_mode": "Hydraulic System Leak",
+    "symptoms": [
+      "Oil puddle under machine",
+      "Clamping force loss or inconsistent clamping",
+      "Hydraulic pressure drop alarm"
+    ],
+    "probable_causes": [
+      "Worn or damaged hydraulic seals and O-rings",
+      "Cracked hydraulic hose or fitting",
+      "Hydraulic pump seal failure"
+    ],
+    "immediate_action": "Stop machine immediately, contain oil spill with absorbent material, identify leak source, replace damaged seal or hose before restart.",
+    "spare_ids": ["SP004", "SP008"],
+    "avg_downtime_hours": "[TO BE ENTERED]",
+    "prevention_check": "Quarterly hydraulic oil change and filter replacement (MP006); visual inspection during daily lubrication (MP002)"
+  },
+  {
+    "id": "BD003",
+    "equipment_id": "EQ001",
+    "failure_mode": "Parison Die Head Blockage",
+    "symptoms": [
+      "No material flow or reduced flow from die head",
+      "Uneven parison or parison with holes",
+      "Increased motor amperage"
+    ],
+    "probable_causes": [
+      "Carbonised/degraded plastic blocking die orifice",
+      "Foreign material contamination in HDPE feedstock",
+      "Incorrect purge during colour/material changeover"
+    ],
+    "immediate_action": "Reduce temperature, attempt purge cycle with virgin material. If blockage persists, stop and dismantle die head for manual cleaning.",
+    "spare_ids": ["SP001", "SP002"],
+    "avg_downtime_hours": "[TO BE ENTERED]",
+    "prevention_check": "Daily die head cleaning (MP001); monthly die head dismantling and cleaning (MP005)"
+  },
+  {
+    "id": "BD004",
+    "equipment_id": "EQ002",
+    "failure_mode": "Blow Pin Wear",
+    "symptoms": [
+      "Inconsistent neck finish or thread profile",
+      "Flash on bottle neck or mouth area",
+      "Air leakage during blow moulding cycle"
+    ],
+    "probable_causes": [
+      "Abrasive wear from long production runs",
+      "Misalignment of blow pin to die head",
+      "Running with contaminated material causing scoring"
+    ],
+    "immediate_action": "Measure blow pin dimensions against drawing tolerance. If out of spec, replace blow pin before continuing production.",
+    "spare_ids": ["SP003"],
+    "avg_downtime_hours": "[TO BE ENTERED]",
+    "prevention_check": "Monthly blow pin inspection (MP016)"
+  },
+  {
+    "id": "BD005",
+    "equipment_id": "EQ002",
+    "failure_mode": "Solenoid Valve Failure",
+    "symptoms": [
+      "Blow air not activating or not releasing",
+      "Clamping sequence not executing correctly",
+      "PLC alarm for valve fault"
+    ],
+    "probable_causes": [
+      "Coil burnout due to voltage spike or continuous energisation",
+      "Contaminated compressed air causing spool blockage",
+      "Mechanical wear of valve spool and seals"
+    ],
+    "immediate_action": "Check PLC fault code, test solenoid coil continuity. If coil failed, replace solenoid coil or valve assembly.",
+    "spare_ids": ["SP009"],
+    "avg_downtime_hours": "[TO BE ENTERED]",
+    "prevention_check": "Annual overhaul includes solenoid valve inspection (MP018); ensure compressed air filter/dryer is maintained"
+  },
+  {
+    "id": "BD006",
+    "equipment_id": "EQ003",
+    "failure_mode": "Cooling System Failure",
+    "symptoms": [
+      "Bottles exiting mould with distortion or soft walls",
+      "Cooling water temperature rising above setpoint",
+      "Reduced cooling water flow rate"
+    ],
+    "probable_causes": [
+      "Blocked cooling water channels in mould due to scale build-up",
+      "Cooling water pump failure",
+      "Chiller or cooling tower fault"
+    ],
+    "immediate_action": "Check cooling water flow and temperature. If pump failed, switch to backup if available. Stop production if bottle quality is unacceptable.",
+    "spare_ids": ["SP010"],
+    "avg_downtime_hours": "[TO BE ENTERED]",
+    "prevention_check": "Annual overhaul includes cooling circuit flush (MP026); monthly mould water channel check"
+  },
+  {
+    "id": "BD007",
+    "equipment_id": "EQ003",
+    "failure_mode": "Electrical/PLC Fault",
+    "symptoms": [
+      "Machine stops unexpectedly with PLC alarm",
+      "Erratic cycle sequence or missed steps",
+      "Indicator lights or HMI display malfunction"
+    ],
+    "probable_causes": [
+      "Power supply fluctuation or voltage spike",
+      "Loose electrical connection due to vibration",
+      "PLC I/O module or communication card failure"
+    ],
+    "immediate_action": "Record PLC fault code, check E-stop and safety relay status. Inspect main electrical cabinet for loose connections or blown fuses. Contact electrical technician.",
+    "spare_ids": [],
+    "avg_downtime_hours": "[TO BE ENTERED]",
+    "prevention_check": "Annual electrical panel inspection during overhaul (MP026); ensure voltage stabiliser/UPS is operational"
+  },
+  {
+    "id": "BD008",
+    "equipment_id": "EQ003",
+    "failure_mode": "Mould Clamping Issue",
+    "symptoms": [
+      "Flash on parting line of bottle",
+      "Incomplete mould closure",
+      "Clamping force alarm on PLC"
+    ],
+    "probable_causes": [
+      "Worn tie bar bushes or clamping platens",
+      "Hydraulic clamping cylinder seal failure",
+      "Mould alignment out of spec due to wear"
+    ],
+    "immediate_action": "Stop production, inspect mould parting faces and clamping mechanism. Check hydraulic clamping pressure. Adjust or replace worn components.",
+    "spare_ids": ["SP008"],
+    "avg_downtime_hours": "[TO BE ENTERED]",
+    "prevention_check": "Weekly bolt and fastener tightening (MP022); quarterly hydraulic oil change (MP024)"
+  },
+  {
+    "id": "BD009",
+    "equipment_id": "EQ004",
+    "failure_mode": "Extruder Screw Wear",
+    "symptoms": [
+      "Reduced output rate at same screw speed",
+      "Inconsistent parison weight",
+      "Increased melt temperature variation"
+    ],
+    "probable_causes": [
+      "Abrasive wear from filled or contaminated material",
+      "Running at excessively low barrel temperatures causing high screw torque",
+      "Extended running hours beyond recommended service interval"
+    ],
+    "immediate_action": "Monitor output rate and parison weight closely. If variation exceeds tolerance, schedule screw and barrel inspection at next maintenance window.",
+    "spare_ids": [],
+    "avg_downtime_hours": "[TO BE ENTERED]",
+    "prevention_check": "Annual overhaul includes extruder screw and barrel inspection (MP034)"
+  },
+  {
+    "id": "BD010",
+    "equipment_id": "EQ004",
+    "failure_mode": "Heating Element Failure",
+    "symptoms": [
+      "Temperature zone not reaching setpoint",
+      "Cold spots visible on barrel surface",
+      "Higher motor load due to unmelted material"
+    ],
+    "probable_causes": [
+      "End-of-life burnout",
+      "Moisture ingress in connection terminal",
+      "Overcurrent due to power supply issues"
+    ],
+    "immediate_action": "Stop machine, isolate power to affected zone, replace heating element.",
+    "spare_ids": ["SP007"],
+    "avg_downtime_hours": "[TO BE ENTERED]",
+    "prevention_check": "Quarterly heating element check (MP007 equivalent for EQ004); daily heating band inspection (MP029)"
+  },
+  {
+    "id": "BD011",
+    "equipment_id": "EQ001",
+    "failure_mode": "Hydraulic Pump Failure",
+    "symptoms": [
+      "No hydraulic pressure build-up",
+      "Excessive noise from hydraulic power unit",
+      "Machine cycle not executing"
+    ],
+    "probable_causes": [
+      "Pump wear due to running with contaminated or degraded hydraulic oil",
+      "Cavitation from low oil level",
+      "Pump coupling or motor failure"
+    ],
+    "immediate_action": "Stop machine immediately, check hydraulic oil level, listen for abnormal pump noise. Do not restart until root cause identified. Replace pump if required.",
+    "spare_ids": ["SP004", "SP005"],
+    "avg_downtime_hours": "[TO BE ENTERED]",
+    "prevention_check": "Quarterly hydraulic oil and filter change (MP006); maintain correct oil level daily"
+  },
+  {
+    "id": "BD012",
+    "equipment_id": "EQ002",
+    "failure_mode": "Parison Die Head Blockage",
+    "symptoms": [
+      "No material or reduced flow from die",
+      "Parison breaks or has voids",
+      "Motor draws high current"
+    ],
+    "probable_causes": [
+      "Degraded material carbonising in die",
+      "Extended idle time at high temperature without purging",
+      "Material contamination"
+    ],
+    "immediate_action": "Attempt controlled purge at elevated temperature. If purge fails, cool down and dismantle die head for manual cleaning.",
+    "spare_ids": ["SP001", "SP002"],
+    "avg_downtime_hours": "[TO BE ENTERED]",
+    "prevention_check": "Daily die head cleaning (MP010); monthly die head dismantling (MP014)"
+  }
+]

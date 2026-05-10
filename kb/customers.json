@@ -1,0 +1,56 @@
+[
+  {
+    "id": "C001",
+    "name": "Arabian Petroleum",
+    "short_name": "ARAP",
+    "address": "[TO BE ENTERED]",
+    "gstin": "[TO BE ENTERED]",
+    "contact_person": "[TO BE ENTERED]",
+    "phone": "[TO BE ENTERED]",
+    "email": "[TO BE ENTERED]",
+    "product_ids": ["[TO BE ENTERED]"],
+    "requirements": {
+      "wall_thickness_tolerance": "[TO BE ENTERED]",
+      "label_requirements": "[TO BE ENTERED]",
+      "delivery_terms": "[TO BE ENTERED]",
+      "special_notes": "[TO BE ENTERED]"
+    },
+    "approved_since": "[TO BE ENTERED]"
+  },
+  {
+    "id": "C002",
+    "name": "Apar Industries",
+    "short_name": "APAR",
+    "address": "[TO BE ENTERED]",
+    "gstin": "[TO BE ENTERED]",
+    "contact_person": "[TO BE ENTERED]",
+    "phone": "[TO BE ENTERED]",
+    "email": "[TO BE ENTERED]",
+    "product_ids": ["[TO BE ENTERED]"],
+    "requirements": {
+      "wall_thickness_tolerance": "[TO BE ENTERED]",
+      "label_requirements": "[TO BE ENTERED]",
+      "delivery_terms": "[TO BE ENTERED]",
+      "special_notes": "[TO BE ENTERED]"
+    },
+    "approved_since": "[TO BE ENTERED]"
+  },
+  {
+    "id": "C003",
+    "name": "Exsan Industries",
+    "short_name": "EXSAN",
+    "address": "[TO BE ENTERED]",
+    "gstin": "[TO BE ENTERED]",
+    "contact_person": "[TO BE ENTERED]",
+    "phone": "[TO BE ENTERED]",
+    "email": "[TO BE ENTERED]",
+    "product_ids": ["[TO BE ENTERED]"],
+    "requirements": {
+      "wall_thickness_tolerance": "[TO BE ENTERED]",
+      "label_requirements": "[TO BE ENTERED]",
+      "delivery_terms": "[TO BE ENTERED]",
+      "special_notes": "[TO BE ENTERED]"
+    },
+    "approved_since": "[TO BE ENTERED]"
+  }
+]

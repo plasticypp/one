@@ -1,0 +1,54 @@
+[
+  {
+    "id": "UT001",
+    "name": "Grid Electricity",
+    "type": "Electricity",
+    "supplier": "MSEDCL",
+    "supplier_id": "S007",
+    "meter_no": "[TO BE ENTERED]",
+    "monthly_consumption_unit": "[TO BE ENTERED]",
+    "unit": "kWh",
+    "connected_load_kw": "[TO BE ENTERED]",
+    "iso14001_aspect": "Energy consumption – greenhouse gas emissions from fossil-fuel-based grid power",
+    "monitoring_frequency": "Monthly"
+  },
+  {
+    "id": "UT002",
+    "name": "Compressed Air",
+    "type": "Compressed Air",
+    "supplier": "Own Compressor (on-site)",
+    "supplier_id": null,
+    "meter_no": "[TO BE ENTERED]",
+    "monthly_consumption_unit": "[TO BE ENTERED]",
+    "unit": "m3",
+    "connected_load_kw": "[TO BE ENTERED]",
+    "iso14001_aspect": "Energy consumption – electricity used by compressor; noise emission from compressor operation",
+    "monitoring_frequency": "Monthly"
+  },
+  {
+    "id": "UT003",
+    "name": "Process & Domestic Water",
+    "type": "Water",
+    "supplier": "MIDC Water Supply",
+    "supplier_id": null,
+    "meter_no": "[TO BE ENTERED]",
+    "monthly_consumption_unit": "[TO BE ENTERED]",
+    "unit": "m3",
+    "connected_load_kw": null,
+    "iso14001_aspect": "Water consumption – depletion of MIDC municipal water resource; wastewater discharge to drain",
+    "monitoring_frequency": "Monthly"
+  },
+  {
+    "id": "UT004",
+    "name": "Diesel (DG Set – Backup Power)",
+    "type": "Diesel",
+    "supplier": "[TO BE ENTERED]",
+    "supplier_id": null,
+    "meter_no": "[TO BE ENTERED]",
+    "monthly_consumption_unit": "[TO BE ENTERED]",
+    "unit": "litre",
+    "connected_load_kw": "[TO BE ENTERED]",
+    "iso14001_aspect": "Air emissions – CO2, NOx, SOx from diesel combustion; fuel storage spill risk",
+    "monitoring_frequency": "Monthly"
+  }
+]

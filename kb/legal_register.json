@@ -1,0 +1,170 @@
+[
+  {
+    "id": "LR001",
+    "act_or_regulation": "The Factories Act, 1948",
+    "applicable_to": "Safety",
+    "issuing_authority": "Ministry of Labour and Employment, Government of India / Maharashtra Factory Inspectorate",
+    "key_requirements": [
+      "Obtain and renew factory licence annually; maintain prescribed registers",
+      "Ensure safe working conditions: guarding of machinery, proper ventilation, lighting, and sanitation",
+      "Comply with working hours, overtime, and leave provisions for workers"
+    ],
+    "compliance_status": "[TO BE ENTERED]",
+    "next_review_date": "[TO BE ENTERED]",
+    "responsible_role_id": "R007"
+  },
+  {
+    "id": "LR002",
+    "act_or_regulation": "Environment Protection Act, 1986 (EPA)",
+    "applicable_to": "Environment",
+    "issuing_authority": "Ministry of Environment, Forest and Climate Change (MoEFCC) / Maharashtra Pollution Control Board (MPCB)",
+    "key_requirements": [
+      "Obtain Consent to Establish (CTE) and Consent to Operate (CTO) from MPCB",
+      "Comply with prescribed standards for air emissions, wastewater, and noise",
+      "Submit periodic environmental compliance reports to MPCB"
+    ],
+    "compliance_status": "[TO BE ENTERED]",
+    "next_review_date": "[TO BE ENTERED]",
+    "responsible_role_id": "R007"
+  },
+  {
+    "id": "LR003",
+    "act_or_regulation": "Hazardous and Other Wastes (Management and Transboundary Movement) Rules, 2016",
+    "applicable_to": "Environment",
+    "issuing_authority": "Ministry of Environment, Forest and Climate Change / Maharashtra Pollution Control Board",
+    "key_requirements": [
+      "Identify and classify hazardous wastes generated (hydraulic oil, waste solvents, electrical waste)",
+      "Obtain authorisation for storage and disposal; use only MPCB-approved recyclers/disposers",
+      "Maintain waste manifest records and submit annual returns to MPCB"
+    ],
+    "compliance_status": "[TO BE ENTERED]",
+    "next_review_date": "[TO BE ENTERED]",
+    "responsible_role_id": "R007"
+  },
+  {
+    "id": "LR004",
+    "act_or_regulation": "Plastic Waste Management Rules, 2016 (amended 2022)",
+    "applicable_to": "Environment",
+    "issuing_authority": "Ministry of Environment, Forest and Climate Change / MPCB",
+    "key_requirements": [
+      "Comply with Extended Producer Responsibility (EPR) obligations for plastic packaging",
+      "Ensure minimum recycled content norms for plastic packaging as notified",
+      "Maintain records of plastic waste generation, collection, and recycling; file annual EPR returns"
+    ],
+    "compliance_status": "[TO BE ENTERED]",
+    "next_review_date": "[TO BE ENTERED]",
+    "responsible_role_id": "R007"
+  },
+  {
+    "id": "LR005",
+    "act_or_regulation": "BIS Standards for HDPE Containers (IS 7223 / IS 16848 and related)",
+    "applicable_to": "Quality",
+    "issuing_authority": "Bureau of Indian Standards (BIS)",
+    "key_requirements": [
+      "Ensure HDPE containers meet specified dimensions, wall thickness, and material properties per applicable BIS standard",
+      "Conduct drop test, top-load test, and leak test as per BIS requirements",
+      "Obtain BIS licence (ISI mark) if applicable for regulated product categories"
+    ],
+    "compliance_status": "[TO BE ENTERED]",
+    "next_review_date": "[TO BE ENTERED]",
+    "responsible_role_id": "R002"
+  },
+  {
+    "id": "LR006",
+    "act_or_regulation": "Legal Metrology Act, 2009 and Legal Metrology (Packaged Commodities) Rules, 2011",
+    "applicable_to": "Trade",
+    "issuing_authority": "Ministry of Consumer Affairs, Food and Public Distribution / State Legal Metrology Department",
+    "key_requirements": [
+      "Ensure all pre-packed commodities declare net quantity, MRP, manufacturer's name and address on label",
+      "Comply with prescribed minimum declaration font sizes and label placement",
+      "Obtain registration/licence as manufacturer of packaged commodities if applicable"
+    ],
+    "compliance_status": "[TO BE ENTERED]",
+    "next_review_date": "[TO BE ENTERED]",
+    "responsible_role_id": "R002"
+  },
+  {
+    "id": "LR007",
+    "act_or_regulation": "Electricity Act, 2003 and MSEDCL Supply Code",
+    "applicable_to": "Safety",
+    "issuing_authority": "Maharashtra State Electricity Distribution Co. Ltd (MSEDCL) / Maharashtra Electricity Regulatory Commission (MERC)",
+    "key_requirements": [
+      "Maintain valid MSEDCL commercial/industrial connection agreement; pay tariffs on time",
+      "Ensure all electrical installations comply with IE Rules 1956; maintain periodic electrical safety inspection reports",
+      "Install energy meters as prescribed; report faults or unauthorised connections promptly"
+    ],
+    "compliance_status": "[TO BE ENTERED]",
+    "next_review_date": "[TO BE ENTERED]",
+    "responsible_role_id": "R007"
+  },
+  {
+    "id": "LR008",
+    "act_or_regulation": "Maharashtra Shops and Establishments Act, 2017",
+    "applicable_to": "Labour",
+    "issuing_authority": "Maharashtra Labour Department",
+    "key_requirements": [
+      "Register establishment under the Act; display registration certificate",
+      "Comply with working hours, weekly off, and paid leave provisions",
+      "Maintain prescribed registers of employees, attendance, and wages"
+    ],
+    "compliance_status": "[TO BE ENTERED]",
+    "next_review_date": "[TO BE ENTERED]",
+    "responsible_role_id": "R007"
+  },
+  {
+    "id": "LR009",
+    "act_or_regulation": "Employees' State Insurance Act, 1948 (ESI)",
+    "applicable_to": "Labour",
+    "issuing_authority": "Employees' State Insurance Corporation (ESIC)",
+    "key_requirements": [
+      "Register establishment and eligible employees with ESIC; deduct and remit ESI contributions monthly",
+      "Maintain ESI records; assist employees in availing medical and sickness benefits",
+      "File half-yearly ESI returns within prescribed due dates"
+    ],
+    "compliance_status": "[TO BE ENTERED]",
+    "next_review_date": "[TO BE ENTERED]",
+    "responsible_role_id": "R007"
+  },
+  {
+    "id": "LR010",
+    "act_or_regulation": "Employees' Provident Funds and Miscellaneous Provisions Act, 1952 (EPF)",
+    "applicable_to": "Labour",
+    "issuing_authority": "Employees' Provident Fund Organisation (EPFO)",
+    "key_requirements": [
+      "Register establishment; deduct and deposit PF contributions (employee + employer) by 15th of each month",
+      "File monthly ECR (Electronic Challan cum Return) via EPFO unified portal",
+      "Ensure new employees are enrolled promptly; update KYC details on UAN portal"
+    ],
+    "compliance_status": "[TO BE ENTERED]",
+    "next_review_date": "[TO BE ENTERED]",
+    "responsible_role_id": "R007"
+  },
+  {
+    "id": "LR011",
+    "act_or_regulation": "Goods and Services Tax Act, 2017 (GST)",
+    "applicable_to": "Trade",
+    "issuing_authority": "Central Board of Indirect Taxes and Customs (CBIC) / GST Network",
+    "key_requirements": [
+      "Maintain GST registration; file GSTR-1 (outward supplies) and GSTR-3B (summary return) within due dates",
+      "Issue tax invoices as per GST rules; maintain input tax credit (ITC) records accurately",
+      "Conduct annual GST reconciliation; file GSTR-9 annual return"
+    ],
+    "compliance_status": "[TO BE ENTERED]",
+    "next_review_date": "[TO BE ENTERED]",
+    "responsible_role_id": "R002"
+  },
+  {
+    "id": "LR012",
+    "act_or_regulation": "Fire Prevention and Life Safety Measures — Maharashtra Fire Prevention and Life Safety Measures Act, 2006",
+    "applicable_to": "Safety",
+    "issuing_authority": "Maharashtra Fire Services / Local Municipal Authority",
+    "key_requirements": [
+      "Obtain No Objection Certificate (NOC) from fire department; renew periodically",
+      "Install and maintain prescribed fire-fighting equipment (extinguishers, hose reels, hydrants)",
+      "Conduct fire drills at least twice a year; maintain drill records"
+    ],
+    "compliance_status": "[TO BE ENTERED]",
+    "next_review_date": "[TO BE ENTERED]",
+    "responsible_role_id": "R007"
+  }
+]

@@ -1,0 +1,126 @@
+{
+  "schema_version": "1.0",
+  "description": "Packaging specifications for Yash Poly Plast products. One entry per product. Defines carton config, pallet layout, marking requirements, and special handling. Used by Packing & Despatch (PR010) and for customer packaging approval.",
+  "packaging_specs": [
+    {
+      "id": "PKG001",
+      "product_id": "PRD001",
+      "product_name": "CAN-5L",
+      "inner_packing": "[TO BE ENTERED]",
+      "inner_packing_note": "e.g. Polybag lined, individual shrink wrap, no inner packing",
+      "carton_qty": "[TO BE ENTERED]",
+      "carton_qty_note": "Units per carton — e.g. 4 or 6 for 5L cans",
+      "carton_size_mm": "[TO BE ENTERED]",
+      "carton_size_note": "Enter as LxWxH e.g. 400x320x300",
+      "carton_weight_kg": "[TO BE ENTERED]",
+      "carton_weight_note": "Gross weight including product and packing material",
+      "pallet_config": {
+        "cartons_per_layer": "[TO BE ENTERED]",
+        "layers_per_pallet": "[TO BE ENTERED]",
+        "total_cartons_per_pallet": "[TO BE ENTERED]"
+      },
+      "stretch_wrap": true,
+      "marking_fields": [
+        "product_name",
+        "batch_no",
+        "qty",
+        "mfg_date",
+        "customer_name",
+        "net_weight"
+      ],
+      "special_handling_instructions": "[TO BE ENTERED]",
+      "special_handling_note": "e.g. This side up, keep dry, do not stack more than X layers",
+      "supplier_id": "S006"
+    },
+    {
+      "id": "PKG002",
+      "product_id": "PRD002",
+      "product_name": "BTL-1L",
+      "inner_packing": "[TO BE ENTERED]",
+      "inner_packing_note": "e.g. Polybag lined, individual shrink wrap, no inner packing",
+      "carton_qty": "[TO BE ENTERED]",
+      "carton_qty_note": "Units per carton — e.g. 12 or 24 for 1L bottles",
+      "carton_size_mm": "[TO BE ENTERED]",
+      "carton_size_note": "Enter as LxWxH e.g. 400x300x250",
+      "carton_weight_kg": "[TO BE ENTERED]",
+      "carton_weight_note": "Gross weight including product and packing material",
+      "pallet_config": {
+        "cartons_per_layer": "[TO BE ENTERED]",
+        "layers_per_pallet": "[TO BE ENTERED]",
+        "total_cartons_per_pallet": "[TO BE ENTERED]"
+      },
+      "stretch_wrap": true,
+      "marking_fields": [
+        "product_name",
+        "batch_no",
+        "qty",
+        "mfg_date",
+        "customer_name",
+        "net_weight"
+      ],
+      "special_handling_instructions": "[TO BE ENTERED]",
+      "special_handling_note": "e.g. This side up, keep dry, do not stack more than X layers",
+      "supplier_id": "S006"
+    },
+    {
+      "id": "PKG003",
+      "product_id": "PRD003",
+      "product_name": "BTL-200ML",
+      "inner_packing": "[TO BE ENTERED]",
+      "inner_packing_note": "e.g. Polybag lined, tray pack, no inner packing",
+      "carton_qty": "[TO BE ENTERED]",
+      "carton_qty_note": "Units per carton — e.g. 48 or 72 for 200ml bottles",
+      "carton_size_mm": "[TO BE ENTERED]",
+      "carton_size_note": "Enter as LxWxH e.g. 380x280x220",
+      "carton_weight_kg": "[TO BE ENTERED]",
+      "carton_weight_note": "Gross weight including product and packing material",
+      "pallet_config": {
+        "cartons_per_layer": "[TO BE ENTERED]",
+        "layers_per_pallet": "[TO BE ENTERED]",
+        "total_cartons_per_pallet": "[TO BE ENTERED]"
+      },
+      "stretch_wrap": true,
+      "marking_fields": [
+        "product_name",
+        "batch_no",
+        "qty",
+        "mfg_date",
+        "customer_name",
+        "net_weight"
+      ],
+      "special_handling_instructions": "[TO BE ENTERED]",
+      "special_handling_note": "e.g. This side up, keep dry, fragile — do not crush",
+      "supplier_id": "S006"
+    },
+    {
+      "id": "PKG004",
+      "product_id": "PRD004",
+      "product_name": "BTL-100ML",
+      "inner_packing": "[TO BE ENTERED]",
+      "inner_packing_note": "e.g. Polybag lined, tray pack, no inner packing",
+      "carton_qty": "[TO BE ENTERED]",
+      "carton_qty_note": "Units per carton — e.g. 96 or 120 for 100ml bottles",
+      "carton_size_mm": "[TO BE ENTERED]",
+      "carton_size_note": "Enter as LxWxH e.g. 360x260x200",
+      "carton_weight_kg": "[TO BE ENTERED]",
+      "carton_weight_note": "Gross weight including product and packing material",
+      "pallet_config": {
+        "cartons_per_layer": "[TO BE ENTERED]",
+        "layers_per_pallet": "[TO BE ENTERED]",
+        "total_cartons_per_pallet": "[TO BE ENTERED]"
+      },
+      "stretch_wrap": true,
+      "marking_fields": [
+        "product_name",
+        "batch_no",
+        "qty",
+        "mfg_date",
+        "customer_name",
+        "net_weight"
+      ],
+      "special_handling_instructions": "[TO BE ENTERED]",
+      "special_handling_note": "e.g. This side up, keep dry, fragile — do not crush",
+      "supplier_id": "S006"
+    }
+  ]
+}

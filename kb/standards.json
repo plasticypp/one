@@ -1,0 +1,632 @@
+[
+  {
+    "id": "STD001",
+    "standard": "ISO 9001:2015",
+    "clause_no": "4.1",
+    "clause_title": "Understanding the organisation and its context",
+    "applicable_processes": ["PR001"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD002",
+    "standard": "ISO 9001:2015",
+    "clause_no": "4.2",
+    "clause_title": "Understanding the needs and expectations of interested parties",
+    "applicable_processes": ["PR001"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD003",
+    "standard": "ISO 9001:2015",
+    "clause_no": "4.3",
+    "clause_title": "Determining the scope of the QMS",
+    "applicable_processes": ["PR001"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD004",
+    "standard": "ISO 9001:2015",
+    "clause_no": "4.4",
+    "clause_title": "QMS and its processes",
+    "applicable_processes": ["PR001", "PR002", "PR003", "PR004", "PR005", "PR006", "PR007", "PR008", "PR009", "PR010"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD005",
+    "standard": "ISO 9001:2015",
+    "clause_no": "5.1",
+    "clause_title": "Leadership and commitment",
+    "applicable_processes": ["PR001"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD006",
+    "standard": "ISO 9001:2015",
+    "clause_no": "5.2",
+    "clause_title": "Quality policy",
+    "applicable_processes": ["PR001"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD007",
+    "standard": "ISO 9001:2015",
+    "clause_no": "5.3",
+    "clause_title": "Organisational roles, responsibilities and authorities",
+    "applicable_processes": ["PR001"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD008",
+    "standard": "ISO 9001:2015",
+    "clause_no": "6.1",
+    "clause_title": "Actions to address risks and opportunities",
+    "applicable_processes": ["PR001", "PR002"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD009",
+    "standard": "ISO 9001:2015",
+    "clause_no": "6.2",
+    "clause_title": "Quality objectives and planning to achieve them",
+    "applicable_processes": ["PR001", "PR009"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD010",
+    "standard": "ISO 9001:2015",
+    "clause_no": "7.1",
+    "clause_title": "Resources",
+    "applicable_processes": ["PR002", "PR003", "PR004"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD011",
+    "standard": "ISO 9001:2015",
+    "clause_no": "7.2",
+    "clause_title": "Competence",
+    "applicable_processes": ["PR004"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD012",
+    "standard": "ISO 9001:2015",
+    "clause_no": "7.3",
+    "clause_title": "Awareness",
+    "applicable_processes": ["PR004"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD013",
+    "standard": "ISO 9001:2015",
+    "clause_no": "7.4",
+    "clause_title": "Communication",
+    "applicable_processes": ["PR001", "PR006"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD014",
+    "standard": "ISO 9001:2015",
+    "clause_no": "7.5",
+    "clause_title": "Documented information",
+    "applicable_processes": ["PR001", "PR002", "PR003", "PR004", "PR005", "PR006", "PR007", "PR008", "PR009", "PR010"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD015",
+    "standard": "ISO 9001:2015",
+    "clause_no": "8.1",
+    "clause_title": "Operational planning and control",
+    "applicable_processes": ["PR003", "PR005"],
+    "responsible_role_id": "R003",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD016",
+    "standard": "ISO 9001:2015",
+    "clause_no": "8.4",
+    "clause_title": "Control of externally provided processes, products and services",
+    "applicable_processes": ["PR002"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD017",
+    "standard": "ISO 9001:2015",
+    "clause_no": "8.5",
+    "clause_title": "Production and service provision",
+    "applicable_processes": ["PR003", "PR005", "PR006"],
+    "responsible_role_id": "R003",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD018",
+    "standard": "ISO 9001:2015",
+    "clause_no": "9.1",
+    "clause_title": "Monitoring, measurement, analysis and evaluation",
+    "applicable_processes": ["PR005", "PR009"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD019",
+    "standard": "ISO 9001:2015",
+    "clause_no": "9.2",
+    "clause_title": "Internal audit",
+    "applicable_processes": ["PR009"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD020",
+    "standard": "ISO 9001:2015",
+    "clause_no": "9.3",
+    "clause_title": "Management review",
+    "applicable_processes": ["PR009"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD021",
+    "standard": "ISO 9001:2015",
+    "clause_no": "10.2",
+    "clause_title": "Nonconformity and corrective action",
+    "applicable_processes": ["PR007", "PR010"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD022",
+    "standard": "ISO 14001:2015",
+    "clause_no": "4.1",
+    "clause_title": "Understanding the organisation and its context (Environmental)",
+    "applicable_processes": ["PR001", "PR008"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD023",
+    "standard": "ISO 14001:2015",
+    "clause_no": "4.2",
+    "clause_title": "Understanding needs and expectations of interested parties (Environmental)",
+    "applicable_processes": ["PR001", "PR008"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD024",
+    "standard": "ISO 14001:2015",
+    "clause_no": "4.3",
+    "clause_title": "Determining the scope of the EMS",
+    "applicable_processes": ["PR001", "PR008"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD025",
+    "standard": "ISO 14001:2015",
+    "clause_no": "4.4",
+    "clause_title": "Environmental management system",
+    "applicable_processes": ["PR001", "PR003", "PR008"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD026",
+    "standard": "ISO 14001:2015",
+    "clause_no": "5.1",
+    "clause_title": "Leadership and commitment (Environmental)",
+    "applicable_processes": ["PR001"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD027",
+    "standard": "ISO 14001:2015",
+    "clause_no": "5.2",
+    "clause_title": "Environmental policy",
+    "applicable_processes": ["PR001"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD028",
+    "standard": "ISO 14001:2015",
+    "clause_no": "5.3",
+    "clause_title": "Organisational roles, responsibilities and authorities (Environmental)",
+    "applicable_processes": ["PR001"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD029",
+    "standard": "ISO 14001:2015",
+    "clause_no": "6.1",
+    "clause_title": "Actions to address risks and opportunities (Environmental aspects and impacts)",
+    "applicable_processes": ["PR001", "PR008"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD030",
+    "standard": "ISO 14001:2015",
+    "clause_no": "6.2",
+    "clause_title": "Environmental objectives and planning to achieve them",
+    "applicable_processes": ["PR001", "PR008", "PR009"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD031",
+    "standard": "ISO 14001:2015",
+    "clause_no": "7.1",
+    "clause_title": "Resources (Environmental)",
+    "applicable_processes": ["PR008"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD032",
+    "standard": "ISO 14001:2015",
+    "clause_no": "7.2",
+    "clause_title": "Competence (Environmental)",
+    "applicable_processes": ["PR004", "PR008"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD033",
+    "standard": "ISO 14001:2015",
+    "clause_no": "7.3",
+    "clause_title": "Awareness (Environmental)",
+    "applicable_processes": ["PR004", "PR008"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD034",
+    "standard": "ISO 14001:2015",
+    "clause_no": "7.4",
+    "clause_title": "Communication (Environmental)",
+    "applicable_processes": ["PR001", "PR008"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD035",
+    "standard": "ISO 14001:2015",
+    "clause_no": "7.5",
+    "clause_title": "Documented information (Environmental)",
+    "applicable_processes": ["PR008"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD036",
+    "standard": "ISO 14001:2015",
+    "clause_no": "8.1",
+    "clause_title": "Operational planning and control (Environmental)",
+    "applicable_processes": ["PR003", "PR008"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD037",
+    "standard": "ISO 14001:2015",
+    "clause_no": "8.4",
+    "clause_title": "Outsourcing (Environmental)",
+    "applicable_processes": ["PR002", "PR008"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD038",
+    "standard": "ISO 14001:2015",
+    "clause_no": "8.5",
+    "clause_title": "Emergency preparedness and response",
+    "applicable_processes": ["PR008"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD039",
+    "standard": "ISO 14001:2015",
+    "clause_no": "9.1",
+    "clause_title": "Monitoring, measurement, analysis and evaluation (Environmental)",
+    "applicable_processes": ["PR008", "PR009"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD040",
+    "standard": "ISO 14001:2015",
+    "clause_no": "9.2",
+    "clause_title": "Internal audit (Environmental)",
+    "applicable_processes": ["PR009"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD041",
+    "standard": "ISO 14001:2015",
+    "clause_no": "9.3",
+    "clause_title": "Management review (Environmental)",
+    "applicable_processes": ["PR009"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD042",
+    "standard": "ISO 14001:2015",
+    "clause_no": "10.2",
+    "clause_title": "Nonconformity and corrective action (Environmental)",
+    "applicable_processes": ["PR007", "PR010"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD043",
+    "standard": "ISO 45001:2018",
+    "clause_no": "4.1",
+    "clause_title": "Understanding the organisation and its context (OH&S)",
+    "applicable_processes": ["PR001"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD044",
+    "standard": "ISO 45001:2018",
+    "clause_no": "4.2",
+    "clause_title": "Understanding needs and expectations of workers and other interested parties",
+    "applicable_processes": ["PR001"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD045",
+    "standard": "ISO 45001:2018",
+    "clause_no": "4.3",
+    "clause_title": "Determining the scope of the OH&S management system",
+    "applicable_processes": ["PR001"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD046",
+    "standard": "ISO 45001:2018",
+    "clause_no": "4.4",
+    "clause_title": "OH&S management system",
+    "applicable_processes": ["PR001", "PR003", "PR004"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD047",
+    "standard": "ISO 45001:2018",
+    "clause_no": "5.1",
+    "clause_title": "Leadership and commitment (OH&S)",
+    "applicable_processes": ["PR001"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD048",
+    "standard": "ISO 45001:2018",
+    "clause_no": "5.2",
+    "clause_title": "OH&S policy",
+    "applicable_processes": ["PR001"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD049",
+    "standard": "ISO 45001:2018",
+    "clause_no": "5.3",
+    "clause_title": "Organisational roles, responsibilities and authorities (OH&S)",
+    "applicable_processes": ["PR001"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD050",
+    "standard": "ISO 45001:2018",
+    "clause_no": "6.1",
+    "clause_title": "Actions to address risks and opportunities (Hazard identification and risk assessment)",
+    "applicable_processes": ["PR001", "PR003"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD051",
+    "standard": "ISO 45001:2018",
+    "clause_no": "6.2",
+    "clause_title": "OH&S objectives and planning to achieve them",
+    "applicable_processes": ["PR001", "PR009"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD052",
+    "standard": "ISO 45001:2018",
+    "clause_no": "7.1",
+    "clause_title": "Resources (OH&S)",
+    "applicable_processes": ["PR003", "PR004"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD053",
+    "standard": "ISO 45001:2018",
+    "clause_no": "7.2",
+    "clause_title": "Competence (OH&S)",
+    "applicable_processes": ["PR004"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD054",
+    "standard": "ISO 45001:2018",
+    "clause_no": "7.3",
+    "clause_title": "Awareness (OH&S)",
+    "applicable_processes": ["PR004"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD055",
+    "standard": "ISO 45001:2018",
+    "clause_no": "7.4",
+    "clause_title": "Communication (OH&S)",
+    "applicable_processes": ["PR001"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD056",
+    "standard": "ISO 45001:2018",
+    "clause_no": "7.5",
+    "clause_title": "Documented information (OH&S)",
+    "applicable_processes": ["PR003", "PR004"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD057",
+    "standard": "ISO 45001:2018",
+    "clause_no": "8.1",
+    "clause_title": "Operational planning and control (OH&S — elimination of hazards, hierarchy of controls)",
+    "applicable_processes": ["PR003", "PR004"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD058",
+    "standard": "ISO 45001:2018",
+    "clause_no": "8.4",
+    "clause_title": "Procurement (OH&S implications of outsourcing/purchasing)",
+    "applicable_processes": ["PR002"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD059",
+    "standard": "ISO 45001:2018",
+    "clause_no": "8.5",
+    "clause_title": "Emergency preparedness and response (OH&S)",
+    "applicable_processes": ["PR003"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD060",
+    "standard": "ISO 45001:2018",
+    "clause_no": "9.1",
+    "clause_title": "Monitoring, measurement, analysis and evaluation (OH&S performance)",
+    "applicable_processes": ["PR009"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD061",
+    "standard": "ISO 45001:2018",
+    "clause_no": "9.2",
+    "clause_title": "Internal audit (OH&S)",
+    "applicable_processes": ["PR009"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD062",
+    "standard": "ISO 45001:2018",
+    "clause_no": "9.3",
+    "clause_title": "Management review (OH&S)",
+    "applicable_processes": ["PR009"],
+    "responsible_role_id": "R002",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  },
+  {
+    "id": "STD063",
+    "standard": "ISO 45001:2018",
+    "clause_no": "10.2",
+    "clause_title": "Incident, nonconformity and corrective action (OH&S)",
+    "applicable_processes": ["PR007", "PR010"],
+    "responsible_role_id": "R007",
+    "key_documents": ["[TO BE ENTERED]"],
+    "implementation_status": "Planned"
+  }
+]

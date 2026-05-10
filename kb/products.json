@@ -1,0 +1,62 @@
+[
+  {
+    "id": "PRD001",
+    "name": "HDPE Can 5L",
+    "short_code": "CAN-5L",
+    "category": "Can",
+    "capacity_ml": 5000,
+    "material": "HDPE",
+    "colour": "Natural White",
+    "weight_grams": "[TO BE ENTERED]",
+    "hsn_code": "[TO BE ENTERED]",
+    "wall_thickness_mm": "[TO BE ENTERED]",
+    "neck_size_mm": "[TO BE ENTERED]",
+    "drawing_ref": "[TO BE ENTERED]",
+    "active": true
+  },
+  {
+    "id": "PRD002",
+    "name": "HDPE Bottle 1L",
+    "short_code": "BTL-1L",
+    "category": "Bottle",
+    "capacity_ml": 1000,
+    "material": "HDPE",
+    "colour": "Natural White",
+    "weight_grams": "[TO BE ENTERED]",
+    "hsn_code": "[TO BE ENTERED]",
+    "wall_thickness_mm": "[TO BE ENTERED]",
+    "neck_size_mm": "[TO BE ENTERED]",
+    "drawing_ref": "[TO BE ENTERED]",
+    "active": true
+  },
+  {
+    "id": "PRD003",
+    "name": "HDPE Bottle 200ml",
+    "short_code": "BTL-200ML",
+    "category": "Bottle",
+    "capacity_ml": 200,
+    "material": "HDPE",
+    "colour": "Natural White",
+    "weight_grams": "[TO BE ENTERED]",
+    "hsn_code": "[TO BE ENTERED]",
+    "wall_thickness_mm": "[TO BE ENTERED]",
+    "neck_size_mm": "[TO BE ENTERED]",
+    "drawing_ref": "[TO BE ENTERED]",
+    "active": true
+  },
+  {
+    "id": "PRD004",
+    "name": "HDPE Bottle 100ml",
+    "short_code": "BTL-100ML",
+    "category": "Bottle",
+    "capacity_ml": 100,
+    "material": "HDPE",
+    "colour": "Natural White",
+    "weight_grams": "[TO BE ENTERED]",
+    "hsn_code": "[TO BE ENTERED]",
+    "wall_thickness_mm": "[TO BE ENTERED]",
+    "neck_size_mm": "[TO BE ENTERED]",
+    "drawing_ref": "[TO BE ENTERED]",
+    "active": true
+  }
+]

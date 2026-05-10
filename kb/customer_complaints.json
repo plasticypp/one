@@ -1,0 +1,109 @@
+{
+  "schema_version": "1.0",
+  "description": "Schema definition and log for Yash Poly Plast customer complaint records. Supports full CAPA loop: complaint receipt → investigation → root cause → corrective action → preventive action → customer response → closure.",
+  "complaint_record_schema": {
+    "complaint_no": {
+      "format": "YPP-CC-YYMM-NNN",
+      "example": "YPP-CC-2503-001",
+      "description": "Unique complaint number. YY=year, MM=month, NNN=sequence."
+    },
+    "date_received": {
+      "type": "string",
+      "format": "YYYY-MM-DD",
+      "value": "[TO BE ENTERED]"
+    },
+    "customer_id": {
+      "type": "string",
+      "ref": "customers.json",
+      "description": "C001=Arabian Petroleum, C002=Apar Industries, C003=Exsan Industries.",
+      "value": "[TO BE ENTERED]"
+    },
+    "contact_person": {
+      "type": "string",
+      "description": "Name and designation of customer contact who raised the complaint.",
+      "value": "[TO BE ENTERED]"
+    },
+    "batch_no_ref": {
+      "type": "string",
+      "format": "YPP-BYYMM-NNN",
+      "ref": "batch_traceability.json — batch_records",
+      "value": "[TO BE ENTERED]"
+    },
+    "product_id": {
+      "type": "string",
+      "ref": "products.json",
+      "description": "PRD001=CAN-5L, PRD002=BTL-1L, PRD003=BTL-200ML, PRD004=BTL-100ML.",
+      "value": "[TO BE ENTERED]"
+    },
+    "complaint_description": {
+      "type": "string",
+      "description": "Verbatim or paraphrased description of the complaint as received from customer.",
+      "value": "[TO BE ENTERED]"
+    },
+    "qty_affected": {
+      "type": "integer",
+      "unit": "pcs",
+      "value": "[TO BE ENTERED]"
+    },
+    "defect_ids": {
+      "type": "array",
+      "description": "One or more defect codes from defect_catalogue.json that match this complaint.",
+      "items": "[TO BE ENTERED]"
+    },
+    "severity": {
+      "type": "string",
+      "allowed_values": ["Critical", "Major", "Minor"],
+      "description": "Critical = safety/regulatory risk or customer line stoppage. Major = functional failure. Minor = cosmetic.",
+      "value": "[TO BE ENTERED]"
+    },
+    "immediate_action": {
+      "type": "string",
+      "description": "Containment action taken immediately on receipt — e.g. stock quarantine, return authorisation, replacement shipment.",
+      "value": "[TO BE ENTERED]"
+    },
+    "capa_ref": {
+      "type": "string",
+      "description": "Reference to formal CAPA record (if raised). Format: YPP-CAPA-YYMM-NNN.",
+      "value": "[TO BE ENTERED]"
+    },
+    "root_cause": {
+      "type": "string",
+      "description": "Root cause determined after investigation (5-Why or Fishbone). Populate after investigation.",
+      "value": "[TO BE ENTERED]"
+    },
+    "corrective_action": {
+      "type": "string",
+      "description": "Action taken to eliminate the root cause for this occurrence.",
+      "value": "[TO BE ENTERED]"
+    },
+    "preventive_action": {
+      "type": "string",
+      "description": "Systemic action taken to prevent recurrence across similar products/processes.",
+      "value": "[TO BE ENTERED]"
+    },
+    "customer_response_due": {
+      "type": "string",
+      "format": "YYYY-MM-DD",
+      "description": "Committed date by which written response is sent to customer.",
+      "value": "[TO BE ENTERED]"
+    },
+    "closure_date": {
+      "type": "string",
+      "format": "YYYY-MM-DD",
+      "description": "Date complaint was formally closed after customer acceptance.",
+      "value": "[TO BE ENTERED]"
+    },
+    "closed_by_role_id": {
+      "type": "string",
+      "ref": "roles.json",
+      "description": "Role that signed off closure. Typically R002=MR/Quality Manager.",
+      "value": "[TO BE ENTERED]"
+    },
+    "status": {
+      "type": "string",
+      "allowed_values": ["Open", "Under Investigation", "Closed"],
+      "value": "Open"
+    }
+  },
+  "complaints_log": []
+}

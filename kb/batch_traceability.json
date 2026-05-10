@@ -1,0 +1,147 @@
+{
+  "schema_version": "1.0",
+  "description": "Template schema for Yash Poly Plast batch traceability records. One record per production batch, covering the full thread: RM receipt (IQC) → Blow Moulding (IPC) → Leak Test → OQC → COA → Despatch. Populate one JSON object per batch following this schema.",
+  "batch_record_schema": {
+    "batch_no": {
+      "format": "YPP-BYYMM-NNN",
+      "example": "YPP-B2503-001",
+      "description": "Unique batch identifier. YY=year, MM=month, NNN=sequence."
+    },
+    "product_id": {
+      "type": "string",
+      "ref": "products.json",
+      "example": "PRD001",
+      "description": "Link to product master. PRD001=CAN-5L, PRD002=BTL-1L, PRD003=BTL-200ML, PRD004=BTL-100ML."
+    },
+    "production_date": {
+      "type": "string",
+      "format": "YYYY-MM-DD",
+      "value": "[TO BE ENTERED]"
+    },
+    "shift": {
+      "type": "string",
+      "allowed_values": ["A", "B"],
+      "value": "[TO BE ENTERED]"
+    },
+    "machine_id": {
+      "type": "string",
+      "description": "Blow moulding machine identifier.",
+      "value": "[TO BE ENTERED]"
+    },
+    "mould_id": {
+      "type": "string",
+      "description": "Tooling/mould identifier used for this batch.",
+      "value": "[TO BE ENTERED]"
+    },
+    "operator_role_id": {
+      "type": "string",
+      "ref": "roles — R004=Quality Inspector, R006=Store & Dispatch",
+      "value": "[TO BE ENTERED]"
+    },
+    "rm_batches": {
+      "type": "array",
+      "description": "Raw material lots consumed in this batch. One entry per material lot.",
+      "item_schema": {
+        "material": "[TO BE ENTERED]",
+        "supplier_id": "[TO BE ENTERED]",
+        "lot_no": "[TO BE ENTERED]",
+        "qty_kg": "[TO BE ENTERED]",
+        "iqc_ref": {
+          "description": "Reference to IQC inspection record for this RM lot (process PR001).",
+          "value": "[TO BE ENTERED]"
+        }
+      }
+    },
+    "masterbatch_lot": {
+      "type": "string",
+      "description": "Lot number of colour/additive masterbatch used.",
+      "value": "[TO BE ENTERED]"
+    },
+    "blow_moulding_params": {
+      "description": "Key process parameters recorded at blow moulding station (process PR004).",
+      "temp_zone1": {
+        "unit": "°C",
+        "value": "[TO BE ENTERED]"
+      },
+      "temp_zone2": {
+        "unit": "°C",
+        "value": "[TO BE ENTERED]"
+      },
+      "blow_pressure": {
+        "unit": "bar",
+        "value": "[TO BE ENTERED]"
+      },
+      "cycle_time": {
+        "unit": "seconds",
+        "value": "[TO BE ENTERED]"
+      }
+    },
+    "ipc_ref": {
+      "type": "string",
+      "description": "Reference to In-Process Control inspection record (process PR006).",
+      "value": "[TO BE ENTERED]"
+    },
+    "leak_test_ref": {
+      "type": "string",
+      "description": "Reference to leak test record (process PR007).",
+      "value": "[TO BE ENTERED]"
+    },
+    "oqc_ref": {
+      "type": "string",
+      "description": "Reference to Outgoing Quality Control inspection record (process PR009).",
+      "value": "[TO BE ENTERED]"
+    },
+    "coa_ref": {
+      "type": "string",
+      "description": "Reference to Certificate of Analysis issued to customer with this batch.",
+      "value": "[TO BE ENTERED]"
+    },
+    "qty_produced": {
+      "type": "integer",
+      "unit": "pcs",
+      "value": "[TO BE ENTERED]"
+    },
+    "qty_rejected": {
+      "type": "integer",
+      "unit": "pcs",
+      "value": "[TO BE ENTERED]"
+    },
+    "qty_passed": {
+      "type": "integer",
+      "unit": "pcs",
+      "description": "qty_produced minus qty_rejected.",
+      "value": "[TO BE ENTERED]"
+    },
+    "rejection_details": {
+      "type": "array",
+      "description": "Breakdown of rejections by defect type. Leave empty array [] if no rejections.",
+      "item_schema": {
+        "defect_id": {
+          "ref": "defect_catalogue.json",
+          "value": "[TO BE ENTERED]"
+        },
+        "qty": {
+          "unit": "pcs",
+          "value": "[TO BE ENTERED]"
+        }
+      }
+    },
+    "despatch_ref": {
+      "type": "string",
+      "description": "Reference to despatch/delivery note (process PR010).",
+      "value": "[TO BE ENTERED]"
+    },
+    "customer_id": {
+      "type": "string",
+      "ref": "customers.json",
+      "description": "C001=Arabian Petroleum, C002=Apar Industries, C003=Exsan Industries.",
+      "value": "[TO BE ENTERED]"
+    },
+    "status": {
+      "type": "string",
+      "allowed_values": ["In Progress", "Released", "On Hold", "Rejected"],
+      "value": "In Progress"
+    }
+  },
+  "batch_records": []
+}

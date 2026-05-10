@@ -1,0 +1,6 @@
+{
+  "apiUrl": "PASTE_APPS_SCRIPT_WEB_APP_URL_HERE",
+  "version": "1.0.0",
+  "appName": "YPP ERP",
+  "sessionHours": 8
+}

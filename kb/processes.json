@@ -1,0 +1,196 @@
+[
+  {
+    "id": "PR001",
+    "seq": 1,
+    "name": "Raw Material Receipt",
+    "department": "Store & Dispatch",
+    "inputs": ["Supplier delivery challan", "Purchase Order", "HDPE resin / regrind bags"],
+    "outputs": ["Goods Receipt Note (GRN)", "RM Lot label", "IQC request"],
+    "machine_id": null,
+    "responsible_role_id": "R006",
+    "key_parameters": [
+      {"parameter": "Material grade / MFI", "target": "[TO BE ENTERED]", "unit": "g/10 min"},
+      {"parameter": "Bag weight", "target": "[TO BE ENTERED]", "unit": "kg"},
+      {"parameter": "Lot quantity", "target": "[TO BE ENTERED]", "unit": "bags"}
+    ],
+    "related_doc_codes": ["[TO BE ENTERED]"],
+    "iqc_required": true,
+    "ipc_required": false,
+    "oqc_required": false
+  },
+  {
+    "id": "PR002",
+    "seq": 2,
+    "name": "Raw Material Storage",
+    "department": "Store & Dispatch",
+    "inputs": ["IQC-approved RM lots", "GRN"],
+    "outputs": ["Stored RM with bin cards", "FIFO pick-list"],
+    "machine_id": null,
+    "responsible_role_id": "R006",
+    "key_parameters": [
+      {"parameter": "Storage temperature", "target": "[TO BE ENTERED]", "unit": "°C"},
+      {"parameter": "Humidity", "target": "[TO BE ENTERED]", "unit": "%RH"},
+      {"parameter": "FIFO compliance", "target": "100", "unit": "%"}
+    ],
+    "related_doc_codes": ["[TO BE ENTERED]"],
+    "iqc_required": false,
+    "ipc_required": false,
+    "oqc_required": false
+  },
+  {
+    "id": "PR003",
+    "seq": 3,
+    "name": "Material Preparation / Blending",
+    "department": "Production",
+    "inputs": ["HDPE virgin resin", "Regrind / regranulate", "Colour masterbatch"],
+    "outputs": ["Blended material (weighed & mixed)", "Blend record"],
+    "machine_id": null,
+    "responsible_role_id": "R003",
+    "key_parameters": [
+      {"parameter": "Virgin : regrind ratio", "target": "[TO BE ENTERED]", "unit": "%"},
+      {"parameter": "Masterbatch dosing", "target": "[TO BE ENTERED]", "unit": "%"},
+      {"parameter": "Blend batch weight", "target": "[TO BE ENTERED]", "unit": "kg"}
+    ],
+    "related_doc_codes": ["[TO BE ENTERED]"],
+    "iqc_required": false,
+    "ipc_required": false,
+    "oqc_required": false
+  },
+  {
+    "id": "PR004",
+    "seq": 4,
+    "name": "Blow Moulding",
+    "department": "Production",
+    "inputs": ["Blended HDPE material", "Machine setup parameters", "Mould"],
+    "outputs": ["Moulded containers (unflashed)", "Production log sheet"],
+    "machine_id": "EQ001",
+    "responsible_role_id": "R005",
+    "key_parameters": [
+      {"parameter": "Barrel zone temperature", "target": "[TO BE ENTERED]", "unit": "°C"},
+      {"parameter": "Die head temperature", "target": "[TO BE ENTERED]", "unit": "°C"},
+      {"parameter": "Blow pressure", "target": "[TO BE ENTERED]", "unit": "bar"},
+      {"parameter": "Cycle time", "target": "[TO BE ENTERED]", "unit": "sec"},
+      {"parameter": "Parison weight", "target": "[TO BE ENTERED]", "unit": "g"}
+    ],
+    "related_doc_codes": ["[TO BE ENTERED]"],
+    "iqc_required": false,
+    "ipc_required": true,
+    "oqc_required": false
+  },
+  {
+    "id": "PR005",
+    "seq": 5,
+    "name": "Deflashing / Trimming",
+    "department": "Production",
+    "inputs": ["Moulded containers (unflashed)", "Flash trim knives / tools"],
+    "outputs": ["Deflashed containers", "Flash scrap (for regrind)"],
+    "machine_id": null,
+    "responsible_role_id": "R005",
+    "key_parameters": [
+      {"parameter": "Flash-free appearance", "target": "No sharp edges or flash", "unit": "visual"},
+      {"parameter": "Scrap segregation", "target": "100", "unit": "%"}
+    ],
+    "related_doc_codes": ["[TO BE ENTERED]"],
+    "iqc_required": false,
+    "ipc_required": false,
+    "oqc_required": false
+  },
+  {
+    "id": "PR006",
+    "seq": 6,
+    "name": "In-Process Inspection",
+    "department": "Quality",
+    "inputs": ["Deflashed containers (sample)", "IPC checklist", "Measuring instruments"],
+    "outputs": ["IPC record", "Accept / rework / reject decision"],
+    "machine_id": null,
+    "responsible_role_id": "R004",
+    "key_parameters": [
+      {"parameter": "Container weight", "target": "[TO BE ENTERED]", "unit": "g"},
+      {"parameter": "Wall thickness (min)", "target": "[TO BE ENTERED]", "unit": "mm"},
+      {"parameter": "Neck OD", "target": "[TO BE ENTERED]", "unit": "mm"},
+      {"parameter": "Height / length", "target": "[TO BE ENTERED]", "unit": "mm"}
+    ],
+    "related_doc_codes": ["[TO BE ENTERED]"],
+    "iqc_required": false,
+    "ipc_required": true,
+    "oqc_required": false
+  },
+  {
+    "id": "PR007",
+    "seq": 7,
+    "name": "Leak Testing",
+    "department": "Quality",
+    "inputs": ["IPC-passed containers", "Leak test rig / air pressure source"],
+    "outputs": ["Leak test record", "Leak-free certified containers"],
+    "machine_id": null,
+    "responsible_role_id": "R004",
+    "key_parameters": [
+      {"parameter": "Test pressure", "target": "[TO BE ENTERED]", "unit": "bar"},
+      {"parameter": "Hold time", "target": "[TO BE ENTERED]", "unit": "sec"},
+      {"parameter": "Acceptance criterion", "target": "No bubble / no pressure drop", "unit": "visual / bar"}
+    ],
+    "related_doc_codes": ["[TO BE ENTERED]"],
+    "iqc_required": false,
+    "ipc_required": false,
+    "oqc_required": false
+  },
+  {
+    "id": "PR008",
+    "seq": 8,
+    "name": "Label Application",
+    "department": "Production",
+    "inputs": ["Leak-tested containers", "Approved labels", "Label application tool / machine"],
+    "outputs": ["Labelled containers", "Label reconciliation record"],
+    "machine_id": null,
+    "responsible_role_id": "R005",
+    "key_parameters": [
+      {"parameter": "Label position (from neck)", "target": "[TO BE ENTERED]", "unit": "mm"},
+      {"parameter": "Label adhesion", "target": "No peel / bubble", "unit": "visual"},
+      {"parameter": "Label batch traceability", "target": "100", "unit": "%"}
+    ],
+    "related_doc_codes": ["[TO BE ENTERED]"],
+    "iqc_required": false,
+    "ipc_required": false,
+    "oqc_required": false
+  },
+  {
+    "id": "PR009",
+    "seq": 9,
+    "name": "Finished Goods Inspection",
+    "department": "Quality",
+    "inputs": ["Labelled containers (full batch)", "OQC plan / AQL table", "Measuring instruments"],
+    "outputs": ["OQC report", "Approved / rejected FG lot", "Non-conformance report (if any)"],
+    "machine_id": null,
+    "responsible_role_id": "R004",
+    "key_parameters": [
+      {"parameter": "AQL sampling level", "target": "[TO BE ENTERED]", "unit": "AQL %"},
+      {"parameter": "Dimensional conformance", "target": "As per drawing", "unit": "mm"},
+      {"parameter": "Visual defects", "target": "Zero critical / major per AQL", "unit": "nos"},
+      {"parameter": "Container weight", "target": "[TO BE ENTERED]", "unit": "g"}
+    ],
+    "related_doc_codes": ["[TO BE ENTERED]"],
+    "iqc_required": false,
+    "ipc_required": false,
+    "oqc_required": true
+  },
+  {
+    "id": "PR010",
+    "seq": 10,
+    "name": "Packing & Despatch",
+    "department": "Store & Dispatch",
+    "inputs": ["OQC-approved FG containers", "Packing material (corrugated boxes / shrink wrap)", "Despatch order"],
+    "outputs": ["Packed & palletised goods", "Despatch challan", "FG inventory update"],
+    "machine_id": null,
+    "responsible_role_id": "R006",
+    "key_parameters": [
+      {"parameter": "Packing qty per box", "target": "[TO BE ENTERED]", "unit": "nos"},
+      {"parameter": "Box gross weight", "target": "[TO BE ENTERED]", "unit": "kg"},
+      {"parameter": "Pallet height", "target": "[TO BE ENTERED]", "unit": "mm"},
+      {"parameter": "Despatch qty vs order qty", "target": "100", "unit": "%"}
+    ],
+    "related_doc_codes": ["[TO BE ENTERED]"],
+    "iqc_required": false,
+    "ipc_required": false,
+    "oqc_required": false
+  }
+]

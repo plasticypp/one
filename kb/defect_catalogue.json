@@ -1,0 +1,227 @@
+[
+  {
+    "id": "DEF001",
+    "code": "D-VIS-001",
+    "name": "Flash",
+    "category": "Visual",
+    "severity": "Major",
+    "description": "Thin film or fin of excess plastic formed along the parting line, pinch-off area, or around the neck/handle insert where the mould halves meet. Can cause sharp edges and interfere with cap seating.",
+    "typical_causes": [
+      "Excessive parison weight or blow pressure causing material to be forced into mould parting line gap",
+      "Worn or damaged mould pinch-off edges",
+      "Mould clamping force insufficient or mould halves misaligned"
+    ],
+    "detection_stage": ["IPC", "OQC"],
+    "corrective_action_hint": "Trim flash manually as short-term measure; investigate and rectify mould pinch-off wear or clamp force settings; reduce parison weight if excess. Log in rejection record."
+  },
+  {
+    "id": "DEF002",
+    "code": "D-VIS-002",
+    "name": "Sink Marks",
+    "category": "Visual",
+    "severity": "Minor",
+    "description": "Shallow depressions or indentations on the outer surface of the container, typically at areas of uneven wall thickness or near ribs and corners. Indicates localised insufficient cooling or uneven material distribution.",
+    "typical_causes": [
+      "Inadequate cooling time or uneven mould cooling — hot spots in the mould",
+      "Excessive wall thickness variation causing uneven shrinkage",
+      "Low blow pressure insufficient to press parison firmly against mould wall"
+    ],
+    "detection_stage": ["IPC", "OQC"],
+    "corrective_action_hint": "Increase cooling time or improve mould cooling water flow to affected area; adjust blow pressure; review parison programming for better wall distribution."
+  },
+  {
+    "id": "DEF003",
+    "code": "D-DIM-001",
+    "name": "Warpage / Distortion",
+    "category": "Dimensional",
+    "severity": "Major",
+    "description": "Container is twisted, bowed, or out-of-round after demoulding. The container does not sit flat or has visible asymmetry. Can cause leakage, label misalignment, and filling line issues at the customer.",
+    "typical_causes": [
+      "Premature ejection before part has sufficiently cooled — part deforms under its own weight",
+      "Uneven mould cooling causing differential shrinkage on opposing walls",
+      "Improper stacking or handling of parts immediately after demould while still warm"
+    ],
+    "detection_stage": ["IPC", "OQC"],
+    "corrective_action_hint": "Increase cooling time before ejection; verify mould cooling circuit balance; enforce proper part placement on cooling conveyor or fixture post-demould."
+  },
+  {
+    "id": "DEF004",
+    "code": "D-VIS-003",
+    "name": "Black Specks / Contamination",
+    "category": "Visual",
+    "severity": "Major",
+    "description": "Small black or brown particles embedded in or on the surface of the container wall. Can indicate degraded/burnt material, contaminated resin, or contamination in the barrel/die head.",
+    "typical_causes": [
+      "Degraded material from prolonged residence time in barrel or die head — often after machine startup or prolonged downtime",
+      "Contaminated raw material (resin lot with black specks) — cross-check against IQC records",
+      "Inadequate purging of machine after colour change or after running regrind"
+    ],
+    "detection_stage": ["IQC", "IPC", "OQC"],
+    "corrective_action_hint": "Purge machine thoroughly; check and replace resin lot if IQC record shows contamination; inspect and clean die head if recurring; implement startup purge protocol."
+  },
+  {
+    "id": "DEF005",
+    "code": "D-VIS-004",
+    "name": "Short Shot / Incomplete Part",
+    "category": "Visual",
+    "severity": "Critical",
+    "description": "Part is not fully formed — missing sections, holes in the body, or severely thinned areas where the parison failed to inflate to the mould wall. Part structurally unusable.",
+    "typical_causes": [
+      "Insufficient parison weight — extruder output too low or screw wear",
+      "Blow pin not seating correctly — air not reaching parison interior",
+      "Parison tear or burst before full inflation due to excessive pre-blow or thin spot in parison"
+    ],
+    "detection_stage": ["IPC"],
+    "corrective_action_hint": "100% scrap affected batch; check extruder output and screw condition; verify blow pin seating and air pressure; review parison programming. Do not release to OQC."
+  },
+  {
+    "id": "DEF006",
+    "code": "D-DIM-002",
+    "name": "Uneven Wall Thickness",
+    "category": "Dimensional",
+    "severity": "Major",
+    "description": "Significant variation in wall thickness between different points on the same container — one side thicker than the other, or shoulder/base much thinner than the body. Can lead to structural weakness and leak failures.",
+    "typical_causes": [
+      "Parison programming not optimised — uneven die gap across part height",
+      "Die head centring off — parison not concentric, causing one side to be consistently thinner",
+      "Mould not closing squarely on the parison"
+    ],
+    "detection_stage": ["IPC"],
+    "corrective_action_hint": "Measure wall thickness at minimum 3 points (shoulder, body, base) and compare; adjust parison programmer profile; check and adjust die head centering; recalibrate if recurring."
+  },
+  {
+    "id": "DEF007",
+    "code": "D-FUN-001",
+    "name": "Pinhole / Leak",
+    "category": "Functional",
+    "severity": "Critical",
+    "description": "Microscopic or visible hole in the container wall or base, causing the container to fail the leak test. Even pinholes invisible to naked eye will fail pressure test. Renders container completely unusable for liquid packaging.",
+    "typical_causes": [
+      "Parison burst during blowing — localised thin spot blown through under air pressure",
+      "Contamination or foreign particle in the parison wall causing a void",
+      "Mould pinch-off damage creating a weakened area that cracks on pressurisation"
+    ],
+    "detection_stage": ["IPC", "OQC"],
+    "corrective_action_hint": "Critical defect — segregate and scrap all affected units immediately; do not advance to packing. Investigate parison thickness, mould pinch-off condition, and resin lot."
+  },
+  {
+    "id": "DEF008",
+    "code": "D-VIS-005",
+    "name": "Colour Variation",
+    "category": "Visual",
+    "severity": "Minor",
+    "description": "Container colour deviates visibly from the approved reference standard — streaks, patches of different shade, or overall shade shift between batches or within a batch.",
+    "typical_causes": [
+      "Inconsistent masterbatch dosing — feeder malfunction or incorrect let-down ratio",
+      "Masterbatch not fully dispersed — mixing inadequate or incompatible carrier resin",
+      "Resin lot change with slightly different natural colour base"
+    ],
+    "detection_stage": ["IPC", "OQC"],
+    "corrective_action_hint": "Compare against approved colour chip; check masterbatch lot and dosing rate; increase mixing by adjusting screw speed; if resin lot is different, check with customer before proceeding."
+  },
+  {
+    "id": "DEF009",
+    "code": "D-VIS-006",
+    "name": "Surface Scratch / Scuff",
+    "category": "Visual",
+    "severity": "Minor",
+    "description": "Linear scratches or scuff marks on the outer surface of the container caused by mechanical contact during demoulding, conveying, or handling. May affect label adhesion or customer appearance requirements.",
+    "typical_causes": [
+      "Rough mould surface or damaged mould interior — mould needs polishing",
+      "Parts dragging against each other or conveyor components during cooling and collection",
+      "Rough or improper handling during packing or bin filling"
+    ],
+    "detection_stage": ["OQC"],
+    "corrective_action_hint": "Inspect mould cavity surface and polish if required; add protective liner or dividers in collection bins; train operators on careful handling; review conveyor contact points."
+  },
+  {
+    "id": "DEF010",
+    "code": "D-VIS-007",
+    "name": "Label Misalignment",
+    "category": "Visual",
+    "severity": "Minor",
+    "description": "Label applied skewed, too high/low, off-centre, or with visible wrinkles or bubbles. Only applicable to batches that are labelled in-house before despatch.",
+    "typical_causes": [
+      "Labelling machine setting not calibrated to current container batch",
+      "Container not correctly orientated at label application point",
+      "Label roll tension or guide not set correctly causing label to walk or skew"
+    ],
+    "detection_stage": ["OQC"],
+    "corrective_action_hint": "Check and recalibrate labelling machine; verify container orientation guide; inspect first 10 pieces after setup and after every label roll change."
+  },
+  {
+    "id": "DEF011",
+    "code": "D-DIM-003",
+    "name": "Underweight",
+    "category": "Dimensional",
+    "severity": "Major",
+    "description": "Container weight below the minimum acceptable limit. Indicates insufficient material — likely thinned walls that may compromise structural integrity and leak resistance.",
+    "typical_causes": [
+      "Extruder output reduced — worn screw, barrel wear, or incorrect back pressure setting",
+      "Parison programmer reducing parison weight unintentionally — incorrect program loaded",
+      "Resin bulk density variation affecting volumetric output"
+    ],
+    "detection_stage": ["IPC", "OQC"],
+    "corrective_action_hint": "Recheck weight on 5 consecutive pieces; if confirmed, stop production and adjust extruder output / parison weight; do not release underweight parts as they are likely to have thin walls."
+  },
+  {
+    "id": "DEF012",
+    "code": "D-DIM-004",
+    "name": "Overweight",
+    "category": "Dimensional",
+    "severity": "Minor",
+    "description": "Container weight above the maximum acceptable limit. Indicates excessive material usage — increases raw material cost and may cause dimensional issues (over-dimension OD, mould not closing fully).",
+    "typical_causes": [
+      "Extruder output too high — screw speed or back pressure set incorrectly",
+      "Parison programmer weight set too high",
+      "Operator manually increasing output to compensate for other issues without proper authorisation"
+    ],
+    "detection_stage": ["IPC", "OQC"],
+    "corrective_action_hint": "Adjust extruder output to bring weight back to target; notify production supervisor; review parison programmer settings."
+  },
+  {
+    "id": "DEF013",
+    "code": "D-DIM-005",
+    "name": "Dimension Out of Specification (Height / OD / Neck)",
+    "category": "Dimensional",
+    "severity": "Major",
+    "description": "Overall height, outer diameter, or neck outer diameter outside the approved tolerance band. Can cause customer filling line stoppages, capping issues, or label application problems.",
+    "typical_causes": [
+      "Mould wear over time causing dimensions to drift beyond tolerance",
+      "Incorrect mould being used — production started with wrong tool",
+      "Significant process parameter change (e.g. different resin grade with different shrinkage rate)"
+    ],
+    "detection_stage": ["IPC", "OQC"],
+    "corrective_action_hint": "Measure minimum 3 pieces; if out of tolerance, stop and investigate mould condition and process parameters; raise tooling inspection if mould wear is suspected."
+  },
+  {
+    "id": "DEF014",
+    "code": "D-FUN-002",
+    "name": "Neck / Thread Defect",
+    "category": "Functional",
+    "severity": "Critical",
+    "description": "Damaged, incomplete, or distorted neck threads — cracked neck, deformed thread profile, or neck out-of-round. Causes cap to not seal correctly, resulting in leakage during customer use.",
+    "typical_causes": [
+      "Mould neck insert wear or damage",
+      "Premature ejection or rough demoulding before neck has cooled and set",
+      "Blow pin not fully retracting before mould opens — damaging neck area on ejection"
+    ],
+    "detection_stage": ["IPC", "OQC"],
+    "corrective_action_hint": "Critical — segregate all affected parts; inspect neck insert condition; adjust ejection timing; perform cap fit and torque test on retained sample; do not dispatch."
+  },
+  {
+    "id": "DEF015",
+    "code": "D-FUN-003",
+    "name": "Parison Burst / Blow-Out",
+    "category": "Functional",
+    "severity": "Critical",
+    "description": "Parison ruptures completely during the blowing phase — part is not formed, or has a large hole/tear. Causes machine downtime, loss of cycle, and potential damage to the mould if burst occurs inside.",
+    "typical_causes": [
+      "Parison wall excessively thin at a localised point due to parison programmer issue or die head problem",
+      "Blow air pressure too high relative to parison wall strength at that temperature",
+      "Resin MFI out of range — material too fluid, parison sags and thins excessively before blowing"
+    ],
+    "detection_stage": ["IPC"],
+    "corrective_action_hint": "Stop machine; inspect die head and parison programmer settings; check MFI of current resin lot against COA; reduce blow pressure if excessive; review parison thickness profile."
+  }
+]

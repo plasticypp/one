@@ -1,0 +1,90 @@
+[
+  {
+    "id": "BOM001",
+    "product_id": "PRD001",
+    "rm_items": [
+      {
+        "material": "HDPE Resin",
+        "grade": "[TO BE ENTERED]",
+        "supplier_id": "S001",
+        "qty_per_unit_kg": "[TO BE ENTERED]",
+        "unit": "kg"
+      }
+    ],
+    "masterbatch": [
+      {
+        "colour_name": "[TO BE ENTERED]",
+        "supplier_id": "S003",
+        "loading_percent": "[TO BE ENTERED]"
+      }
+    ],
+    "total_rm_cost_per_unit": "[TO BE ENTERED]",
+    "scrap_allowance_percent": "[TO BE ENTERED]"
+  },
+  {
+    "id": "BOM002",
+    "product_id": "PRD002",
+    "rm_items": [
+      {
+        "material": "HDPE Resin",
+        "grade": "[TO BE ENTERED]",
+        "supplier_id": "S001",
+        "qty_per_unit_kg": "[TO BE ENTERED]",
+        "unit": "kg"
+      }
+    ],
+    "masterbatch": [
+      {
+        "colour_name": "[TO BE ENTERED]",
+        "supplier_id": "S003",
+        "loading_percent": "[TO BE ENTERED]"
+      }
+    ],
+    "total_rm_cost_per_unit": "[TO BE ENTERED]",
+    "scrap_allowance_percent": "[TO BE ENTERED]"
+  },
+  {
+    "id": "BOM003",
+    "product_id": "PRD003",
+    "rm_items": [
+      {
+        "material": "HDPE Resin",
+        "grade": "[TO BE ENTERED]",
+        "supplier_id": "S002",
+        "qty_per_unit_kg": "[TO BE ENTERED]",
+        "unit": "kg"
+      }
+    ],
+    "masterbatch": [
+      {
+        "colour_name": "[TO BE ENTERED]",
+        "supplier_id": "S003",
+        "loading_percent": "[TO BE ENTERED]"
+      }
+    ],
+    "total_rm_cost_per_unit": "[TO BE ENTERED]",
+    "scrap_allowance_percent": "[TO BE ENTERED]"
+  },
+  {
+    "id": "BOM004",
+    "product_id": "PRD004",
+    "rm_items": [
+      {
+        "material": "HDPE Resin",
+        "grade": "[TO BE ENTERED]",
+        "supplier_id": "S002",
+        "qty_per_unit_kg": "[TO BE ENTERED]",
+        "unit": "kg"
+      }
+    ],
+    "masterbatch": [
+      {
+        "colour_name": "[TO BE ENTERED]",
+        "supplier_id": "S003",
+        "loading_percent": "[TO BE ENTERED]"
+      }
+    ],
+    "total_rm_cost_per_unit": "[TO BE ENTERED]",
+    "scrap_allowance_percent": "[TO BE ENTERED]"
+  }
+]
