@@ -1,5 +1,5 @@
 {
-  "apiUrl": "PASTE_APPS_SCRIPT_WEB_APP_URL_HERE",
+  "apiUrl": "https://script.google.com/macros/s/AKfycbz4yJwKiVd2r10KDEH2-Xg2BoWNmYanyYmmp5v978tLp7P-qL-IuRzT-oqcccQmMoSU/exec",
   "version": "1.0.0",
   "appName": "YPP ERP",
   "sessionHours": 8
