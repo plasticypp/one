@@ -3,7 +3,8 @@ const Nav = (() => {
     { id: 'home',    icon: '🏠', labelKey: 'nav.home',    roles: ['director','qmr','supervisor','operator','store','hr'] },
     { id: 'work',    icon: '⚙️', labelKey: 'nav.work',    roles: ['director','qmr','supervisor','operator'] },
     { id: 'stock',   icon: '📦', labelKey: 'nav.stock',   roles: ['director','qmr','supervisor','store'] },
-    { id: 'profile', icon: '👤', labelKey: 'nav.profile', roles: ['director','qmr','supervisor','operator','store','hr'] }
+    { id: 'profile', icon: '👤', labelKey: 'nav.profile', roles: ['director','qmr','supervisor','operator','store','hr'] },
+    { id: 'masters', icon: '🗂️', labelKey: 'nav.masters', roles: ['director','qmr'] }
   ];
 
   let activeTab = 'home';
@@ -24,6 +25,10 @@ const Nav = (() => {
   }
 
   function switchTab(tabId, role) {
+    if (tabId === 'masters') {
+      window.location.href = 'masters.html';
+      return;
+    }
     activeTab = tabId;
     document.querySelectorAll('.tab-item').forEach(b => {
       b.classList.toggle('active', b.getAttribute('data-tab') === tabId);
