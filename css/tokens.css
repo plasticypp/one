@@ -1,63 +1,64 @@
-/* YPP ERP Design Tokens — generated from brand #1565C0, classic style */
+/* YPP ERP Design Tokens — High-Vis Safety Orange */
 :root {
-  /* Primary — factory blue */
-  --color-primary:       #1565C0;
-  --color-primary-light: #4a81c0;
-  --color-primary-dark:  #0d2b4c;
-  --color-primary-bg:    #a9cbf2;
+  /* Primary — safety orange */
+  --color-primary:       #EA580C;
+  --color-primary-light: #FB923C;
+  --color-primary-dark:  #C2410C;
+  --color-primary-bg:    #FFF7ED;
 
-  /* Secondary — amber accent */
-  --color-accent:        #c06f15;
-  --color-accent-light:  #f2bb7f;
-  --color-accent-dark:   #734a1c;
+  /* Accent — near-black */
+  --color-accent:        #0F172A;
+  --color-accent-light:  #1E293B;
+  --color-accent-dark:   #020617;
 
   /* Neutrals */
-  --color-bg:            #F9FAFB;
+  --color-bg:            #F8FAFC;
   --color-surface:       #FFFFFF;
-  --color-border:        #E5E7EB;
-  --color-divider:       #D1D5DB;
-  --color-text:          #111827;
-  --color-text-muted:    #6B7280;
-  --color-text-subtle:   #9CA3AF;
+  --color-border:        #E2E8F0;
+  --color-divider:       #CBD5E1;
+  --color-text:          #0F172A;
+  --color-text-muted:    #64748B;
+  --color-text-subtle:   #94A3B8;
 
   /* Semantic */
-  --color-success:       #10B981;
-  --color-success-light: #34D399;
-  --color-warning:       #F59E0B;
-  --color-warning-light: #FBD24D;
-  --color-error:         #EF4444;
-  --color-error-light:   #F87171;
-  --color-info:          #3B82F6;
+  --color-success:       #16A34A;
+  --color-success-light: #22C55E;
+  --color-warning:       #D97706;
+  --color-warning-light: #F59E0B;
+  --color-error:         #DC2626;
+  --color-error-light:   #EF4444;
+  --color-info:          #0369A1;
 
   /* Status badges (ERP-specific) */
-  --color-status-open:       #F59E0B;
+  --color-status-open:       #D97706;
   --color-status-open-bg:    #FEF3C7;
-  --color-status-closed:     #10B981;
-  --color-status-closed-bg:  #D1FAE5;
-  --color-status-pending:    #3B82F6;
-  --color-status-pending-bg: #DBEAFE;
-  --color-status-overdue:    #EF4444;
+  --color-status-closed:     #16A34A;
+  --color-status-closed-bg:  #DCFCE7;
+  --color-status-pending:    #0369A1;
+  --color-status-pending-bg: #E0F2FE;
+  --color-status-overdue:    #DC2626;
   --color-status-overdue-bg: #FEE2E2;
-  --color-status-planned:    #8B5CF6;
+  --color-status-planned:    #7C3AED;
   --color-status-planned-bg: #EDE9FE;
 
   /* Typography */
-  --font-sans:    'Inter', Helvetica, Arial, sans-serif;
+  --font-sans:    'Barlow', Helvetica, Arial, sans-serif;
+  --font-display: 'Barlow Condensed', 'Barlow', Helvetica, Arial, sans-serif;
   --font-mono:    'Courier New', monospace;
 
-  --text-xs:   10px;
+  --text-xs:   11px;
   --text-sm:   13px;
   --text-base: 16px;
-  --text-lg:   20px;
-  --text-xl:   25px;
-  --text-2xl:  31px;
+  --text-lg:   19px;
+  --text-xl:   24px;
+  --text-2xl:  30px;
 
   --weight-normal:   400;
   --weight-medium:   500;
   --weight-semibold: 600;
   --weight-bold:     700;
 
-  --leading-tight:  1.25;
+  --leading-tight:  1.2;
   --leading-normal: 1.5;
 
   /* Spacing — 8pt grid */
@@ -73,19 +74,20 @@
   --space-10: 64px;
 
   /* Borders */
-  --radius-sm:  4px;
-  --radius-md:  6px;
-  --radius-lg:  8px;
-  --radius-xl:  12px;
+  --radius-sm:   3px;
+  --radius-md:   4px;
+  --radius-lg:   6px;
+  --radius-xl:   10px;
   --radius-full: 9999px;
 
   --border-thin:   1px;
   --border-medium: 2px;
+  --border-thick:  4px;
 
   /* Shadows */
-  --shadow-sm:  0 1px 2px rgba(0,0,0,0.08);
-  --shadow-md:  0 2px 8px rgba(0,0,0,0.10);
-  --shadow-lg:  0 8px 24px rgba(0,0,0,0.10);
+  --shadow-sm:  0 1px 3px rgba(15,23,42,0.08);
+  --shadow-md:  0 2px 8px rgba(15,23,42,0.10);
+  --shadow-lg:  0 8px 24px rgba(15,23,42,0.12);
 
   /* Component sizes */
   --btn-h-sm:  32px;
@@ -97,8 +99,8 @@
   --icon-lg:   24px;
 
   /* Animation */
-  --dur-fast:    150ms;
-  --dur-default: 250ms;
+  --dur-fast:    120ms;
+  --dur-default: 220ms;
   --ease-out:    ease-out;
   --ease-spring: cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
