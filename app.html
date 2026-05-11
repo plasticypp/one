@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#1565C0">
   <title>YPP ERP</title>
+  <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -28,10 +29,13 @@
     <!-- Profile Tab -->
     <div class="tab-content hidden" data-tab="profile">
       <div class="profile-card">
-        <div class="profile-name" id="profile-name"></div>
-        <div class="profile-meta" id="profile-role"></div>
+        <div class="profile-avatar" id="profile-avatar">?</div>
+        <div class="profile-info">
+          <div class="profile-name" id="profile-name"></div>
+          <div class="profile-meta" id="profile-role"></div>
+        </div>
       </div>
-      <button class="btn-danger" id="logout-btn" data-i18n="profile.logout">Logout</button>
+      <button class="btn btn-danger btn-full mt-4" id="logout-btn" data-i18n="profile.logout">Logout</button>
     </div>
 
     <!-- Masters Tab (navigates to masters.html) -->
@@ -41,6 +45,9 @@
 
   <!-- Bottom Tab Bar -->
   <nav class="tab-bar" id="tab-bar"></nav>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
 
   <!-- Spinner -->
   <div class="spinner-overlay hidden" id="spinner">
@@ -53,6 +60,15 @@
   <script src="js/nav.js"></script>
   <script src="js/app.js"></script>
   <script>
+    // Global toast helper
+    window.showToast = function(msg, type = '', duration = 2500) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast' + (type ? ' ' + type : '') + ' show';
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => { t.className = 'toast'; }, duration);
+    };
+
     (async () => {
       const spinner = document.getElementById('spinner');
       spinner.classList.remove('hidden');

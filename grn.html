@@ -4,234 +4,99 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#1565C0">
-  <title>YPP ERP — Inventory / GRN</title>
+  <title>YPP ERP — Inventory</title>
+  <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/masters.css">
-  <style>
-    .grn-tab-bar {
-      display: flex;
-      gap: 0;
-      background: #fff;
-      border-bottom: 1px solid #e0e0e0;
-      padding: 0 16px;
-    }
-    .grn-tab {
-      padding: 12px 20px;
-      border: none;
-      background: none;
-      font-size: 0.95rem;
-      color: #757575;
-      cursor: pointer;
-      border-bottom: 3px solid transparent;
-      font-family: inherit;
-    }
-    .grn-tab.active {
-      color: #1565C0;
-      border-bottom-color: #1565C0;
-      font-weight: 600;
-    }
-
-    .filter-bar {
-      display: flex;
-      gap: 8px;
-      padding: 12px 16px;
-      background: #fafafa;
-      border-bottom: 1px solid #e0e0e0;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    .filter-bar select,
-    .filter-bar input[type="date"] {
-      padding: 6px 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      font-family: inherit;
-      background: #fff;
-    }
-    .filter-bar .btn-apply {
-      padding: 6px 14px;
-      background: #1565C0;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      cursor: pointer;
-    }
-
-    .grn-table-wrap {
-      overflow-x: auto;
-      padding: 0 16px 16px;
-    }
-    .grn-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.88rem;
-      margin-top: 8px;
-    }
-    .grn-table th {
-      text-align: left;
-      padding: 10px 12px;
-      background: #f5f5f5;
-      color: #424242;
-      font-weight: 600;
-      border-bottom: 2px solid #e0e0e0;
-      white-space: nowrap;
-    }
-    .grn-table td {
-      padding: 9px 12px;
-      border-bottom: 1px solid #f0f0f0;
-      color: #212121;
-    }
-    .grn-table tr:hover td {
-      background: #f9f9f9;
-    }
-
-    .stock-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 12px;
-      padding: 16px;
-    }
-    .stock-card {
-      background: #fff;
-      border: 1px solid #e0e0e0;
-      border-radius: 10px;
-      padding: 16px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-    }
-    .stock-card.reorder-low {
-      border-color: #e53935;
-      background: #fff8f8;
-    }
-    .stock-material {
-      font-weight: 600;
-      color: #212121;
-      font-size: 0.95rem;
-      margin-bottom: 8px;
-    }
-    .stock-qty {
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: #1565C0;
-      line-height: 1.1;
-    }
-    .stock-unit {
-      font-size: 0.9rem;
-      font-weight: 400;
-      color: #757575;
-    }
-    .reorder-flag {
-      color: #e53935;
-      font-size: 0.8rem;
-      font-weight: 600;
-      margin-top: 6px;
-    }
-    .stock-meta {
-      font-size: 0.75rem;
-      color: #9e9e9e;
-      margin-top: 6px;
-    }
-
-    .tab-content { flex: 1; overflow-y: auto; }
-    .tab-content.hidden { display: none; }
-
-    .new-grn-bar {
-      padding: 12px 16px;
-      display: flex;
-      justify-content: flex-end;
-    }
-  </style>
 </head>
 <body>
 
   <!-- Header -->
   <header class="header">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <button class="back-btn" id="back-to-app" style="color:#fff;font-size:1.1rem;">←</button>
-      <span class="header-title">Inventory / GRN</span>
+    <div class="flex items-center gap-3">
+      <button class="back-btn" id="back-to-app" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="header-title" data-i18n="nav.grn">Inventory / GRN</span>
     </div>
     <div class="header-actions">
       <button class="lang-toggle" id="lang-toggle">EN</button>
     </div>
   </header>
 
-  <!-- Tab Bar -->
-  <div class="grn-tab-bar">
-    <button class="grn-tab active" data-tab="history">GRN History</button>
-    <button class="grn-tab" data-tab="stock">Stock Levels</button>
+  <!-- Sub-tab bar -->
+  <div class="sub-tab-bar" style="margin-top:56px;">
+    <button class="sub-tab active" data-pane="history">GRN History</button>
+    <button class="sub-tab" data-pane="stock">Stock Levels</button>
   </div>
 
-  <!-- Main Content -->
-  <div id="main-content" style="display:flex;flex-direction:column;height:calc(100vh - 112px);overflow:hidden;">
-
-    <!-- GRN History Tab -->
-    <div id="tab-history" class="tab-content">
-      <div class="filter-bar">
-        <select id="filter-supplier"><option value="">All Suppliers</option></select>
-        <input type="date" id="filter-date-from" title="From date">
-        <input type="date" id="filter-date-to" title="To date">
-        <button class="btn-apply" onclick="GRN.loadGRNList()">Apply</button>
+  <!-- GRN History pane -->
+  <div id="pane-history" class="tab-pane active" style="padding:var(--space-4);">
+    <div class="flex items-center justify-between mb-4">
+      <div class="filter-bar" style="margin:0;padding:0;border:none;background:none;">
+        <select id="filter-supplier" class="filter-btn" style="border-radius:var(--radius-md);padding:0 var(--space-3);height:36px;">
+          <option value="">All Suppliers</option>
+        </select>
       </div>
-      <div class="new-grn-bar">
-        <button class="btn-primary" id="btn-new-grn">+ New GRN</button>
-      </div>
-      <div class="grn-table-wrap">
-        <table class="grn-table">
-          <thead>
-            <tr>
-              <th>GRN ID</th>
-              <th>Date</th>
-              <th>Supplier</th>
-              <th>Material</th>
-              <th>Qty</th>
-              <th>Unit</th>
-              <th>Rate</th>
-              <th>Invoice No</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="grn-tbody">
-            <tr><td colspan="9" style="text-align:center;color:#757575;padding:24px;">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <button class="btn btn-primary btn-sm" id="btn-new-grn">+ New GRN</button>
     </div>
-
-    <!-- Stock Levels Tab -->
-    <div id="tab-stock" class="tab-content hidden">
-      <div id="stock-grid" class="stock-grid">
-        <p style="color:#757575;padding:16px;">Loading…</p>
-      </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>GRN ID</th>
+            <th>Date</th>
+            <th>Material</th>
+            <th>Qty</th>
+            <th>Invoice</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="grn-tbody">
+          <tr><td colspan="6" class="text-center text-muted" style="padding:var(--space-8);">Loading…</td></tr>
+        </tbody>
+      </table>
     </div>
-
   </div>
 
-  <!-- Form Panel (slide-in) -->
+  <!-- Stock Levels pane -->
+  <div id="pane-stock" class="tab-pane" style="padding:0;">
+    <div id="stock-grid" class="stock-grid">
+      <p class="text-muted text-sm" style="padding:var(--space-4);">Loading…</p>
+    </div>
+  </div>
+
+  <!-- Form Panel -->
   <div class="form-panel" id="form-panel">
     <div class="form-header">
-      <button class="back-btn" id="form-back">← Back</button>
-      <span class="form-title" id="form-title">New GRN</span>
+      <button class="back-btn" id="form-back" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <span class="form-title">New GRN</span>
     </div>
     <div class="form-body">
       <div class="field-group">
-        <label>Date</label>
+        <label for="field-date">Date</label>
         <input type="date" id="field-date">
       </div>
       <div class="field-group">
-        <label>Supplier</label>
-        <select id="field-supplier"><option value="">— select —</option></select>
+        <label for="field-supplier">Supplier</label>
+        <select id="field-supplier"><option value="">— select supplier —</option></select>
       </div>
       <div class="field-group">
-        <label>Material</label>
+        <label for="field-material-id">Material ID</label>
+        <input type="text" id="field-material-id" placeholder="e.g. MAT001">
+      </div>
+      <div class="field-group">
+        <label for="field-material">Material Name</label>
         <input type="text" id="field-material" placeholder="e.g. HDPE Natural">
       </div>
       <div class="field-group">
-        <label>Qty Received</label>
-        <input type="number" id="field-qty" min="0" step="any">
+        <label for="field-qty">Qty Received</label>
+        <input type="number" id="field-qty" min="0" step="any" inputmode="decimal">
       </div>
       <div class="field-group">
-        <label>Unit</label>
+        <label for="field-unit">Unit</label>
         <select id="field-unit">
           <option value="kg">kg</option>
           <option value="nos">nos</option>
@@ -240,36 +105,56 @@
         </select>
       </div>
       <div class="field-group">
-        <label>Rate (₹/unit)</label>
-        <input type="number" id="field-rate" min="0" step="any">
+        <label for="field-rate">Rate (₹/unit)</label>
+        <input type="number" id="field-rate" min="0" step="any" inputmode="decimal">
       </div>
       <div class="field-group">
-        <label>Invoice No</label>
+        <label for="field-invoice">Invoice No</label>
         <input type="text" id="field-invoice">
       </div>
       <div class="field-group">
-        <label>Received By</label>
+        <label for="field-received-by">Received By</label>
         <input type="text" id="field-received-by">
       </div>
     </div>
     <div class="form-actions">
-      <button class="btn-primary" onclick="GRN.submitGRN()">Save GRN</button>
+      <div class="form-error" id="form-error"></div>
+      <button class="btn btn-primary btn-full btn-lg" id="btn-save-grn">Save GRN</button>
     </div>
-  </div>
-
-  <!-- Spinner -->
-  <div class="spinner-overlay hidden" id="spinner">
-    <div class="spinner"></div>
   </div>
 
   <!-- Toast -->
   <div class="toast" id="toast"></div>
+
+  <!-- Spinner -->
+  <div class="spinner-overlay hidden" id="spinner"><div class="spinner"></div></div>
 
   <script src="js/api.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/lang.js"></script>
   <script src="js/grn.js"></script>
   <script>
+    window.showToast = function(msg, type, duration = 2500) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast' + (type ? ' ' + type : '') + ' show';
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => { t.className = 'toast'; }, duration);
+    };
+
+    // Sub-tab switching
+    document.querySelectorAll('.sub-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('pane-' + btn.dataset.pane).classList.add('active');
+        if (btn.dataset.pane === 'stock') GRN.loadStockLevels();
+      });
+    });
+
+    document.getElementById('back-to-app').addEventListener('click', () => window.location.href = 'app.html');
+
     (async () => {
       await Api.init();
       await GRN.init();

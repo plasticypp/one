@@ -5,122 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#1565C0">
   <title>YPP ERP — Production</title>
+  <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/masters.css">
-  <style>
-    .prod-tab-bar {
-      display: flex;
-      gap: 0;
-      background: #fff;
-      border-bottom: 1px solid #e0e0e0;
-      padding: 0 16px;
-    }
-    .prod-tab {
-      padding: 12px 20px;
-      border: none;
-      background: none;
-      font-size: 0.95rem;
-      color: #757575;
-      cursor: pointer;
-      border-bottom: 3px solid transparent;
-      font-family: inherit;
-    }
-    .prod-tab.active {
-      color: #1565C0;
-      border-bottom-color: #1565C0;
-      font-weight: 600;
-    }
-
-    .filter-bar {
-      display: flex;
-      gap: 8px;
-      padding: 12px 16px;
-      background: #fafafa;
-      border-bottom: 1px solid #e0e0e0;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    .filter-bar select {
-      padding: 6px 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      font-family: inherit;
-      background: #fff;
-    }
-    .filter-bar .btn-apply {
-      padding: 6px 14px;
-      background: #1565C0;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      cursor: pointer;
-    }
-
-    .prod-table-wrap {
-      overflow-x: auto;
-      padding: 0 16px 16px;
-    }
-    .prod-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.88rem;
-      margin-top: 8px;
-    }
-    .prod-table th {
-      text-align: left;
-      padding: 10px 12px;
-      background: #f5f5f5;
-      color: #424242;
-      font-weight: 600;
-      border-bottom: 2px solid #e0e0e0;
-      white-space: nowrap;
-    }
-    .prod-table td {
-      padding: 9px 12px;
-      border-bottom: 1px solid #f0f0f0;
-      color: #212121;
-    }
-    .prod-table tr:hover td {
-      background: #f9f9f9;
-    }
-
-    .status-badge.planned {
-      background: #e3f2fd;
-      color: #1565C0;
-    }
-
-    .btn-sm {
-      padding: 4px 10px;
-      font-size: 0.8rem;
-      background: #1565C0;
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-family: inherit;
-    }
-    .btn-sm:hover {
-      background: #0d47a1;
-    }
-
-    .tab-content { flex: 1; overflow-y: auto; }
-    .tab-content.hidden { display: none; }
-
-    .new-batch-bar {
-      padding: 12px 16px;
-      display: flex;
-      justify-content: flex-end;
-    }
-  </style>
 </head>
 <body>
 
   <!-- Header -->
   <header class="header">
     <div style="display:flex;align-items:center;gap:10px;">
-      <button class="back-btn" id="back-to-app" style="color:#fff;font-size:1.1rem;">←</button>
+      <button class="back-btn" id="back-to-app"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
       <span class="header-title">Production</span>
     </div>
     <div class="header-actions">
@@ -129,9 +23,9 @@
   </header>
 
   <!-- Tab Bar -->
-  <div class="prod-tab-bar">
-    <button class="prod-tab active" data-tab="batches">Batch Orders</button>
-    <button class="prod-tab" data-tab="fg">Finished Goods</button>
+  <div class="sub-tab-bar">
+    <button class="sub-tab active" data-tab="batches">Batch Orders</button>
+    <button class="sub-tab" data-tab="fg">Finished Goods</button>
   </div>
 
   <!-- Main Content -->

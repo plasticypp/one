@@ -8,25 +8,47 @@ const App = (() => {
     hr:         ['training','personnel']
   };
 
+  // SVG icons (Lucide-style, 24x24, stroke-based)
+  const SVG = {
+    kpi:         `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
+    production:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>`,
+    dispatch:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>`,
+    capa:        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`,
+    quality:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+    calibration: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`,
+    ncr:         `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+    workorders:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
+    machines:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>`,
+    today:       `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
+    startbatch:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
+    logparams:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+    defect:      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
+    mybatches:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>`,
+    grn:         `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
+    rmstock:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,
+    training:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`,
+    personnel:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  };
+
   const TILE_CONFIG = {
-    kpi:         { icon: '📊', labelKey: 'home.tile.kpi' },
-    production:  { icon: '🏭', labelKey: 'home.tile.production' },
-    dispatch:    { icon: '🚚', labelKey: 'home.tile.dispatch' },
-    capa:        { icon: '🔧', labelKey: 'home.tile.capa' },
-    quality:     { icon: '✅', labelKey: 'home.tile.quality' },
-    calibration: { icon: '🔬', labelKey: 'home.tile.calibration' },
-    ncr:         { icon: '⚠️', labelKey: 'home.tile.ncr' },
-    workorders:  { icon: '📋', labelKey: 'home.tile.workorders' },
-    machines:    { icon: '⚙️', labelKey: 'home.tile.machines' },
-    today:       { icon: '📈', labelKey: 'home.tile.today' },
-    startbatch:  { icon: '▶️', labelKey: 'home.tile.startbatch' },
-    logparams:   { icon: '📝', labelKey: 'home.tile.logparams' },
-    defect:      { icon: '🔴', labelKey: 'home.tile.defect' },
-    mybatches:   { icon: '📦', labelKey: 'home.tile.mybatches' },
-    grn:         { icon: '📥', labelKey: 'home.tile.grn' },
-    rmstock:     { icon: '🗄️', labelKey: 'home.tile.rmstock' },
-    training:    { icon: '🎓', labelKey: 'home.tile.training' },
-    personnel:   { icon: '👥', labelKey: 'home.tile.personnel' }
+    kpi:         { labelKey: 'home.tile.kpi' },
+    production:  { labelKey: 'home.tile.production' },
+    dispatch:    { labelKey: 'home.tile.dispatch' },
+    capa:        { labelKey: 'home.tile.capa' },
+    quality:     { labelKey: 'home.tile.quality' },
+    calibration: { labelKey: 'home.tile.calibration' },
+    ncr:         { labelKey: 'home.tile.ncr' },
+    workorders:  { labelKey: 'home.tile.workorders' },
+    machines:    { labelKey: 'home.tile.machines' },
+    today:       { labelKey: 'home.tile.today' },
+    startbatch:  { labelKey: 'home.tile.startbatch' },
+    logparams:   { labelKey: 'home.tile.logparams' },
+    defect:      { labelKey: 'home.tile.defect' },
+    mybatches:   { labelKey: 'home.tile.mybatches' },
+    grn:         { labelKey: 'home.tile.grn' },
+    rmstock:     { labelKey: 'home.tile.rmstock' },
+    training:    { labelKey: 'home.tile.training' },
+    personnel:   { labelKey: 'home.tile.personnel' }
   };
 
   // Maps tile id → stat key returned by getDashboardStats
@@ -50,7 +72,7 @@ const App = (() => {
       const btn = document.createElement('button');
       btn.className = 'tile';
       btn.dataset.tileId = id;
-      btn.innerHTML = `<span class="tile-icon">${cfg.icon}</span><span class="tile-label" data-i18n="${cfg.labelKey}">${Lang.t(cfg.labelKey)}</span>`;
+      btn.innerHTML = `<span class="tile-icon">${SVG[id] || SVG.kpi}</span><span class="tile-label" data-i18n="${cfg.labelKey}">${Lang.t(cfg.labelKey)}</span>`;
       btn.addEventListener('click', () => handleTile(id));
       grid.appendChild(btn);
     });
@@ -125,10 +147,12 @@ const App = (() => {
   }
 
   function renderProfile(session) {
-    const nameEl = document.getElementById('profile-name');
-    const roleEl = document.getElementById('profile-role');
-    if (nameEl) nameEl.textContent = session.name;
-    if (roleEl) roleEl.textContent = session.role;
+    const nameEl   = document.getElementById('profile-name');
+    const roleEl   = document.getElementById('profile-role');
+    const avatarEl = document.getElementById('profile-avatar');
+    if (nameEl)   nameEl.textContent   = session.name;
+    if (roleEl)   roleEl.textContent   = session.role;
+    if (avatarEl) avatarEl.textContent = (session.name || '?')[0].toUpperCase();
   }
 
   function setupHeader(session) {

@@ -1,0 +1,111 @@
+/* YPP ERP Design Tokens — generated from brand #1565C0, classic style */
+:root {
+  /* Primary — factory blue */
+  --color-primary:       #1565C0;
+  --color-primary-light: #4a81c0;
+  --color-primary-dark:  #0d2b4c;
+  --color-primary-bg:    #a9cbf2;
+
+  /* Secondary — amber accent */
+  --color-accent:        #c06f15;
+  --color-accent-light:  #f2bb7f;
+  --color-accent-dark:   #734a1c;
+
+  /* Neutrals */
+  --color-bg:            #F9FAFB;
+  --color-surface:       #FFFFFF;
+  --color-border:        #E5E7EB;
+  --color-divider:       #D1D5DB;
+  --color-text:          #111827;
+  --color-text-muted:    #6B7280;
+  --color-text-subtle:   #9CA3AF;
+
+  /* Semantic */
+  --color-success:       #10B981;
+  --color-success-light: #34D399;
+  --color-warning:       #F59E0B;
+  --color-warning-light: #FBD24D;
+  --color-error:         #EF4444;
+  --color-error-light:   #F87171;
+  --color-info:          #3B82F6;
+
+  /* Status badges (ERP-specific) */
+  --color-status-open:       #F59E0B;
+  --color-status-open-bg:    #FEF3C7;
+  --color-status-closed:     #10B981;
+  --color-status-closed-bg:  #D1FAE5;
+  --color-status-pending:    #3B82F6;
+  --color-status-pending-bg: #DBEAFE;
+  --color-status-overdue:    #EF4444;
+  --color-status-overdue-bg: #FEE2E2;
+  --color-status-planned:    #8B5CF6;
+  --color-status-planned-bg: #EDE9FE;
+
+  /* Typography */
+  --font-sans:    'Inter', Helvetica, Arial, sans-serif;
+  --font-mono:    'Courier New', monospace;
+
+  --text-xs:   10px;
+  --text-sm:   13px;
+  --text-base: 16px;
+  --text-lg:   20px;
+  --text-xl:   25px;
+  --text-2xl:  31px;
+
+  --weight-normal:   400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+
+  --leading-tight:  1.25;
+  --leading-normal: 1.5;
+
+  /* Spacing — 8pt grid */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-7:  32px;
+  --space-8:  40px;
+  --space-9:  48px;
+  --space-10: 64px;
+
+  /* Borders */
+  --radius-sm:  4px;
+  --radius-md:  6px;
+  --radius-lg:  8px;
+  --radius-xl:  12px;
+  --radius-full: 9999px;
+
+  --border-thin:   1px;
+  --border-medium: 2px;
+
+  /* Shadows */
+  --shadow-sm:  0 1px 2px rgba(0,0,0,0.08);
+  --shadow-md:  0 2px 8px rgba(0,0,0,0.10);
+  --shadow-lg:  0 8px 24px rgba(0,0,0,0.10);
+
+  /* Component sizes */
+  --btn-h-sm:  32px;
+  --btn-h-md:  40px;
+  --btn-h-lg:  48px;
+  --input-h:   40px;
+  --icon-sm:   16px;
+  --icon-md:   20px;
+  --icon-lg:   24px;
+
+  /* Animation */
+  --dur-fast:    150ms;
+  --dur-default: 250ms;
+  --ease-out:    ease-out;
+  --ease-spring: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* Z-index */
+  --z-dropdown:     1000;
+  --z-sticky:       1020;
+  --z-overlay:      1030;
+  --z-modal:        1040;
+  --z-toast:        1070;
+}

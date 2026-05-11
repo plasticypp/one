@@ -5,117 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#1565C0">
   <title>YPP ERP — Dispatch</title>
+  <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/masters.css">
-  <style>
-    .dispatch-tab-bar {
-      display: flex;
-      gap: 0;
-      background: #fff;
-      border-bottom: 1px solid #e0e0e0;
-      padding: 0 16px;
-    }
-    .dispatch-tab {
-      padding: 12px 20px;
-      border: none;
-      background: none;
-      font-size: 0.95rem;
-      color: #757575;
-      cursor: pointer;
-      border-bottom: 3px solid transparent;
-      font-family: inherit;
-    }
-    .dispatch-tab.active {
-      color: #1565C0;
-      border-bottom-color: #1565C0;
-      font-weight: 600;
-    }
-
-    .filter-bar {
-      display: flex;
-      gap: 8px;
-      padding: 12px 16px;
-      background: #fafafa;
-      border-bottom: 1px solid #e0e0e0;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    .filter-bar select {
-      padding: 6px 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      font-family: inherit;
-      background: #fff;
-    }
-    .filter-bar .btn-apply {
-      padding: 6px 14px;
-      background: #1565C0;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      cursor: pointer;
-    }
-
-    .so-table-wrap {
-      overflow-x: auto;
-      padding: 0 16px 16px;
-    }
-    .so-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.88rem;
-      margin-top: 8px;
-    }
-    .so-table th {
-      text-align: left;
-      padding: 10px 12px;
-      background: #f5f5f5;
-      color: #424242;
-      font-weight: 600;
-      border-bottom: 2px solid #e0e0e0;
-      white-space: nowrap;
-    }
-    .so-table td {
-      padding: 9px 12px;
-      border-bottom: 1px solid #f0f0f0;
-      color: #212121;
-    }
-    .so-table tr:hover td {
-      background: #f9f9f9;
-    }
-
-    .btn-dispatch {
-      padding: 5px 12px;
-      background: #1565C0;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      cursor: pointer;
-      font-family: inherit;
-    }
-    .btn-dispatch:hover {
-      background: #0d47a1;
-    }
-
-    .new-so-bar {
-      padding: 12px 16px;
-      display: flex;
-      justify-content: flex-end;
-    }
-
-    .tab-content { flex: 1; overflow-y: auto; }
-    .tab-content.hidden { display: none; }
-  </style>
 </head>
 <body>
 
   <!-- Header -->
   <header class="header">
     <div style="display:flex;align-items:center;gap:10px;">
-      <button class="back-btn" id="back-to-app" style="color:#fff;font-size:1.1rem;">←</button>
+      <button class="back-btn" id="back-to-app"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
       <span class="header-title">Dispatch</span>
     </div>
     <div class="header-actions">
@@ -124,9 +23,9 @@
   </header>
 
   <!-- Tab Bar -->
-  <div class="dispatch-tab-bar">
-    <button class="dispatch-tab active" data-tab="so">Sales Orders</button>
-    <button class="dispatch-tab" data-tab="log">Dispatch Log</button>
+  <div class="sub-tab-bar">
+    <button class="sub-tab active" data-tab="so">Sales Orders</button>
+    <button class="sub-tab" data-tab="log">Dispatch Log</button>
   </div>
 
   <!-- Main Content -->
