@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#EA580C">
+  <title>YPP ERP — Customer Complaints</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/masters.css">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-flex">
+      <button class="back-btn" id="back-to-app">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="header-title">Customer Complaints</span>
+    </div>
+    <div class="header-actions">
+      <button class="lang-toggle" id="lang-toggle">EN</button>
+      <button class="add-btn" id="new-complaint-btn">+ New</button>
+    </div>
+  </header>
+
+  <!-- List Panel -->
+  <div class="list-panel" id="complaints-list-panel">
+    <div class="filter-bar">
+      <button class="cc-filter-btn capa-filter-btn active" data-status="all">All</button>
+      <button class="cc-filter-btn capa-filter-btn" data-status="Open">Open</button>
+      <button class="cc-filter-btn capa-filter-btn" data-status="Closed">Closed</button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Ref No</th>
+            <th>Date</th>
+            <th>Customer</th>
+            <th>Description</th>
+            <th>Severity</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="complaints-tbody">
+          <tr><td colspan="7" class="td-loading">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- New Complaint Form Panel -->
+  <div class="form-panel" id="complaint-form-panel">
+    <div class="form-header">
+      <button class="back-btn" id="complaint-form-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="form-title">New Complaint</span>
+    </div>
+    <div class="form-body">
+      <div class="field-group">
+        <label>Customer</label>
+        <select id="cf-customer"><option value="">— select —</option></select>
+      </div>
+      <div class="field-group">
+        <label>Contact Person</label>
+        <input type="text" id="cf-contact" placeholder="Name and designation">
+      </div>
+      <div class="field-group">
+        <label>Product</label>
+        <select id="cf-product"><option value="">— select —</option></select>
+      </div>
+      <div class="field-group">
+        <label>Batch No (if known)</label>
+        <input type="text" id="cf-batch" placeholder="e.g. YPP-B2503-001">
+      </div>
+      <div class="field-group">
+        <label>Complaint Type</label>
+        <select id="cf-type">
+          <option value="">— select —</option>
+          <option value="Leakage">Leakage</option>
+          <option value="Dimensional">Dimensional Non-conformance</option>
+          <option value="Appearance">Appearance / Surface Defect</option>
+          <option value="Wrong Product">Wrong Product / Label</option>
+          <option value="Short Supply">Short Supply</option>
+          <option value="Late Delivery">Late Delivery</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Description</label>
+        <textarea id="cf-description" rows="3" placeholder="Describe the complaint in detail"></textarea>
+      </div>
+      <div class="field-group">
+        <label>Severity</label>
+        <select id="cf-severity">
+          <option value="Low">Low</option>
+          <option value="Medium" selected>Medium</option>
+          <option value="High">High</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Remarks</label>
+        <textarea id="cf-remarks" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" id="complaint-submit-btn">Register</button>
+    </div>
+  </div>
+
+  <!-- Detail Panel -->
+  <div class="form-panel" id="cc-detail-panel">
+    <div class="form-header">
+      <button class="back-btn" id="cc-detail-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="form-title">Complaint Detail</span>
+    </div>
+    <div class="form-body" id="cc-detail-body"></div>
+  </div>
+
+  <!-- Close Complaint Panel -->
+  <div class="form-panel" id="close-complaint-panel">
+    <div class="form-header">
+      <button class="back-btn" id="close-complaint-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="form-title">Close Complaint — <span id="close-display-no"></span></span>
+    </div>
+    <div class="form-body">
+      <input type="hidden" id="close-complaint-no">
+      <div class="field-group">
+        <label>Root Cause</label>
+        <textarea id="close-root-cause" rows="3" placeholder="Identified root cause"></textarea>
+      </div>
+      <div class="field-group">
+        <label>Corrective Action Taken</label>
+        <textarea id="close-action" rows="3" placeholder="Actions taken to resolve and prevent recurrence"></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" id="close-submit-btn">Close Complaint</button>
+    </div>
+  </div>
+
+  <div class="spinner-overlay hidden" id="spinner"><div class="spinner"></div></div>
+  <div class="toast" id="toast"></div>
+
+  <script src="js/api.js" defer></script>
+  <script src="js/auth.js" defer></script>
+  <script src="js/lang.js" defer></script>
+  <script src="js/complaints.js" defer></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', async () => {
+      await Api.init();
+      await Complaints.init();
+    });
+  </script>
+</body>
+</html>

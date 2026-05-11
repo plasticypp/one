@@ -26,16 +26,71 @@
     </div>
   </header>
 
-  <div id="kpi-content" style="padding:var(--space-4);">
+  <!-- List Panel -->
+  <div class="list-panel" id="kpi-list-panel">
 
-    <!-- Live counters from getDashboardStats -->
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-3);margin-bottom:var(--space-5);" id="stat-grid">
-      <!-- populated by JS -->
+    <div style="padding:var(--space-4);">
+
+      <!-- Stats grid -->
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-3);margin-bottom:var(--space-5);" id="stat-grid"></div>
+
+      <!-- KPI Log section -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-3);">
+        <span style="font-weight:600;font-size:var(--text-base);">KPI Log</span>
+        <button class="add-btn" id="log-kpi-btn">+ Log Entry</button>
+      </div>
+
+      <div class="filter-bar" style="margin-bottom:var(--space-3);">
+        <label>KPI</label>
+        <select id="kpi-filter">
+          <option value="all">All KPIs</option>
+        </select>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>KPI</th>
+              <th>Value</th>
+              <th>Target</th>
+              <th>Period</th>
+              <th>By</th>
+            </tr>
+          </thead>
+          <tbody id="kpi-log-tbody">
+            <tr><td colspan="6" class="td-loading">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
+  </div>
 
-    <div class="empty-msg" style="margin-top:var(--space-4);">
-      <p style="font-size:var(--text-base);font-weight:var(--weight-bold);margin-bottom:var(--space-2);">Full KPI Dashboard</p>
-      <p style="color:var(--color-text-muted);font-size:var(--text-sm);">OEE, downtime Pareto, scrap rate, on-time dispatch %, MTBF/MTTR — coming in Wave 1 KPI expansion.</p>
+  <!-- Log Entry Form Panel -->
+  <div class="form-panel" id="kpi-form-panel">
+    <div class="form-header">
+      <button class="back-btn" id="kpi-form-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="form-title">Log KPI Entry</span>
+    </div>
+    <div class="form-body">
+      <div class="field-group">
+        <label>KPI</label>
+        <select id="kf-kpi-code"><option value="">— select KPI —</option></select>
+      </div>
+      <div class="field-group">
+        <label>Value</label>
+        <input type="number" id="kf-value" placeholder="e.g. 2.4" step="0.01">
+      </div>
+      <div class="field-group">
+        <label>Period (YYYY-MM)</label>
+        <input type="month" id="kf-period">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" id="kpi-submit-btn">Save</button>
     </div>
   </div>
 
@@ -45,40 +100,23 @@
   <script src="js/api.js" defer></script>
   <script src="js/auth.js" defer></script>
   <script src="js/lang.js" defer></script>
+  <script src="js/kpi.js" defer></script>
   <script>
     window.addEventListener('DOMContentLoaded', async () => {
-      const session = Auth.get();
-      if (!session) { Auth.requireLogin(); return; }
-      document.getElementById('back-to-app').addEventListener('click', () => window.location.href = 'app.html');
-      document.getElementById('lang-toggle').textContent = (session.lang || 'en').toUpperCase();
-
-      document.getElementById('spinner').classList.remove('hidden');
-      try {
-        await Api.init();
-        const res = await Api.get('getDashboardStats');
-        if (res && res.success) renderStats(res.data);
-      } finally {
-        document.getElementById('spinner').classList.add('hidden');
+      await Api.init();
+      await KPI.init();
+      // Populate the filter dropdown after KB is loaded
+      const kbRes = await Api.get('getKPIsKB');
+      if (kbRes && kbRes.success) {
+        const sel = document.getElementById('kpi-filter');
+        kbRes.data.forEach(k => {
+          const opt = document.createElement('option');
+          opt.value = k.id;
+          opt.textContent = k.name;
+          sel.appendChild(opt);
+        });
       }
     });
-
-    function renderStats(d) {
-      const items = [
-        { label: 'Active Batches',      value: d.activeBatches,      color: '#EA580C' },
-        { label: 'Open Breakdowns',     value: d.openBreakdowns,     color: d.openBreakdowns > 0 ? '#dc2626' : '#16a34a' },
-        { label: 'Open CAPAs',          value: d.openCapas,          color: d.openCapas > 0 ? '#d97706' : '#16a34a' },
-        { label: 'Overdue Compliance',  value: d.overdueCompliance,  color: d.overdueCompliance > 0 ? '#dc2626' : '#16a34a' },
-        { label: 'Low Stock Items',     value: d.lowStockCount,      color: d.lowStockCount > 0 ? '#d97706' : '#16a34a' },
-        { label: 'Overdue PMs',         value: d.overduePMs,         color: d.overduePMs > 0 ? '#d97706' : '#16a34a' },
-        { label: 'Pending GRNs',        value: d.openGRNs,           color: '#6b7280' },
-      ];
-      const grid = document.getElementById('stat-grid');
-      grid.innerHTML = items.map(i => `
-        <div style="background:var(--color-surface);border-radius:var(--radius-md);padding:var(--space-4);border-left:4px solid ${i.color};">
-          <div style="font-size:2rem;font-weight:700;color:${i.color};line-height:1;">${i.value ?? '—'}</div>
-          <div style="font-size:var(--text-xs);color:var(--color-text-muted);margin-top:var(--space-1);font-weight:500;text-transform:uppercase;letter-spacing:0.05em;">${i.label}</div>
-        </div>`).join('');
-    }
   </script>
 </body>
 </html>

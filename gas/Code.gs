@@ -1,5 +1,50 @@
 // ── Entry Points ────────────────────────────────────────────────────────────
 
+// ── Wave 5 KB Constants ──────────────────────────────────────────────────────
+
+const BREAKDOWN_CODES_KB = [
+  { id: 'MECH',  label: 'Mechanical' },
+  { id: 'ELEC',  label: 'Electrical' },
+  { id: 'PNEUM', label: 'Pneumatic' },
+  { id: 'HYD',   label: 'Hydraulic' },
+  { id: 'OTHER', label: 'Other' }
+];
+
+const TRAINING_PLAN_KB = [
+  { id: 'TR001', topic: 'ISO 9001:2015 / 14001:2015 / 45001:2018 Awareness', category: 'Quality',   frequency: 'On Joining' },
+  { id: 'TR002', topic: 'New Employee Induction — Company Policy & QMS',       category: 'Process',   frequency: 'On Joining' },
+  { id: 'TR003', topic: 'QMS Documentation, SOPs & Document Control',          category: 'Quality',   frequency: 'Annual'     },
+  { id: 'TR004', topic: 'Internal Audit Techniques',                            category: 'Audit',     frequency: 'Annual'     },
+  { id: 'TR005', topic: 'Machine Operation & Safety',                           category: 'Safety',    frequency: 'On Joining' },
+  { id: 'TR006', topic: 'Quality Inspection Methods & Use of Instruments',      category: 'Quality',   frequency: 'Annual'     },
+  { id: 'TR007', topic: 'Fire Safety & Emergency Evacuation',                   category: 'Safety',    frequency: 'Annual'     },
+  { id: 'TR008', topic: 'Customer Focus & Complaint Handling',                  category: 'Customer',  frequency: 'Annual'     }
+];
+
+const KPIS_KB = [
+  { id: 'KPI001', name: 'Rejection Rate',            category: 'Quality',   unit: '%',     target_label: '< 3%'   },
+  { id: 'KPI002', name: 'Customer Complaint Rate',   category: 'Customer',  unit: 'count', target_label: '0/month' },
+  { id: 'KPI003', name: 'On-Time Delivery Rate',     category: 'Delivery',  unit: '%',     target_label: '≥ 95%'  },
+  { id: 'KPI004', name: 'First Pass Yield (FPY)',    category: 'Quality',   unit: '%',     target_label: '≥ 97%'  },
+  { id: 'KPI005', name: 'Machine Downtime (MTBF)',   category: 'Equipment', unit: 'hrs',   target_label: '≥ 200h' },
+  { id: 'KPI006', name: 'PM Compliance Rate',        category: 'Equipment', unit: '%',     target_label: '≥ 90%'  },
+  { id: 'KPI007', name: 'Raw Material Yield',        category: 'Process',   unit: '%',     target_label: '≥ 98%'  },
+  { id: 'KPI008', name: 'CAPA Closure Rate',         category: 'Quality',   unit: '%',     target_label: '≥ 80%'  }
+];
+
+// ── Wave 6 KB Constants ──────────────────────────────────────────────────────
+
+const LEGAL_REGISTER_KB = [
+  { id: 'LR001', act: 'The Factories Act, 1948',               category: 'Safety',      responsible: 'R007' },
+  { id: 'LR002', act: 'Environment Protection Act, 1986',      category: 'Environment', responsible: 'R007' },
+  { id: 'LR003', act: 'Hazardous Waste Management Rules',      category: 'Environment', responsible: 'R007' },
+  { id: 'LR004', act: 'BIS Compulsory Registration (BIS CRS)', category: 'Product',     responsible: 'R002' },
+  { id: 'LR005', act: 'Plastic Waste Management Rules, 2016',  category: 'Environment', responsible: 'R007' },
+  { id: 'LR006', act: 'ISO 9001:2015 Certification',           category: 'Quality',     responsible: 'R002' },
+  { id: 'LR007', act: 'Fire NOC (Local Fire Authority)',        category: 'Safety',      responsible: 'R007' },
+  { id: 'LR008', act: 'ESIC / EPF Compliance',                 category: 'Labour',      responsible: 'R008' }
+];
+
 // ── Wave 4 KB Constants ──────────────────────────────────────────────────────
 
 const SUPPLIERS_KB = [
@@ -138,19 +183,29 @@ function doGet(e) {
         if (delAuthErr) return respond({ success: false, error: delAuthErr });
         return respond(deleteRecord(data));
       }
-      if (action === 'completePM')      return respond(completePM(data));
-      if (action === 'saveLegalEntry')  return respond(saveLegalEntry(data));
-      if (action === 'saveQualityParam')return respond(saveQualityParam(data));
+      if (action === 'completePM')            return respond(completePM(data));
+      if (action === 'saveLegalEntry')        return respond(saveLegalEntry(data));
+      if (action === 'saveQualityParam')      return respond(saveQualityParam(data));
+      if (action === 'saveTrainingLog')       return respond(saveTrainingLog(data));
+      if (action === 'saveKPILog')            return respond(saveKPILog(data));
+      if (action === 'saveCustomerComplaint') return respond(saveCustomerComplaint(data));
+      if (action === 'closeCustomerComplaint')return respond(closeCustomerComplaint(data));
     }
 
     if (action === 'getQualityParams') return respond(getQualityParams(e.parameter));
     if (action === 'getInspectionParams') return respond(getInspectionParams(e.parameter));
     if (action === 'getDefectCatalogue')  return respond(getDefectCatalogue());
     if (action === 'getNCRList') return respond(getNCRList(e.parameter));
-    if (action === 'getBatchRecord')  return respond(getBatchRecord(e.parameter));
-    if (action === 'getOQCBatchList') return respond(getOQCBatchList());
-    if (action === 'getRMStock')      return respond(getRMStock());
-    if (action === 'getSuppliers')    return respond(getSuppliers());
+    if (action === 'getBatchRecord')        return respond(getBatchRecord(e.parameter));
+    if (action === 'getOQCBatchList')       return respond(getOQCBatchList());
+    if (action === 'getRMStock')            return respond(getRMStock());
+    if (action === 'getSuppliers')          return respond(getSuppliers());
+    if (action === 'getPersonnelList')      return respond(getPersonnelList());
+    if (action === 'getTrainingLog')        return respond(getTrainingLog(e.parameter));
+    if (action === 'getKPILog')             return respond(getKPILog(e.parameter));
+    if (action === 'getCustomerComplaints') return respond(getCustomerComplaints(e.parameter));
+    if (action === 'getKPIsKB')            return respond({ success: true, data: KPIS_KB });
+    if (action === 'getTrainingPlanKB')    return respond({ success: true, data: TRAINING_PLAN_KB });
 
     return respond({ success: false, error: 'unknown_action' });
   } catch (err) {
@@ -1399,6 +1454,7 @@ function createWorkbookSkeleton() {
     'Training_Log':     ['TrainingID','Date','Topic','TrainerID','Participants','Method','EvalScore','Status','Remarks'],
     'Legal_Register':   ['LegalID','Act','Requirement','Applicability','ComplianceStatus','LastReview','NextReview','Remarks'],
     'KPI_Log':          ['LogID','LogDate','KPICode','KPIName','Value','Unit','Target','Period','RecordedBy'],
+    'Customer_Complaints': ['ComplaintNo','DateReceived','CustomerID','ContactPerson','BatchNoRef','ProductID','ComplaintType','Description','Severity','Status','RootCause','CorrectiveAction','ClosedDate','ClosedBy','Remarks'],
     '_Meta':            ['Key','Value'],
     'QualityParams':    ['ParamID','ProductID','Parameter','Unit','SpecMin','SpecMax','Active']
   };
@@ -1811,4 +1867,175 @@ function seedDispatchData() {
   );
 
   Logger.log('seedDispatchData complete.');
+}
+
+// ── Wave 5: People & Training ─────────────────────────────────────────────────
+
+function getPersonnelList() {
+  const sheet = getSheet('Personnel');
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length < 2) return { success: true, data: [] };
+  const headers = rows[0];
+  const data = rows.slice(1)
+    .map(row => rowToObj(headers, row))
+    .filter(r => r.Active !== false && String(r.Active).toLowerCase() !== 'false');
+  return { success: true, data };
+}
+
+function getTrainingLog(params) {
+  const sheet = getSheet('Training_Log');
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length < 2) return { success: true, data: [] };
+  const headers = rows[0];
+  let data = rows.slice(1).map(row => rowToObj(headers, row));
+  if (params && params.status && params.status !== 'all') {
+    data = data.filter(r => (r.Status || '') === params.status);
+  }
+  return { success: true, data };
+}
+
+function saveTrainingLog(data) {
+  var authError = requireRole(data, ['director','qmr','supervisor']);
+  if (authError) return { success: false, error: authError };
+
+  var fieldError = validateFields(data, ['topic','date','trainer_id']);
+  if (fieldError) return { success: false, error: fieldError };
+
+  const sheet = ensureSheet('Training_Log', ['TrainingID','Date','Topic','TrainerID','Participants','Method','EvalScore','Status','Remarks']);
+  const rows = sheet.getDataRange().getValues();
+  const training_id = 'TR' + String(rows.length).padStart(4, '0');
+  sheet.appendRow([
+    training_id,
+    data.date,
+    data.topic,
+    data.trainer_id,
+    data.participants || '',
+    data.method || '',
+    data.eval_score || '',
+    data.status || 'Completed',
+    data.remarks || ''
+  ]);
+  return { success: true, training_id };
+}
+
+// ── Wave 5+6: KPI Log ─────────────────────────────────────────────────────────
+
+function getKPILog(params) {
+  const sheet = ensureSheet('KPI_Log', ['LogID','LogDate','KPICode','KPIName','Value','Unit','Target','Period','RecordedBy']);
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length < 2) return { success: true, data: [] };
+  const headers = rows[0];
+  let data = rows.slice(1).map(row => rowToObj(headers, row));
+  if (params && params.kpi_code) {
+    data = data.filter(r => r.KPICode === params.kpi_code);
+  }
+  if (params && params.period) {
+    data = data.filter(r => (r.Period || '').startsWith(params.period));
+  }
+  return { success: true, data };
+}
+
+function saveKPILog(data) {
+  var authError = requireRole(data, ['director','qmr','supervisor']);
+  if (authError) return { success: false, error: authError };
+
+  var fieldError = validateFields(data, ['kpi_code','value','period']);
+  if (fieldError) return { success: false, error: fieldError };
+
+  const kpiDef = KPIS_KB.find(k => k.id === data.kpi_code) || {};
+  const sheet = ensureSheet('KPI_Log', ['LogID','LogDate','KPICode','KPIName','Value','Unit','Target','Period','RecordedBy']);
+  const rows = sheet.getDataRange().getValues();
+  const log_id = 'KL' + String(rows.length).padStart(4, '0');
+  const today = new Date().toISOString().slice(0, 10);
+  sheet.appendRow([
+    log_id,
+    today,
+    data.kpi_code,
+    kpiDef.name || data.kpi_name || '',
+    Number(data.value),
+    kpiDef.unit || data.unit || '',
+    kpiDef.target_label || data.target || '',
+    data.period,
+    data.userId || ''
+  ]);
+  return { success: true, log_id };
+}
+
+// ── Wave 6: Customer Complaints ───────────────────────────────────────────────
+
+function getCustomerComplaints(params) {
+  const sheet = ensureSheet('Customer_Complaints', ['ComplaintNo','DateReceived','CustomerID','ContactPerson','BatchNoRef','ProductID','ComplaintType','Description','Severity','Status','RootCause','CorrectiveAction','ClosedDate','ClosedBy','Remarks']);
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length < 2) return { success: true, data: [] };
+  const headers = rows[0];
+  let data = rows.slice(1).map(row => rowToObj(headers, row));
+  if (params && params.status && params.status !== 'all') {
+    data = data.filter(r => (r.Status || '') === params.status);
+  }
+  return { success: true, data };
+}
+
+function saveCustomerComplaint(data) {
+  var authError = requireRole(data, ['director','qmr','supervisor']);
+  if (authError) return { success: false, error: authError };
+
+  var fieldError = validateFields(data, ['customer_id','description','complaint_type']);
+  if (fieldError) return { success: false, error: fieldError };
+
+  const CC_HEADERS = ['ComplaintNo','DateReceived','CustomerID','ContactPerson','BatchNoRef','ProductID','ComplaintType','Description','Severity','Status','RootCause','CorrectiveAction','ClosedDate','ClosedBy','Remarks'];
+  const sheet = ensureSheet('Customer_Complaints', CC_HEADERS);
+  const rows = sheet.getDataRange().getValues();
+  const today = new Date();
+  const yy = String(today.getFullYear()).slice(2);
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const seq = String(rows.length).padStart(3, '0');
+  const complaint_no = 'YPP-CC-' + yy + mm + '-' + seq;
+  sheet.appendRow([
+    complaint_no,
+    today.toISOString().slice(0, 10),
+    data.customer_id,
+    data.contact_person || '',
+    data.batch_no_ref || '',
+    data.product_id || '',
+    data.complaint_type,
+    data.description,
+    data.severity || 'Medium',
+    'Open',
+    '',
+    '',
+    '',
+    '',
+    data.remarks || ''
+  ]);
+  return { success: true, complaint_no };
+}
+
+function closeCustomerComplaint(data) {
+  var authError = requireRole(data, ['director','qmr']);
+  if (authError) return { success: false, error: authError };
+
+  var fieldError = validateFields(data, ['complaint_no']);
+  if (fieldError) return { success: false, error: fieldError };
+
+  const sheet = ensureSheet('Customer_Complaints', ['ComplaintNo','DateReceived','CustomerID','ContactPerson','BatchNoRef','ProductID','ComplaintType','Description','Severity','Status','RootCause','CorrectiveAction','ClosedDate','ClosedBy','Remarks']);
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+  const noIdx     = headers.indexOf('ComplaintNo');
+  const statusIdx = headers.indexOf('Status');
+  const rcIdx     = headers.indexOf('RootCause');
+  const caIdx     = headers.indexOf('CorrectiveAction');
+  const cdIdx     = headers.indexOf('ClosedDate');
+  const cbIdx     = headers.indexOf('ClosedBy');
+  const today = new Date().toISOString().slice(0, 10);
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][noIdx]) === String(data.complaint_no)) {
+      if (statusIdx >= 0) sheet.getRange(i+1, statusIdx+1).setValue('Closed');
+      if (rcIdx     >= 0) sheet.getRange(i+1, rcIdx+1).setValue(data.root_cause || '');
+      if (caIdx     >= 0) sheet.getRange(i+1, caIdx+1).setValue(data.corrective_action || '');
+      if (cdIdx     >= 0) sheet.getRange(i+1, cdIdx+1).setValue(today);
+      if (cbIdx     >= 0) sheet.getRange(i+1, cbIdx+1).setValue(data.userId || '');
+      return { success: true };
+    }
+  }
+  return { success: false, error: 'not_found' };
 }
