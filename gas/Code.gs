@@ -112,6 +112,8 @@ function doGet(e) {
     }
 
     if (action === 'getQualityParams') return respond(getQualityParams(e.parameter));
+    if (action === 'getInspectionParams') return respond(getInspectionParams(e.parameter));
+    if (action === 'getDefectCatalogue')  return respond(getDefectCatalogue());
 
     return respond({ success: false, error: 'unknown_action' });
   } catch (err) {
@@ -829,6 +831,64 @@ function seedProductionData() {
   );
 
   Logger.log('seedProductionData complete.');
+}
+
+// ── KB Constants ─────────────────────────────────────────────────────────────
+
+const INSPECTION_PLANS = [
+  { id:'IP001', stage:'IQC', product_id:'ALL', parameter:'MFI (Melt Flow Index)',            unit:'g/10 min', spec_min:null, spec_max:null, aql_level:null, sample_size:'Per lot — COA document' },
+  { id:'IP002', stage:'IQC', product_id:'ALL', parameter:'Density',                          unit:'g/cm³',    spec_min:null, spec_max:null, aql_level:null, sample_size:'Per lot — COA document' },
+  { id:'IP003', stage:'IQC', product_id:'ALL', parameter:'Colour and Appearance of Resin Pellets', unit:'Visual', spec_min:null, spec_max:null, aql_level:null, sample_size:'Per lot — COA document' },
+  { id:'IP004', stage:'IQC', product_id:'ALL', parameter:'Moisture Content',                 unit:'%',        spec_min:null, spec_max:null, aql_level:null, sample_size:'Per lot — COA document' },
+  { id:'IP005', stage:'IQC', product_id:'ALL', parameter:'Contamination / Foreign Material', unit:'Visual',   spec_min:null, spec_max:null, aql_level:null, sample_size:'Per lot — COA document' },
+  { id:'IP006', stage:'IPC', product_id:'ALL', parameter:'Parison Weight',                   unit:'g',        spec_min:null, spec_max:null, aql_level:'AQL 1.5', sample_size:'5 per hour' },
+  { id:'IP007', stage:'IPC', product_id:'ALL', parameter:'Wall Thickness',                   unit:'mm',       spec_min:null, spec_max:null, aql_level:'AQL 1.5', sample_size:'5 per hour' },
+  { id:'IP008', stage:'IPC', product_id:'ALL', parameter:'Container Weight',                 unit:'g',        spec_min:null, spec_max:null, aql_level:'AQL 1.5', sample_size:'5 per hour' },
+  { id:'IP009', stage:'IPC', product_id:'ALL', parameter:'Neck/Thread Dimensions',           unit:'mm',       spec_min:null, spec_max:null, aql_level:'AQL 1.5', sample_size:'5 per hour' },
+  { id:'IP010', stage:'IPC', product_id:'ALL', parameter:'Visual Defects',                   unit:'Visual',   spec_min:null, spec_max:null, aql_level:'AQL 2.5', sample_size:'10 per hour' },
+  { id:'IP011', stage:'IPC', product_id:'ALL', parameter:'Leak Test',                        unit:'Pass/Fail',spec_min:null, spec_max:null, aql_level:'AQL 0.65',sample_size:'5 per hour' },
+  { id:'IP012', stage:'IPC', product_id:'ALL', parameter:'Flash Trimming Check',             unit:'Visual',   spec_min:null, spec_max:null, aql_level:'AQL 2.5', sample_size:'5 per hour' },
+  { id:'IP013', stage:'IPC', product_id:'ALL', parameter:'Label Application',                unit:'Visual',   spec_min:null, spec_max:null, aql_level:'AQL 2.5', sample_size:'5 per hour' },
+  { id:'IP014', stage:'OQC', product_id:'ALL', parameter:'Final Visual Inspection',          unit:'Visual',   spec_min:null, spec_max:null, aql_level:'AQL 2.5', sample_size:'Per batch AQL table' },
+  { id:'IP015', stage:'OQC', product_id:'ALL', parameter:'Dimensional Check (Critical)',     unit:'mm',       spec_min:null, spec_max:null, aql_level:'AQL 1.5', sample_size:'Per batch AQL table' },
+  { id:'IP016', stage:'OQC', product_id:'ALL', parameter:'Weight Check',                     unit:'g',        spec_min:null, spec_max:null, aql_level:'AQL 1.5', sample_size:'Per batch AQL table' },
+  { id:'IP017', stage:'OQC', product_id:'ALL', parameter:'Leak / Pressure Test',             unit:'Pass/Fail',spec_min:null, spec_max:null, aql_level:'AQL 0.65',sample_size:'Per batch AQL table' },
+  { id:'IP018', stage:'OQC', product_id:'ALL', parameter:'Label / Print Quality',            unit:'Visual',   spec_min:null, spec_max:null, aql_level:'AQL 2.5', sample_size:'Per batch AQL table' },
+  { id:'IP019', stage:'OQC', product_id:'ALL', parameter:'Packaging Integrity',              unit:'Visual',   spec_min:null, spec_max:null, aql_level:'AQL 2.5', sample_size:'Per batch AQL table' },
+  { id:'IP020', stage:'OQC', product_id:'ALL', parameter:'Batch / Label Traceability',       unit:'Visual',   spec_min:null, spec_max:null, aql_level:'AQL 4.0', sample_size:'Per batch AQL table' },
+  { id:'IP021', stage:'IPC', product_id:'ALL', parameter:'Mould Temperature',                unit:'°C',       spec_min:null, spec_max:null, aql_level:null,      sample_size:'Per shift' },
+  { id:'IP022', stage:'IPC', product_id:'ALL', parameter:'Cycle Time',                       unit:'sec',      spec_min:null, spec_max:null, aql_level:null,      sample_size:'Per hour' }
+];
+
+const DEFECT_CATALOGUE = [
+  { id:'DEF001', code:'D-VIS-001', name:'Flash',                    category:'Visual',      severity:'Major',    detection_stage:['IPC','OQC'], corrective_action_hint:'Trim flash; check mould pinch-off wear or clamp force; reduce parison weight.' },
+  { id:'DEF002', code:'D-VIS-002', name:'Sink Marks',               category:'Visual',      severity:'Minor',    detection_stage:['IPC','OQC'], corrective_action_hint:'Increase cooling time; improve mould cooling; adjust blow pressure.' },
+  { id:'DEF003', code:'D-DIM-001', name:'Warpage / Distortion',     category:'Dimensional', severity:'Major',    detection_stage:['IPC','OQC'], corrective_action_hint:'Increase cooling time; verify mould cooling balance; enforce proper part placement.' },
+  { id:'DEF004', code:'D-VIS-003', name:'Black Specks / Contamination', category:'Visual',  severity:'Critical', detection_stage:['IQC','IPC','OQC'], corrective_action_hint:'Stop production; purge barrel; investigate raw material lot.' },
+  { id:'DEF005', code:'D-STR-001', name:'Pinhole / Leak',           category:'Structural',  severity:'Critical', detection_stage:['IPC','OQC'], corrective_action_hint:'100% leak test; reject affected batch; investigate parison/blow cycle.' },
+  { id:'DEF006', code:'D-VIS-004', name:'Short Shot',               category:'Visual',      severity:'Critical', detection_stage:['IPC'], corrective_action_hint:'Check parison weight; adjust extrusion speed; inspect die gap.' },
+  { id:'DEF007', code:'D-DIM-002', name:'Neck / Thread Defect',     category:'Dimensional', severity:'Critical', detection_stage:['IPC','OQC'], corrective_action_hint:'Check neck tooling; verify mould alignment; inspect thread inserts.' },
+  { id:'DEF008', code:'D-STR-002', name:'Parison Burst',            category:'Structural',  severity:'Critical', detection_stage:['IPC'], corrective_action_hint:'Reduce blow pressure; check parison wall; inspect die tooling.' },
+  { id:'DEF009', code:'D-STR-003', name:'Uneven Wall Thickness',    category:'Structural',  severity:'Critical', detection_stage:['IPC','OQC'], corrective_action_hint:'Adjust parison programming; check die centering; review blow ratio.' },
+  { id:'DEF010', code:'D-VIS-005', name:'Surface Scratches',        category:'Visual',      severity:'Minor',    detection_stage:['OQC'], corrective_action_hint:'Check handling procedures; inspect conveyor and ejection mechanism.' },
+  { id:'DEF011', code:'D-VIS-006', name:'Colour Variation',         category:'Visual',      severity:'Major',    detection_stage:['IPC','OQC'], corrective_action_hint:'Check masterbatch dosing; verify let-down ratio; inspect mixing.' },
+  { id:'DEF012', code:'D-DIM-003', name:'Dimension Out of Spec',    category:'Dimensional', severity:'Major',    detection_stage:['IPC','OQC'], corrective_action_hint:'Verify mould dimensions; check shrinkage allowance; calibrate gauges.' },
+  { id:'DEF013', code:'D-RM-001',  name:'Raw Material Contamination', category:'Raw Material', severity:'Critical', detection_stage:['IQC'], corrective_action_hint:'Quarantine lot; notify supplier; request COA and re-inspection.' },
+  { id:'DEF014', code:'D-RM-002',  name:'MFI Out of Spec',          category:'Raw Material', severity:'Major',    detection_stage:['IQC'], corrective_action_hint:'Hold lot; verify against COA; consider supplier deviation approval.' },
+  { id:'DEF015', code:'D-LBL-001', name:'Label Mismatch / Missing', category:'Label',       severity:'Major',    detection_stage:['OQC'], corrective_action_hint:'Stop labelling line; verify label stock; 100% check affected batch.' }
+];
+
+function getInspectionParams(params) {
+  const stage     = params.stage;
+  const productId = params.product_id;
+  let data = INSPECTION_PLANS;
+  if (stage)     data = data.filter(r => r.stage === stage);
+  if (productId) data = data.filter(r => r.product_id === productId || r.product_id === 'ALL');
+  return { success: true, data };
+}
+
+function getDefectCatalogue() {
+  return { success: true, data: DEFECT_CATALOGUE };
 }
 
 // ── Quality / IPQC ───────────────────────────────────────────────────────────
