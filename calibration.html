@@ -11,6 +11,19 @@
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/masters.css">
+  <style>
+    .cal-summary { display:grid; grid-template-columns:1fr 1fr; gap:var(--space-2); padding:var(--space-3) var(--space-4) 0; }
+    .cal-summary-card { background:var(--color-surface); border-radius:var(--radius-md); padding:var(--space-2) var(--space-3); border-left:3px solid var(--color-success); }
+    .cal-summary-card.cal-overdue { border-left-color:var(--color-danger); }
+    .cal-inst-name { display:block; font-size:var(--text-xs); font-weight:var(--weight-semibold); color:var(--color-text); }
+    .cal-due-label { display:block; font-size:var(--text-xs); color:var(--color-text-muted); margin-top:2px; }
+    .cal-summary-card.cal-overdue .cal-due-label { color:var(--color-danger); }
+    .cal-info-row { display:flex; gap:var(--space-4); font-size:var(--text-sm); color:var(--color-text-muted); margin-top:var(--space-1); }
+    .cal-info-row span { font-weight:var(--weight-semibold); color:var(--color-text); }
+    .badge-ok   { background:var(--color-success-bg,#dcfce7); color:var(--color-success,#16a34a); }
+    .badge-fail { background:var(--color-danger-bg,#fee2e2);  color:var(--color-danger,#dc2626); }
+    .text-danger { color:var(--color-danger,#dc2626); font-weight:var(--weight-semibold); }
+  </style>
 </head>
 <body>
 
@@ -19,35 +32,97 @@
       <button class="back-btn" id="back-to-app">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
-      <span class="header-title">Calibration</span>
+      <span class="header-title">Calibration Register</span>
     </div>
     <div class="header-actions">
       <button class="lang-toggle" id="lang-toggle">EN</button>
     </div>
   </header>
 
-  <div class="masters-content" style="padding:var(--space-6) var(--space-4);">
-    <div class="empty-msg" style="margin-top:var(--space-12);">
-      <p style="font-size:var(--text-lg);font-weight:var(--weight-bold);margin-bottom:var(--space-2);">Calibration Register</p>
-      <p style="color:var(--color-text-muted);font-size:var(--text-sm);">Instrument calibration tracking — coming in Wave 5.</p>
-      <p style="color:var(--color-text-muted);font-size:var(--text-sm);margin-top:var(--space-2);">8 QC instruments tracked: Vernier, Wall-Thickness Gauge, Weighing Scales (×2), Pressure Gauge, IR Temp Gun, Torque Tester, MFI Tester.</p>
+  <!-- Instrument Status Summary -->
+  <div class="cal-summary" id="cal-summary"></div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar" style="padding:var(--space-3) var(--space-4) 0;">
+    <button class="cal-filter-btn capa-filter-btn active" data-status="all">All</button>
+    <button class="cal-filter-btn capa-filter-btn" data-status="overdue">Overdue</button>
+    <button class="cal-filter-btn capa-filter-btn" data-status="ok">OK</button>
+  </div>
+
+  <!-- Log Table -->
+  <div class="table-wrap" style="margin:var(--space-3) var(--space-4);">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Instrument</th>
+          <th>Cal. Date</th>
+          <th>Due Date</th>
+          <th>Result</th>
+          <th>Cert No</th>
+          <th>Done By</th>
+        </tr>
+      </thead>
+      <tbody id="cal-tbody">
+        <tr><td colspan="7" class="td-loading">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- FAB -->
+  <button class="fab hidden" id="fab">+</button>
+
+  <!-- Log Calibration Form Panel -->
+  <div class="form-panel" id="cal-form-panel">
+    <div class="form-header">
+      <button class="back-btn" id="cal-form-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="form-title">Log Calibration</span>
+    </div>
+    <div class="form-body">
+      <div class="form-group">
+        <label class="form-label">Instrument *</label>
+        <select class="form-select" id="cal-inst-select"></select>
+      </div>
+      <div class="cal-info-row">
+        <div>Standard: <span id="cal-standard-display">—</span></div>
+        <div>Frequency: <span id="cal-freq-display">—</span></div>
+      </div>
+      <div class="form-group" style="margin-top:var(--space-3);">
+        <label class="form-label">Calibration Date *</label>
+        <input class="form-input" type="date" id="cal-date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Result *</label>
+        <select class="form-select" id="cal-result">
+          <option value="Pass">Pass</option>
+          <option value="Fail">Fail</option>
+          <option value="Conditional">Conditional</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Certificate No</label>
+        <input class="form-input" type="text" id="cal-cert-no" placeholder="CAL-XXXX">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Done By *</label>
+        <input class="form-input" type="text" id="cal-done-by" placeholder="Lab name or person">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Remarks</label>
+        <textarea class="form-input" id="cal-remarks" rows="2" placeholder="Optional notes"></textarea>
+      </div>
+      <button class="btn-primary" id="cal-submit-btn">Save Calibration Log</button>
     </div>
   </div>
 
   <div class="spinner-overlay hidden" id="spinner"><div class="spinner"></div></div>
-  <div class="toast" id="toast"></div>
+  <div class="toast hidden" id="toast"></div>
 
   <script src="js/api.js" defer></script>
   <script src="js/auth.js" defer></script>
   <script src="js/lang.js" defer></script>
-  <script>
-    window.addEventListener('DOMContentLoaded', () => {
-      const session = Auth.get();
-      if (!session) { Auth.requireLogin(); return; }
-      document.getElementById('back-to-app').addEventListener('click', () => window.location.href = 'app.html');
-      const langBtn = document.getElementById('lang-toggle');
-      langBtn.textContent = (session.lang || 'en').toUpperCase();
-    });
-  </script>
+  <script src="js/calibration.js" defer></script>
 </body>
 </html>

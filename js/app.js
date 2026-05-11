@@ -68,7 +68,7 @@ const App = (() => {
     complaints:  'openComplaints',
     machines:    'openBreakdowns',
     kpi:         'overdueCompliance',
-    calibration: 'overdueCompliance',
+    calibration: 'overdueCalibrations',
     rmstock:     'lowStockCount',
     today:       'overduePMs'
   };

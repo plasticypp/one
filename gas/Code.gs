@@ -1,5 +1,18 @@
 // ── Entry Points ────────────────────────────────────────────────────────────
 
+// ── Calibration KB ───────────────────────────────────────────────────────────
+
+const INSTRUMENTS_KB = [
+  { id: 'INST001', name: 'Vernier Caliper',         location: 'QC Lab',       frequency_months: 6,  standard: 'IS 3651' },
+  { id: 'INST002', name: 'Wall-Thickness Gauge',    location: 'Production',   frequency_months: 6,  standard: 'IS 7328' },
+  { id: 'INST003', name: 'Weighing Scale (Lab)',    location: 'QC Lab',       frequency_months: 12, standard: 'IS 1435' },
+  { id: 'INST004', name: 'Weighing Scale (Store)',  location: 'Stores',       frequency_months: 12, standard: 'IS 1435' },
+  { id: 'INST005', name: 'Pressure Gauge',          location: 'Production',   frequency_months: 6,  standard: 'IS 3624' },
+  { id: 'INST006', name: 'IR Temperature Gun',      location: 'Production',   frequency_months: 12, standard: 'IS 15614' },
+  { id: 'INST007', name: 'Torque Tester',           location: 'QC Lab',       frequency_months: 12, standard: 'IS 7096' },
+  { id: 'INST008', name: 'MFI Tester',              location: 'QC Lab',       frequency_months: 12, standard: 'IS 2530' }
+];
+
 // ── Wave 5 KB Constants ──────────────────────────────────────────────────────
 
 const BREAKDOWN_CODES_KB = [
@@ -190,6 +203,7 @@ function doGet(e) {
       if (action === 'saveKPILog')            return respond(saveKPILog(data));
       if (action === 'saveCustomerComplaint') return respond(saveCustomerComplaint(data));
       if (action === 'closeCustomerComplaint')return respond(closeCustomerComplaint(data));
+      if (action === 'saveCalibrationLog')    return respond(saveCalibrationLog(data));
     }
 
     if (action === 'getQualityParams') return respond(getQualityParams(e.parameter));
@@ -206,6 +220,8 @@ function doGet(e) {
     if (action === 'getCustomerComplaints') return respond(getCustomerComplaints(e.parameter));
     if (action === 'getKPIsKB')            return respond({ success: true, data: KPIS_KB });
     if (action === 'getTrainingPlanKB')    return respond({ success: true, data: TRAINING_PLAN_KB });
+    if (action === 'getCalibrationList')   return respond(getCalibrationList(e.parameter));
+    if (action === 'getInstrumentsKB')     return respond({ success: true, data: INSTRUMENTS_KB });
 
     return respond({ success: false, error: 'unknown_action' });
   } catch (err) {
@@ -1299,6 +1315,52 @@ function seedQualityData() {
   Logger.log(sheetName + ': seeded ' + rows.length + ' rows.');
 }
 
+// ── Calibration ──────────────────────────────────────────────────────────────
+
+function getCalibrationList(params) {
+  var authErr = requireRole(params, ['director','qmr','supervisor']);
+  if (authErr) return { success: false, error: authErr };
+  var sheet = ensureSheet('Calibration_Log', ['inst_id','inst_name','calibration_date','due_date','result','certificate_no','done_by','remarks']);
+  var rows = sheet.getDataRange().getValues();
+  if (rows.length <= 1) return { success: true, data: [] };
+  var hdrs = rows[0];
+  return {
+    success: true,
+    data: rows.slice(1).map(function(r) {
+      var obj = {};
+      hdrs.forEach(function(h, i) { obj[h] = r[i]; });
+      return obj;
+    })
+  };
+}
+
+function saveCalibrationLog(data) {
+  var authErr = requireRole(data, ['director','qmr']);
+  if (authErr) return { success: false, error: authErr };
+  var fieldErr = validateFields(data, ['inst_id','inst_name','calibration_date','result','done_by']);
+  if (fieldErr) return { success: false, error: fieldErr };
+
+  var inst = INSTRUMENTS_KB.find(function(i) { return i.id === data.inst_id; });
+  var calDate = new Date(data.calibration_date);
+  var dueDate = new Date(calDate);
+  dueDate.setMonth(dueDate.getMonth() + (inst ? inst.frequency_months : 12));
+  var dueDateStr = Utilities.formatDate(dueDate, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+
+  var sheet = ensureSheet('Calibration_Log', ['inst_id','inst_name','calibration_date','due_date','result','certificate_no','done_by','remarks']);
+  sheet.appendRow([
+    data.inst_id,
+    data.inst_name,
+    data.calibration_date,
+    dueDateStr,
+    data.result,
+    data.certificate_no || '',
+    data.done_by,
+    data.remarks || ''
+  ]);
+  _cacheInvalidate('dashboard_stats');
+  return { success: true };
+}
+
 // ── Dashboard ────────────────────────────────────────────────────────────────
 
 function getDashboardStats() {
@@ -1361,7 +1423,15 @@ function getDashboardStats() {
   const ccStatusIdx = ccHdrs.indexOf('Status') >= 0 ? ccHdrs.indexOf('Status') : 9;
   const openComplaints = ccRows.slice(1).filter(r => r[ccStatusIdx] === 'Open').length;
 
-  const data = { openGRNs, activeBatches, openBreakdowns, openCapas, overdueCompliance, lowStockCount, overduePMs, openComplaints };
+  const calRows = sheetRows('Calibration_Log');
+  const calHdrs = calRows[0] || [];
+  const calDueIdx = calHdrs.indexOf('due_date') >= 0 ? calHdrs.indexOf('due_date') : 3;
+  const overdueCalibrations = calRows.slice(1).filter(r => {
+    const d = r[calDueIdx] ? new Date(r[calDueIdx]) : null;
+    return d && d < today;
+  }).length;
+
+  const data = { openGRNs, activeBatches, openBreakdowns, openCapas, overdueCompliance, overdueCalibrations, lowStockCount, overduePMs, openComplaints };
   _cachePut('dashboard_stats', data, 30);
   return { success: true, data };
 }
