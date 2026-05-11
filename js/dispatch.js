@@ -186,6 +186,7 @@ const Dispatch = (() => {
       try {
         const res = await Api.post('updateRecord', {
           sheet: 'SalesOrders', idCol: 'so_id', idVal: editingSOId,
+          userId: Auth.getUserId(),
           fields: { customer_id, product_id, qty_ordered: Number(qty_ordered), date, invoice_no }
         });
         if (res.success) {
@@ -211,7 +212,8 @@ const Dispatch = (() => {
         customer_id,
         product_id,
         qty_ordered: Number(qty_ordered),
-        invoice_no
+        invoice_no,
+        userId:      Auth.getUserId()
       });
       if (res.success) {
         showToast('SO saved — ' + (res.so_id || ''));
@@ -290,7 +292,8 @@ const Dispatch = (() => {
         dispatch_date: date,
         invoice_no:    invoice,
         vehicle_no:    vehicle,
-        dispatched_by: session.username || session.name || ''
+        dispatched_by: session.username || session.name || '',
+        userId:        Auth.getUserId()
       });
       if (res.success) {
         showToast('Dispatched — ' + (res.dispatch_id || ''));
@@ -321,7 +324,8 @@ const Dispatch = (() => {
         dispatch_date:  date,
         vehicle_no:     document.getElementById('dp-vehicle').value.trim(),
         driver_name:    document.getElementById('dp-driver').value.trim(),
-        dispatched_by:  session.username || session.name || ''
+        dispatched_by:  session.username || session.name || '',
+        userId:         Auth.getUserId()
       });
       if (res.success) {
         showToast('Dispatched — ' + res.dispatch_id);
@@ -381,7 +385,7 @@ const Dispatch = (() => {
 
   async function deleteSO(soId) {
     if (!confirm('Delete SO ' + soId + '?')) return;
-    const res = await Api.post('deleteRecord', { sheet: 'SalesOrders', idCol: 'so_id', idVal: soId });
+    const res = await Api.post('deleteRecord', { sheet: 'SalesOrders', idCol: 'so_id', idVal: soId, userId: Auth.getUserId() });
     if (res.success) { slideDetailOut(); await loadSOList(); }
     else showToast('Delete failed: ' + res.error);
   }

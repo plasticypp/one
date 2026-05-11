@@ -4,6 +4,7 @@ const Compliance = (() => {
   let capaStatusFilter = 'all';
   let capaCache = [];
   let editingLegalId = null;
+  let editingCapaId = null;
 
   // ── Init ──────────────────────────────────────────────────────────────────
 
@@ -145,7 +146,7 @@ const Compliance = (() => {
     if (!data.LegalID) delete data.LegalID;
     showSpinner(true);
     try {
-      const res = await Api.post('saveLegalEntry', data);
+      const res = await Api.post('saveLegalEntry', { ...data, userId: Auth.getUserId() });
       if (res.success) {
         showToast('Saved');
         closeLegalForm();
@@ -202,13 +203,14 @@ const Compliance = (() => {
         <td>${String(target).slice(0, 10)}</td>
         <td><span class="chip ${statusClass}">${status}</span></td>
         <td>${closeBtn}</td>
+        <td><div class="row-actions"><button class="btn-icon btn-icon-edit" onclick="Compliance.editCapa('${id}')" title="Edit">✏</button><button class="btn-icon btn-icon-delete" onclick="Compliance.deleteCapa('${id}')" title="Delete">🗑</button></div></td>
       </tr>`;
     }).join('');
     container.innerHTML = `
       <table class="comp-table">
         <thead><tr>
           <th>CAPA ID</th><th>Date</th><th>Source</th><th>Description</th>
-          <th>Target Date</th><th>Status</th><th></th>
+          <th>Target Date</th><th>Status</th><th></th><th>Actions</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
@@ -265,7 +267,7 @@ const Compliance = (() => {
     if (effectiveness === null) return;
     showSpinner(true);
     try {
-      const res = await Api.post('updateCapaStatus', { capa_id: id, status: 'Closed', effectiveness });
+      const res = await Api.post('updateCapaStatus', { capa_id: id, status: 'Closed', effectiveness, userId: Auth.getUserId() });
       if (res.success) {
         showToast('CAPA closed');
         closeCapaDetail();
@@ -279,6 +281,7 @@ const Compliance = (() => {
   // ── CAPA Form ─────────────────────────────────────────────────────────────
 
   function openCapaForm() {
+    editingCapaId = null;
     document.getElementById('capa-form-source').value = '';
     document.getElementById('capa-form-description').value = '';
     document.getElementById('capa-form-root-cause').value = '';
@@ -288,13 +291,47 @@ const Compliance = (() => {
     document.getElementById('capa-form-ncr-ref') && (document.getElementById('capa-form-ncr-ref').value = '');
     document.getElementById('capa-form-responsible') && (document.getElementById('capa-form-responsible').value = '');
     document.getElementById('capa-form-target-date').value = '';
+    const titleEl = document.getElementById('capa-form-title') || document.querySelector('#capa-form-panel h2');
+    if (titleEl) titleEl.textContent = 'New CAPA';
     document.getElementById('capa-form-panel').classList.add('slide-in');
     document.getElementById('panel-capa').classList.add('slide-out');
   }
 
   function closeCapaForm() {
+    editingCapaId = null;
+    const titleEl = document.getElementById('capa-form-title') || document.querySelector('#capa-form-panel h2');
+    if (titleEl) titleEl.textContent = 'New CAPA';
     document.getElementById('capa-form-panel').classList.remove('slide-in');
     document.getElementById('panel-capa').classList.remove('slide-out');
+  }
+
+  function editCapa(capaId) {
+    const capa = capaCache.find(c => String(c.CAPAID || c.capa_id) === String(capaId));
+    if (!capa) return;
+    editingCapaId = capaId;
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+    setVal('capa-form-source',      capa.Source      || capa.source      || '');
+    setVal('capa-form-description', capa.ProblemDesc || capa.description || '');
+    setVal('capa-form-root-cause',  capa.RootCause   || capa.root_cause  || '');
+    setVal('capa-form-action',      capa.CorrectiveAction || capa.action || '');
+    setVal('capa-form-corrective-action', capa.CorrectiveAction || capa.action || '');
+    setVal('capa-form-preventive-action', capa.PreventiveAction || '');
+    setVal('capa-form-ncr-ref',     capa.NCRRef      || '');
+    setVal('capa-form-responsible', capa.ResponsibleID || '');
+    setVal('capa-form-target-date', (capa.TargetDate || capa.target_date || '').toString().slice(0, 10));
+    const titleEl = document.getElementById('capa-form-title') || document.querySelector('#capa-form-panel h2');
+    if (titleEl) titleEl.textContent = 'Edit CAPA';
+    document.getElementById('capa-form-panel').classList.add('slide-in');
+    document.getElementById('panel-capa').classList.add('slide-out');
+  }
+
+  function deleteCapa(capaId) {
+    if (!confirm('Delete CAPA ' + capaId + '?')) return;
+    Api.post('deleteRecord', { sheet: 'CAPA_Register', idCol: 'capa_id', idVal: capaId, userId: Auth.getUserId() })
+      .then(res => {
+        if (res && res.success) loadCapaList(capaStatusFilter);
+        else showToast('Delete failed: ' + (res && res.error || 'error'), 'error');
+      });
   }
 
   async function submitCapa() {
@@ -302,6 +339,35 @@ const Compliance = (() => {
     const description = document.getElementById('capa-form-description').value;
     if (!source || !description) {
       showToast('Source and Description are required');
+      return;
+    }
+    if (editingCapaId) {
+      showSpinner(true);
+      try {
+        const res = await Api.post('updateRecord', {
+          sheet: 'CAPA_Register',
+          idCol: 'capa_id',
+          idVal: editingCapaId,
+          userId: Auth.getUserId(),
+          fields: {
+            source,
+            description,
+            root_cause:        document.getElementById('capa-form-root-cause').value,
+            corrective_action: (document.getElementById('capa-form-corrective-action') || {}).value || document.getElementById('capa-form-action').value,
+            preventive_action: (document.getElementById('capa-form-preventive-action') || {}).value || '',
+            ncr_ref:           (document.getElementById('capa-form-ncr-ref') || {}).value || '',
+            responsible_id:    (document.getElementById('capa-form-responsible') || {}).value || '',
+            target_date:       document.getElementById('capa-form-target-date').value
+          }
+        });
+        if (res && res.success) {
+          editingCapaId = null;
+          closeCapaForm();
+          await loadCapaList(capaStatusFilter);
+        } else {
+          showToast('Update failed: ' + (res && res.error));
+        }
+      } finally { showSpinner(false); }
       return;
     }
     const data = {
@@ -316,7 +382,7 @@ const Compliance = (() => {
     };
     showSpinner(true);
     try {
-      const res = await Api.post('saveCapa', data);
+      const res = await Api.post('saveCapa', { ...data, userId: Auth.getUserId() });
       if (res.success) {
         showToast('CAPA saved: ' + res.capa_id);
         closeCapaForm();
@@ -333,7 +399,7 @@ const Compliance = (() => {
     if (!confirm('Mark CAPA ' + id + ' as Closed?')) return;
     showSpinner(true);
     try {
-      const res = await Api.post('updateCapaStatus', { capa_id: id, status: 'Closed' });
+      const res = await Api.post('updateCapaStatus', { capa_id: id, status: 'Closed', userId: Auth.getUserId() });
       if (res.success) {
         showToast('CAPA closed');
         await loadCapaList(capaStatusFilter);
@@ -358,5 +424,5 @@ const Compliance = (() => {
     setTimeout(() => t.classList.remove('show'), 2500);
   }
 
-  return { init, openCapaForm, closeCapaForm, submitCapa, loadCapa: loadCapaList, openLegalForm, closeLegalForm, submitLegalEntry, closeCapaItemFromDetail };
+  return { init, openCapaForm, closeCapaForm, submitCapa, loadCapa: loadCapaList, openLegalForm, closeLegalForm, submitLegalEntry, closeCapaItemFromDetail, editCapa, deleteCapa };
 })();

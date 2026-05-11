@@ -49,5 +49,10 @@ const Auth = (() => {
     window.location.href = 'index.html';
   }
 
-  return { login, logout, get, isLoggedIn, requireLogin };
+  function getUserId() {
+    const s = get();
+    return (s && (s.userId || s.user_id || s.id)) || '';
+  }
+
+  return { login, logout, get, isLoggedIn, requireLogin, getUserId };
 })();

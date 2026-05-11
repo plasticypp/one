@@ -173,6 +173,7 @@ const Production = (() => {
       try {
         const res = await Api.post('updateRecord', {
           sheet: 'BatchOrders', idCol: 'batch_id', idVal: editingBatchId,
+          userId: Auth.getUserId(),
           fields: { product_id: productId, machine_id: machineId, operator_id: operatorId, planned_qty: Number(plannedQty), start_time: startTime }
         });
         if (res.success) {
@@ -198,7 +199,8 @@ const Production = (() => {
         machine_id:  machineId,
         operator_id: operatorId,
         planned_qty: Number(plannedQty),
-        start_time:  startTime
+        start_time:  startTime,
+        userId:      Auth.getUserId()
       });
       if (res.success) {
         showToast('Batch saved — ' + (res.batch_id || ''));
@@ -247,7 +249,8 @@ const Production = (() => {
         actual_qty: actualQty,
         end_time:   document.getElementById('close-end-time').value,
         notes:      document.getElementById('close-notes').value,
-        override:   session.role === 'director' ? 'true' : 'false'
+        override:   session.role === 'director' ? 'true' : 'false',
+        userId:     Auth.getUserId()
       });
       if (res.success) {
         showToast('Batch ' + closingBatchId + ' closed');
@@ -306,7 +309,7 @@ const Production = (() => {
 
   async function deleteBatch(batchId) {
     if (!confirm('Delete batch ' + batchId + '?')) return;
-    const res = await Api.post('deleteRecord', { sheet: 'BatchOrders', idCol: 'batch_id', idVal: batchId });
+    const res = await Api.post('deleteRecord', { sheet: 'BatchOrders', idCol: 'batch_id', idVal: batchId, userId: Auth.getUserId() });
     if (res.success) { slideDetailOut(); await loadBatches(); }
     else showToast('Delete failed: ' + res.error);
   }

@@ -88,7 +88,7 @@ const GRN = (() => {
   function renderGRNTable(rows) {
     const tbody = document.getElementById('grn-tbody');
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted" style="padding:var(--space-8);">No records found</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:var(--space-8);">No records found</td></tr>';
       return;
     }
     tbody.innerHTML = '';
@@ -104,7 +104,10 @@ const GRN = (() => {
         <td><strong>${r.qty_received || ''}</strong> ${r.unit || ''}</td>
         <td class="text-muted">${r.invoice_no || '—'}</td>
         <td><span class="badge badge-${statusClass}">${r.status || ''}</span></td>
+        <td><div class="row-actions"><button class="btn-icon btn-icon-edit" title="Edit">✏</button><button class="btn-icon btn-icon-delete" title="Delete">🗑</button></div></td>
       `;
+      tr.querySelector('.btn-icon-edit').addEventListener('click', e => { e.stopPropagation(); GRN.editGRN(r.grn_id); });
+      tr.querySelector('.btn-icon-delete').addEventListener('click', e => { e.stopPropagation(); GRN.deleteGRN(r.grn_id); });
       tr.addEventListener('click', () => openGRNDetail(r.grn_id));
       tbody.appendChild(tr);
     });
@@ -155,6 +158,7 @@ const GRN = (() => {
       try {
         const res = await Api.post('updateRecord', {
           sheet: 'GRN', idCol: 'grn_id', idVal: editingGrnId,
+          userId: Auth.getUserId(),
           fields: { qty_received: Number(qtyReceived), unit, rate: Number(rate) || 0, invoice_no: invoiceNo }
         });
         if (res.success) {
@@ -187,7 +191,8 @@ const GRN = (() => {
         unit,
         rate:          Number(rate) || 0,
         invoice_no:    invoiceNo,
-        received_by:   receivedBy
+        received_by:   receivedBy,
+        userId:        Auth.getUserId()
       });
       if (res.success) {
         slideFormOut();
@@ -259,7 +264,7 @@ const GRN = (() => {
 
   async function deleteGRN(grnId) {
     if (!confirm('Delete GRN ' + grnId + '?')) return;
-    const res = await Api.post('deleteRecord', { sheet: 'GRN', idCol: 'grn_id', idVal: grnId });
+    const res = await Api.post('deleteRecord', { sheet: 'GRN', idCol: 'grn_id', idVal: grnId, userId: Auth.getUserId() });
     if (res.success) { slideDetailOut(); await loadGRNList(); }
     else showToast('Delete failed: ' + res.error);
   }

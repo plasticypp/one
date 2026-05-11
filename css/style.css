@@ -1242,3 +1242,11 @@ input[readonly] {
   align-items: center;
 }
 .drawer-item-icon svg { width: 20px; height: 20px; }
+
+/* Row action buttons */
+.row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+.btn-icon { background: none; border: none; cursor: pointer; padding: 4px 6px; border-radius: 4px; font-size: 0.85rem; line-height: 1; transition: background 0.15s; }
+.btn-icon-edit { color: var(--primary); }
+.btn-icon-edit:hover { background: var(--primary-light, #fff7ed); color: var(--primary-dark, #c2410c); }
+.btn-icon-delete { color: #dc2626; }
+.btn-icon-delete:hover { background: #fee2e2; }

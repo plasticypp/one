@@ -1,5 +1,63 @@
 // ── Entry Points ────────────────────────────────────────────────────────────
 
+// ── Server-Side Validation ──────────────────────────────────────────────────
+
+function validateSession(params) {
+  if (!params.userId) return { valid: false, error: 'Not authenticated' };
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Users');
+  if (!sheet) return { valid: false, error: 'Users sheet not found' };
+  var data = sheet.getDataRange().getValues();
+  var headers = data[0];
+  var idIdx = headers.indexOf('user_id');
+  var activeIdx = headers.indexOf('active');
+  var roleIdx = headers.indexOf('role');
+  var nameIdx = headers.indexOf('name');
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][idIdx]) === String(params.userId)) {
+      var isActive = activeIdx !== -1 ? data[i][activeIdx] : true;
+      if (!isActive) return { valid: false, error: 'User account inactive' };
+      return { valid: true, user: { id: data[i][idIdx], role: roleIdx !== -1 ? data[i][roleIdx] : '', name: nameIdx !== -1 ? data[i][nameIdx] : '' } };
+    }
+  }
+  return { valid: false, error: 'User not found' };
+}
+
+function requireRole(params, allowedRoles) {
+  var session = validateSession(params);
+  if (!session.valid) return session.error;
+  if (allowedRoles.indexOf(session.user.role) === -1) {
+    return 'Access denied. Required role: ' + allowedRoles.join(' or ');
+  }
+  return null;
+}
+
+function validateFields(params, requiredFields) {
+  var missing = [];
+  requiredFields.forEach(function(f) {
+    if (!params[f] || String(params[f]).trim() === '') missing.push(f);
+  });
+  return missing.length > 0 ? 'Missing required fields: ' + missing.join(', ') : null;
+}
+
+function checkDuplicate(sheetName, colName, value, idCol, excludeId) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(sheetName);
+  if (!sheet) return false;
+  var data = sheet.getDataRange().getValues();
+  var headers = data[0];
+  var colIdx = headers.indexOf(colName);
+  var idIdx = idCol ? headers.indexOf(idCol) : -1;
+  if (colIdx === -1) return false;
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][colIdx]).toLowerCase() === String(value).toLowerCase()) {
+      if (excludeId && idIdx !== -1 && String(data[i][idIdx]) === String(excludeId)) continue;
+      return true;
+    }
+  }
+  return false;
+}
+
 function doGet(e) {
   const action = e.parameter.action;
   try {
@@ -38,8 +96,16 @@ function doGet(e) {
       if (action === 'saveQualityCheck') return respond(saveQualityCheck(data));
       if (action === 'saveSO')           return respond(saveSO(data));
       if (action === 'saveDispatch')     return respond(saveDispatch(data));
-      if (action === 'updateRecord')    return respond(updateRecord(data));
-      if (action === 'deleteRecord')    return respond(deleteRecord(data));
+      if (action === 'updateRecord') {
+        var updAuthErr = requireRole(data, ['director','qmr','supervisor']);
+        if (updAuthErr) return respond({ success: false, error: updAuthErr });
+        return respond(updateRecord(data));
+      }
+      if (action === 'deleteRecord') {
+        var delAuthErr = requireRole(data, ['director','qmr','supervisor']);
+        if (delAuthErr) return respond({ success: false, error: delAuthErr });
+        return respond(deleteRecord(data));
+      }
       if (action === 'completePM')      return respond(completePM(data));
       if (action === 'saveLegalEntry')  return respond(saveLegalEntry(data));
       if (action === 'saveQualityParam')return respond(saveQualityParam(data));
@@ -409,6 +475,12 @@ function getGRNList(params) {
 }
 
 function saveGRN(data) {
+  var authError = requireRole(data, ['director','store']);
+  if (authError) return { success: false, error: authError };
+
+  var fieldError = validateFields(data, ['supplier_id','qty_received','date']);
+  if (fieldError) return { success: false, error: fieldError };
+
   const sheet = getSheet('GRN');
   const rows = sheet.getDataRange().getValues();
   const rowCount = rows.length; // includes header
@@ -480,6 +552,12 @@ function getBreakdownList(params) {
 }
 
 function saveBreakdown(data) {
+  var authError = requireRole(data, ['director','supervisor','operator']);
+  if (authError) return { success: false, error: authError };
+
+  var fieldError = validateFields(data, ['machine_id','description','breakdown_code']);
+  if (fieldError) return { success: false, error: fieldError };
+
   const sheet = getSheet('Breakdown_Log');
   const rows = sheet.getDataRange().getValues();
   const rowCount = rows.length;
@@ -503,6 +581,12 @@ function saveBreakdown(data) {
 }
 
 function resolveBreakdown(data) {
+  var authError = requireRole(data, ['director','supervisor']);
+  if (authError) return { success: false, error: authError };
+
+  var fieldError = validateFields(data, ['breakdown_id','resolution']);
+  if (fieldError) return { success: false, error: fieldError };
+
   const sheet = getSheet('Breakdown_Log');
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -594,6 +678,12 @@ function getBatchList(params) {
 }
 
 function saveBatch(data) {
+  var authError = requireRole(data, ['director','supervisor','operator']);
+  if (authError) return { success: false, error: authError };
+
+  var fieldError = validateFields(data, ['product_id','machine_id','planned_qty','batch_date']);
+  if (fieldError) return { success: false, error: fieldError };
+
   const sheet = getSheet('BatchOrders');
   const rows = sheet.getDataRange().getValues();
   const rowCount = rows.length;
@@ -615,6 +705,12 @@ function saveBatch(data) {
 }
 
 function closeBatch(data) {
+  var authError = requireRole(data, ['director','supervisor','operator']);
+  if (authError) return { success: false, error: authError };
+
+  var fieldError = validateFields(data, ['batch_id','actual_qty']);
+  if (fieldError) return { success: false, error: fieldError };
+
   const actualQty = Number(data.actual_qty);
   if (!Number.isFinite(actualQty) || actualQty <= 0) return { success: false, error: 'invalid_qty' };
   const sheet = getSheet('BatchOrders');
@@ -750,6 +846,12 @@ function getQualityChecks(params) {
 }
 
 function saveQualityCheck(data) {
+  var authError = requireRole(data, ['director','qmr','supervisor','operator']);
+  if (authError) return { success: false, error: authError };
+
+  var fieldError = validateFields(data, ['batch_id','parameter','actual_value']);
+  if (fieldError) return { success: false, error: fieldError };
+
   const sheet = getSheet('QualityChecks');
   const rows = sheet.getDataRange().getValues();
   const rowCount = rows.length;
@@ -1071,6 +1173,12 @@ function getCapaList(params) {
 }
 
 function saveCapa(data) {
+  var authError = requireRole(data, ['director','qmr']);
+  if (authError) return { success: false, error: authError };
+
+  var fieldError = validateFields(data, ['source','description','target_date']);
+  if (fieldError) return { success: false, error: fieldError };
+
   const sheet = getSheet('CAPA_Register');
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -1110,6 +1218,12 @@ function saveCapa(data) {
 }
 
 function updateCapaStatus(data) {
+  var authError = requireRole(data, ['director','qmr']);
+  if (authError) return { success: false, error: authError };
+
+  var fieldError = validateFields(data, ['capa_id','status']);
+  if (fieldError) return { success: false, error: fieldError };
+
   const sheet = getSheet('CAPA_Register');
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
@@ -1189,6 +1303,12 @@ function getSOList(params) {
 }
 
 function saveSO(data) {
+  var authError = requireRole(data, ['director','store']);
+  if (authError) return { success: false, error: authError };
+
+  var fieldError = validateFields(data, ['customer_id','product_id','qty_ordered','date']);
+  if (fieldError) return { success: false, error: fieldError };
+
   const sheet = getSheet('SalesOrders');
   const rows = sheet.getDataRange().getValues();
   const rowCount = rows.length;
@@ -1208,6 +1328,12 @@ function saveSO(data) {
 }
 
 function saveDispatch(data) {
+  var authError = requireRole(data, ['director','store']);
+  if (authError) return { success: false, error: authError };
+
+  var fieldError = validateFields(data, ['so_id','qty']);
+  if (fieldError) return { success: false, error: fieldError };
+
   const qty = Number(data.qty);
   if (!Number.isFinite(qty) || qty <= 0) return { success: false, error: 'invalid_qty' };
 

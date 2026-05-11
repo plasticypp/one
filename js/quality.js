@@ -292,7 +292,7 @@ const Quality = (() => {
       }
       showSpinner(true);
       try {
-        const res = await Api.post('updateRecord', { sheet: 'QualityChecks', idCol: 'check_id', idVal: editingCheckId, fields });
+        const res = await Api.post('updateRecord', { sheet: 'QualityChecks', idCol: 'check_id', idVal: editingCheckId, userId: Auth.getUserId(), fields });
         if (res.success) {
           editingCheckId = null;
           slideFormOut();
@@ -315,7 +315,8 @@ const Quality = (() => {
         spec_min:     specMin,
         spec_max:     specMax,
         actual_value: Number(actual),
-        remarks
+        remarks,
+        userId:       Auth.getUserId()
       });
       if (res.success) {
         showToast('Check saved — ' + (res.check_id || ''));
@@ -385,7 +386,7 @@ const Quality = (() => {
 
   async function deleteCheck(checkId) {
     if (!confirm('Delete check ' + checkId + '?')) return;
-    const res = await Api.post('deleteRecord', { sheet: 'QualityChecks', idCol: 'check_id', idVal: checkId });
+    const res = await Api.post('deleteRecord', { sheet: 'QualityChecks', idCol: 'check_id', idVal: checkId, userId: Auth.getUserId() });
     if (res.success) {
       slideDetailOut();
       await loadChecks(document.getElementById('filter-batch').value);

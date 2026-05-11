@@ -5,6 +5,7 @@ const Maintenance = (() => {
   let equipDropdown = [];
   let bdCache = [];
   let resolvingBdId = null;
+  let editingBreakdownId = null;
 
   async function init() {
     session = Auth.get();
@@ -75,7 +76,7 @@ const Maintenance = (() => {
     const tbody = document.getElementById('breakdown-tbody');
     tbody.innerHTML = '';
     if (records.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="td-loading">No records</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="td-loading">No records</td></tr>';
       return;
     }
     records.forEach(r => {
@@ -90,6 +91,7 @@ const Maintenance = (() => {
         <td>${r.Symptom || ''}</td>
         <td><span class="status-chip ${isOpen ? 'chip-open' : 'chip-closed'}">${r.Status}</span></td>
         <td>${isOpen ? `<button class="btn-resolve" onclick="event.stopPropagation();Maintenance.resolveBreakdown('${r.BreakdownID}')">Resolve</button>` : ''}</td>
+        <td><div class="row-actions"><button class="btn-icon btn-icon-edit" onclick="event.stopPropagation();Maintenance.editBreakdown('${r.BreakdownID}')" title="Edit">✏</button><button class="btn-icon btn-icon-delete" onclick="event.stopPropagation();Maintenance.deleteBreakdown('${r.BreakdownID}')" title="Delete">🗑</button></div></td>
       `;
       tr.addEventListener('click', (e) => {
         if (e.target.closest('button')) return;
@@ -135,6 +137,39 @@ const Maintenance = (() => {
   }
 
   async function submitBreakdown() {
+    if (editingBreakdownId) {
+      const data = {};
+      document.querySelectorAll('#form-body [data-key]').forEach(el => {
+        data[el.dataset.key] = el.value;
+      });
+      showSpinner(true);
+      try {
+        const res = await Api.post('updateRecord', {
+          sheet: 'Breakdown_Log',
+          idCol: 'breakdown_id',
+          idVal: editingBreakdownId,
+          userId: Auth.getUserId(),
+          fields: {
+            machine_id:     data.machine_id,
+            breakdown_code: data.breakdown_code,
+            description:    data.description,
+            reported_by:    data.reported_by
+          }
+        });
+        if (res && res.success) {
+          showToast('Breakdown updated');
+          editingBreakdownId = null;
+          slideFormOut();
+          const filter = document.getElementById('status-filter').value;
+          await loadBreakdowns(filter);
+        } else {
+          showToast('Update failed: ' + (res && res.error || 'error'));
+        }
+      } finally {
+        showSpinner(false);
+      }
+      return;
+    }
     const data = {};
     document.querySelectorAll('#form-body [data-key]').forEach(el => {
       data[el.dataset.key] = el.value;
@@ -142,7 +177,7 @@ const Maintenance = (() => {
     if (!data.machine_id) { showToast('Select a machine'); return; }
     showSpinner(true);
     try {
-      const res = await Api.post('saveBreakdown', data);
+      const res = await Api.post('saveBreakdown', { ...data, userId: Auth.getUserId() });
       if (res.success) {
         showToast('Breakdown logged');
         slideFormOut();
@@ -150,6 +185,39 @@ const Maintenance = (() => {
         await loadBreakdowns(filter);
       } else {
         showToast('Error: ' + (res.error || 'save failed'));
+      }
+    } finally {
+      showSpinner(false);
+    }
+  }
+
+  async function editBreakdown(bdId) {
+    const bd = bdCache.find(b => String(b.BreakdownID) === String(bdId));
+    if (!bd) return;
+    editingBreakdownId = bdId;
+    await openBreakdownForm();
+    document.getElementById('form-title').textContent = 'Edit Breakdown';
+    const setKey = (key, val) => {
+      const el = document.querySelector(`#form-body [data-key="${key}"]`);
+      if (el) el.value = val || '';
+    };
+    setKey('machine_id', bd.EquipID);
+    setKey('breakdown_code', bd.BreakdownCode);
+    setKey('description', bd.Symptom);
+    setKey('reported_by', bd.ReportedBy);
+  }
+
+  async function deleteBreakdown(bdId) {
+    if (!confirm('Delete breakdown record ' + bdId + '?')) return;
+    showSpinner(true);
+    try {
+      const res = await Api.post('deleteRecord', { sheet: 'Breakdown_Log', idCol: 'breakdown_id', idVal: bdId, userId: Auth.getUserId() });
+      if (res && res.success) {
+        showToast('Breakdown deleted');
+        const filter = document.getElementById('status-filter').value;
+        await loadBreakdowns(filter);
+      } else {
+        showToast('Delete failed: ' + (res && res.error || 'error'));
       }
     } finally {
       showSpinner(false);
@@ -192,7 +260,8 @@ const Maintenance = (() => {
         downtime_min:     Number(document.getElementById('resolve-downtime').value) || 0,
         spare_used:       document.getElementById('resolve-spares').value.trim(),
         spares_used:      document.getElementById('resolve-spares').value.trim(),
-        downtime_hrs:     document.getElementById('resolve-downtime').value || '0'
+        downtime_hrs:     document.getElementById('resolve-downtime').value || '0',
+        userId:           Auth.getUserId()
       });
       if (res.success) {
         showToast('Breakdown resolved');
@@ -279,7 +348,7 @@ const Maintenance = (() => {
     if (!confirm('Mark PM ' + pmId + ' as complete?')) return;
     showSpinner(true);
     try {
-      const res = await Api.post('completePM', { pm_id: pmId, remarks: '' });
+      const res = await Api.post('completePM', { pm_id: pmId, remarks: '', userId: Auth.getUserId() });
       if (res.success) { showToast('PM marked complete'); await loadPMSchedule(); }
       else showToast('Error: ' + res.error);
     } finally { showSpinner(false); }
@@ -293,6 +362,9 @@ const Maintenance = (() => {
   }
 
   function slideFormOut() {
+    editingBreakdownId = null;
+    const titleEl = document.getElementById('form-title');
+    if (titleEl) titleEl.textContent = 'Log Breakdown';
     document.getElementById('list-panel').classList.remove('slide-out');
     document.getElementById('form-panel').classList.remove('slide-in');
   }
@@ -331,7 +403,7 @@ const Maintenance = (() => {
     setTimeout(() => t.classList.remove('show'), 2500);
   }
 
-  return { init, resolveBreakdown, submitResolve, completePM, _loadBreakdowns: loadBreakdowns };
+  return { init, resolveBreakdown, submitResolve, completePM, editBreakdown, deleteBreakdown, _loadBreakdowns: loadBreakdowns };
 })();
 
 // Global shim so onclick="submitResolve()" in HTML works
