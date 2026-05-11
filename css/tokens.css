@@ -110,4 +110,8 @@
   --z-overlay:      1030;
   --z-modal:        1040;
   --z-toast:        1070;
+
+  /* Tile accent wash */
+  --tile-accent-wash: rgba(234,88,12,0.06);
+  --tile-icon-bg:     rgba(234,88,12,0.10);
 }

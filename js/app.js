@@ -84,7 +84,7 @@ const App = (() => {
       const btn = document.createElement('button');
       btn.className = 'tile';
       btn.dataset.tileId = id;
-      btn.innerHTML = `<span class="tile-icon">${SVG[id] || SVG.kpi}</span><span class="tile-label" data-i18n="${cfg.labelKey}">${Lang.t(cfg.labelKey)}</span>`;
+      btn.innerHTML = `<span class="tile-icon-wrap"><span class="tile-icon">${SVG[id] || SVG.kpi}</span></span><span class="tile-label" data-i18n="${cfg.labelKey}">${Lang.t(cfg.labelKey)}</span>`;
       btn.addEventListener('click', () => handleTile(id));
       grid.appendChild(btn);
     });
