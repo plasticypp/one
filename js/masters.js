@@ -230,7 +230,7 @@ const Masters = (() => {
       : records;
 
     if (filtered.length === 0) {
-      list.innerHTML = '<div style="padding:24px 16px;color:#757575;text-align:center;">No records</div>';
+      list.innerHTML = '<div class="empty-msg">No records</div>';
       return;
     }
 

@@ -68,5 +68,11 @@
   "masters.error.save": "सेव नहीं हुआ। फिर कोशिश करें।",
   "nav.production": "प्रोडक्शन",
   "nav.quality": "क्वालिटी",
-  "nav.dispatch": "डिस्पैच"
+  "nav.dispatch": "डिस्पैच",
+  "page.grn": "इन्वेंट्री / GRN",
+  "page.production": "प्रोडक्शन",
+  "page.quality": "क्वालिटी / IPQC",
+  "page.dispatch": "डिस्पैच",
+  "page.maintenance": "मेंटेनेंस",
+  "page.compliance": "कंप्लायंस"
 }

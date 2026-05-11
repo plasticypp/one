@@ -68,5 +68,11 @@
   "masters.error.save": "Save failed. Try again.",
   "nav.production": "Production",
   "nav.quality": "Quality",
-  "nav.dispatch": "Dispatch"
+  "nav.dispatch": "Dispatch",
+  "page.grn": "Inventory / GRN",
+  "page.production": "Production",
+  "page.quality": "Quality / IPQC",
+  "page.dispatch": "Dispatch",
+  "page.maintenance": "Maintenance",
+  "page.compliance": "Compliance"
 }

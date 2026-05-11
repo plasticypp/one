@@ -103,7 +103,7 @@ const Quality = (() => {
     grid.innerHTML = '';
 
     if (rows.length === 0) {
-      grid.innerHTML = '<p style="color:#757575;padding:16px;">No quality data</p>';
+      grid.innerHTML = '<p class="empty-msg">No quality data</p>';
       return;
     }
 
@@ -154,7 +154,7 @@ const Quality = (() => {
     tbody.innerHTML = '';
 
     if (rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#757575;padding:24px;">No records</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="td-loading">No records</td></tr>';
       return;
     }
 

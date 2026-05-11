@@ -972,7 +972,9 @@ select.form-control {
   margin-top: calc(56px + 44px); /* header + sub-tab-bar */
   min-height: calc(100vh - 56px - 44px);
   overflow: hidden;
+  transition: transform var(--dur-default) var(--ease-out);
 }
+#main-content.slide-out { transform: translateX(-100%); }
 
 /* Summary/KPI grid (quality page) */
 .summary-grid {

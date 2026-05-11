@@ -107,7 +107,7 @@ const Production = (() => {
     tbody.innerHTML = '';
 
     if (rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#757575;padding:24px;">No records</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="td-loading">No records</td></tr>';
       return;
     }
 
@@ -213,7 +213,7 @@ const Production = (() => {
     tbody.innerHTML = '';
 
     if (rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#757575;padding:24px;">No records</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="td-loading">No records</td></tr>';
       return;
     }
 

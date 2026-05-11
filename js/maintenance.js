@@ -67,7 +67,7 @@ const Maintenance = (() => {
     const tbody = document.getElementById('breakdown-tbody');
     tbody.innerHTML = '';
     if (records.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#757575;">No records</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="td-loading">No records</td></tr>';
       return;
     }
     records.forEach(r => {
@@ -179,7 +179,7 @@ const Maintenance = (() => {
     const tbody = document.getElementById('pm-tbody');
     tbody.innerHTML = '';
     if (records.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:#757575;">No records</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="td-loading">No records</td></tr>';
       return;
     }
     const today = new Date();
