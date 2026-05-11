@@ -12,7 +12,6 @@ const GRN = (() => {
     await Lang.init(session.lang);
     setupHeader();
     await loadSuppliers();
-    await loadMaterials();
     await loadGRNList();
   }
 
@@ -34,42 +33,20 @@ const GRN = (() => {
   }
 
   async function loadSuppliers() {
-    const res = await Api.get('getMasterDropdown', { entity: 'Suppliers' });
+    const res = await Api.get('getSuppliers');
     supplierCache = res.success ? res.data : [];
-    const sel = document.getElementById('filter-supplier');
-    sel.innerHTML = '<option value="">All Suppliers</option>';
-    supplierCache.forEach(s => {
-      const o = document.createElement('option');
-      o.value = s.id; o.textContent = s.name;
-      sel.appendChild(o);
-    });
-    sel.addEventListener('change', loadGRNList);
+    const filterSel = document.getElementById('filter-supplier');
+    if (filterSel) {
+      filterSel.innerHTML = '<option value="">All Suppliers</option>';
+      supplierCache.forEach(s => {
+        const o = document.createElement('option');
+        o.value = s.id; o.textContent = s.name + ' (' + s.category + ')';
+        filterSel.appendChild(o);
+      });
+      filterSel.addEventListener('change', loadGRNList);
+    }
   }
 
-  async function loadMaterials() {
-    const res = await Api.get('getStockList');
-    materialCache = res.success ? res.data : [];
-    const sel = document.getElementById('field-material-select');
-    if (!sel) return;
-    sel.innerHTML = '<option value="">— select existing —</option>';
-    materialCache.forEach(item => {
-      const o = document.createElement('option');
-      o.value = item.material_id;
-      o.dataset.name = item.material_name;
-      o.textContent = item.material_id + ' — ' + item.material_name;
-      sel.appendChild(o);
-    });
-    sel.addEventListener('change', () => {
-      const opt = sel.options[sel.selectedIndex];
-      if (opt.value) {
-        document.getElementById('field-material-id').value = opt.value;
-        document.getElementById('field-material').value = opt.dataset.name || '';
-      } else {
-        document.getElementById('field-material-id').value = '';
-        document.getElementById('field-material').value = '';
-      }
-    });
-  }
 
   async function loadGRNList() {
     showSpinner(true);
@@ -88,27 +65,21 @@ const GRN = (() => {
   function renderGRNTable(rows) {
     const tbody = document.getElementById('grn-tbody');
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:var(--space-8);">No records found</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted" style="padding:var(--space-8);">No records found</td></tr>';
       return;
     }
     tbody.innerHTML = '';
     rows.forEach(r => {
       const supplierName = (supplierCache.find(s => String(s.id) === String(r.supplier_id)) || {}).name || r.supplier_id;
-      const statusClass = (r.status || '').toLowerCase().replace(' ', '-');
       const tr = document.createElement('tr');
-      tr.style.cursor = 'pointer';
       tr.innerHTML = `
         <td style="font-weight:600;font-size:var(--text-sm);">${r.grn_id || ''}</td>
         <td class="text-muted">${r.date || ''}</td>
-        <td>${r.material_id || ''}</td>
-        <td><strong>${r.qty_received || ''}</strong> ${r.unit || ''}</td>
-        <td class="text-muted">${r.invoice_no || '—'}</td>
-        <td><span class="badge badge-${statusClass}">${r.status || ''}</span></td>
-        <td><div class="row-actions"><button class="btn-icon btn-icon-edit" title="Edit">✏</button><button class="btn-icon btn-icon-delete" title="Delete">🗑</button></div></td>
+        <td>${supplierName}</td>
+        <td>${r.material || ''}</td>
+        <td><strong>${r.qty_kg || ''}</strong> kg</td>
+        <td class="text-muted">${r.lot_no || '—'}</td>
       `;
-      tr.querySelector('.btn-icon-edit').addEventListener('click', e => { e.stopPropagation(); GRN.editGRN(r.grn_id); });
-      tr.querySelector('.btn-icon-delete').addEventListener('click', e => { e.stopPropagation(); GRN.deleteGRN(r.grn_id); });
-      tr.addEventListener('click', () => openGRNDetail(r.grn_id));
       tbody.appendChild(tr);
     });
   }
@@ -117,14 +88,10 @@ const GRN = (() => {
     editingGrnId = null;
     const today = new Date().toISOString().slice(0, 10);
     document.getElementById('field-date').value = today;
-    document.getElementById('field-material-select').value = '';
-    document.getElementById('field-material-id').value = '';
     document.getElementById('field-material').value = '';
-    document.getElementById('field-qty').value = '';
-    document.getElementById('field-unit').value = 'kg';
-    document.getElementById('field-rate').value = '';
-    document.getElementById('field-invoice').value = '';
-    document.getElementById('field-received-by').value = session.name || '';
+    document.getElementById('field-qty-kg').value = '';
+    const lotEl = document.getElementById('field-lot-no');
+    if (lotEl) lotEl.value = '';
     document.getElementById('form-error').textContent = '';
     const sel = document.getElementById('field-supplier');
     sel.innerHTML = '<option value="">— select supplier —</option>';
@@ -137,42 +104,14 @@ const GRN = (() => {
   }
 
   async function submitGRN() {
-    const supplierId  = document.getElementById('field-supplier').value;
-    const materialId  = document.getElementById('field-material-id').value.trim();
-    const materialName = document.getElementById('field-material').value.trim();
-    const qtyReceived = document.getElementById('field-qty').value;
-    const unit        = document.getElementById('field-unit').value;
-    const rate        = document.getElementById('field-rate').value;
-    const invoiceNo   = document.getElementById('field-invoice').value.trim();
-    const receivedBy  = document.getElementById('field-received-by').value.trim();
-    const date        = document.getElementById('field-date').value;
-    const errEl       = document.getElementById('form-error');
+    const supplierId = document.getElementById('field-supplier').value;
+    const material   = document.getElementById('field-material').value.trim();
+    const qtyKg      = document.getElementById('field-qty-kg').value;
+    const lotNo      = document.getElementById('field-lot-no')?.value?.trim() || '';
+    const date       = document.getElementById('field-date').value;
+    const errEl      = document.getElementById('form-error');
 
-    if (editingGrnId) {
-      // On edit, only allow updating qty, unit, rate, invoice_no
-      if (!qtyReceived) { errEl.textContent = 'Qty is required'; return; }
-      errEl.textContent = '';
-      const btn = document.getElementById('btn-save-grn');
-      btn.disabled = true;
-      showSpinner(true);
-      try {
-        const res = await Api.post('updateRecord', {
-          sheet: 'GRN', idCol: 'grn_id', idVal: editingGrnId,
-          userId: Auth.getUserId(),
-          fields: { qty_received: Number(qtyReceived), unit, rate: Number(rate) || 0, invoice_no: invoiceNo }
-        });
-        if (res.success) {
-          editingGrnId = null;
-          slideFormOut();
-          await loadGRNList();
-        } else {
-          errEl.textContent = 'Update failed: ' + res.error;
-        }
-      } finally { btn.disabled = false; showSpinner(false); }
-      return;
-    }
-
-    if (!supplierId || !materialId || !qtyReceived) {
+    if (!supplierId || !material || !qtyKg) {
       errEl.textContent = 'Supplier, Material and Qty are required';
       return;
     }
@@ -183,20 +122,14 @@ const GRN = (() => {
     showSpinner(true);
     try {
       const res = await Api.post('saveGRN', {
-        date,
-        supplier_id:   supplierId,
-        material_id:   materialId,
-        material_name: materialName || materialId,
-        qty_received:  Number(qtyReceived),
-        unit,
-        rate:          Number(rate) || 0,
-        invoice_no:    invoiceNo,
-        received_by:   receivedBy,
-        userId:        Auth.getUserId()
+        date, supplier_id: supplierId, material,
+        qty_kg: Number(qtyKg), lot_no: lotNo,
+        userId: Auth.getUserId()
       });
       if (res.success) {
         slideFormOut();
-        showToast('GRN saved — ' + (res.grn_id || ''));
+        if (res.warning === 'duplicate_lot_no') showToast('Warning: duplicate lot no — saved anyway', 'warning');
+        else showToast('GRN saved — ' + (res.grn_id || ''));
         await loadGRNList();
       } else {
         errEl.textContent = res.error === 'internal_error' ? 'Save failed. Check Apps Script logs.' : (res.error || 'Save failed');
@@ -272,47 +205,34 @@ const GRN = (() => {
   async function loadStockLevels() {
     showSpinner(true);
     try {
-      const res = await Api.get('getStockList');
-      renderStockCards(res.success ? res.data : []);
+      const res = await Api.get('getRMStock');
+      renderStockTable(res.success ? res.data : []);
     } finally {
       showSpinner(false);
     }
   }
 
-  function renderStockCards(items) {
-    const grid = document.getElementById('stock-grid');
+  function renderStockTable(items) {
+    const tbody = document.getElementById('stock-tbody');
+    if (!tbody) return;
     if (!items.length) {
-      grid.innerHTML = '<p class="text-muted text-sm" style="padding:var(--space-4);">No stock data</p>';
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted" style="padding:var(--space-8);">No stock data</td></tr>';
       return;
     }
-    grid.innerHTML = '';
-    items.forEach(item => {
-      const card = document.createElement('div');
-      card.className = 'stock-card' + (item.reorder_low ? ' reorder-low' : '');
-      card.innerHTML = `
-        <div class="stock-material">${item.material_name || item.material_id}</div>
-        <div class="stock-qty">${item.current_qty}<span class="stock-unit"> ${item.unit || ''}</span></div>
-        ${item.reorder_low ? '<div class="reorder-flag">Low stock — reorder</div>' : ''}
-        <div class="stock-meta">Reorder: ${item.reorder_level} &nbsp;·&nbsp; ${item.last_updated || '—'}</div>
-      `;
-      grid.appendChild(card);
-    });
+    tbody.innerHTML = items.map(r => `
+      <tr>
+        <td>${r.material}</td>
+        <td>${r.received_kg.toFixed(1)}</td>
+        <td>${r.consumed_kg.toFixed(1)}</td>
+        <td class="${r.low_stock ? 'text-warning' : ''}" style="font-weight:600;">
+          ${r.stock_kg.toFixed(1)} kg${r.low_stock ? ' ⚠' : ''}
+        </td>
+      </tr>`).join('');
   }
 
-  function slideFormIn()  {
-    document.getElementById('form-panel').classList.add('slide-in');
-    // Reset disabled fields on fresh form open
-    if (!editingGrnId) {
-      document.getElementById('field-supplier').disabled = false;
-      document.getElementById('field-material-select').disabled = false;
-      document.getElementById('field-material-id').readOnly = false;
-    }
-  }
+  function slideFormIn()  { document.getElementById('form-panel').classList.add('slide-in'); }
   function slideFormOut() {
     document.getElementById('form-panel').classList.remove('slide-in');
-    document.getElementById('field-supplier').disabled = false;
-    document.getElementById('field-material-select').disabled = false;
-    document.getElementById('field-material-id').readOnly = false;
     editingGrnId = null;
   }
 

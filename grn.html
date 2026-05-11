@@ -49,11 +49,10 @@
           <tr>
             <th>GRN ID</th>
             <th>Date</th>
+            <th>Supplier</th>
             <th>Material</th>
-            <th>Qty</th>
-            <th>Invoice</th>
-            <th>Status</th>
-            <th>Actions</th>
+            <th>Qty (kg)</th>
+            <th>Lot No</th>
           </tr>
         </thead>
         <tbody id="grn-tbody">
@@ -64,9 +63,21 @@
   </div>
 
   <!-- Stock Levels pane -->
-  <div id="pane-stock" class="tab-pane" style="padding:0;">
-    <div id="stock-grid" class="stock-grid">
-      <p class="text-muted text-sm" style="padding:var(--space-4);">Loading…</p>
+  <div id="pane-stock" class="tab-pane" style="padding:var(--space-4);">
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Material</th>
+            <th>Received (kg)</th>
+            <th>Consumed (kg)</th>
+            <th>Current Stock</th>
+          </tr>
+        </thead>
+        <tbody id="stock-tbody">
+          <tr><td colspan="4" class="text-center text-muted" style="padding:var(--space-8);">Loading…</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
@@ -88,41 +99,16 @@
         <select id="field-supplier"><option value="">— select supplier —</option></select>
       </div>
       <div class="field-group">
-        <label for="field-material-select">Select Material</label>
-        <select id="field-material-select"><option value="">— select existing —</option></select>
+        <label for="field-material">Material</label>
+        <input type="text" id="field-material" placeholder="e.g. HDPE Resin">
       </div>
       <div class="field-group">
-        <label for="field-material-id">Material ID</label>
-        <input type="text" id="field-material-id" placeholder="e.g. MAT001">
+        <label for="field-qty-kg">Qty Received (kg)</label>
+        <input type="number" id="field-qty-kg" min="0" step="any" inputmode="decimal">
       </div>
       <div class="field-group">
-        <label for="field-material">Material Name</label>
-        <input type="text" id="field-material" placeholder="e.g. HDPE Natural">
-      </div>
-      <div class="field-group">
-        <label for="field-qty">Qty Received</label>
-        <input type="number" id="field-qty" min="0" step="any" inputmode="decimal">
-      </div>
-      <div class="field-group">
-        <label for="field-unit">Unit</label>
-        <select id="field-unit">
-          <option value="kg">kg</option>
-          <option value="nos">nos</option>
-          <option value="ltr">ltr</option>
-          <option value="set">set</option>
-        </select>
-      </div>
-      <div class="field-group">
-        <label for="field-rate">Rate (₹/unit)</label>
-        <input type="number" id="field-rate" min="0" step="any" inputmode="decimal">
-      </div>
-      <div class="field-group">
-        <label for="field-invoice">Invoice No</label>
-        <input type="text" id="field-invoice">
-      </div>
-      <div class="field-group">
-        <label for="field-received-by">Received By</label>
-        <input type="text" id="field-received-by">
+        <label for="field-lot-no">Lot No</label>
+        <input type="text" id="field-lot-no" placeholder="Supplier lot number">
       </div>
     </div>
     <div class="form-actions">
