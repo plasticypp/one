@@ -1144,3 +1144,101 @@ input[readonly] {
   white-space: nowrap;
 }
 .btn-close-capa:hover { background: var(--color-primary-bg); }
+
+/* ── Header menu button ─────────────────────────────────────────────────── */
+.menu-btn {
+  background: none;
+  border: none;
+  color: var(--color-header-text, #fff);
+  cursor: pointer;
+  padding: var(--space-2);
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast);
+}
+.menu-btn:hover { background: rgba(255,255,255,0.12); }
+
+/* ── All-Modules Drawer ─────────────────────────────────────────────────── */
+.modules-drawer {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-modal) + 10);
+}
+.modules-drawer.open { display: block; }
+
+.drawer-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+}
+.drawer-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 270px;
+  height: 100%;
+  background: var(--color-bg);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 0 24px rgba(0,0,0,0.18);
+  transform: translateX(-100%);
+  transition: transform var(--dur-default) var(--ease-out);
+  overflow-y: auto;
+}
+.modules-drawer.open .drawer-panel { transform: translateX(0); }
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-4);
+  height: 56px;
+  background: var(--color-accent);
+  flex-shrink: 0;
+}
+.drawer-title {
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-base);
+  color: #fff;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.drawer-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  padding: var(--space-2);
+  line-height: 1;
+  border-radius: var(--radius-sm);
+}
+.drawer-nav { padding: var(--space-3) 0; }
+.drawer-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  transition: background var(--dur-fast);
+  border-left: 3px solid transparent;
+}
+.drawer-item:hover {
+  background: var(--color-primary-bg);
+  border-left-color: var(--color-primary);
+  color: var(--color-primary);
+}
+.drawer-item-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+.drawer-item-icon svg { width: 20px; height: 20px; }

@@ -131,6 +131,21 @@ function updateLanguage(data) {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+// CacheService wrapper — 60s TTL for read-heavy endpoints
+function _cacheGet(key) {
+  try { const v = CacheService.getScriptCache().get(key); return v ? JSON.parse(v) : null; } catch(_) { return null; }
+}
+function _cachePut(key, data, ttl) {
+  try { CacheService.getScriptCache().put(key, JSON.stringify(data), ttl || 60); } catch(_) {}
+}
+function _cacheDel(key) {
+  try { CacheService.getScriptCache().remove(key); } catch(_) {}
+}
+function _cacheBustMaster(entity) {
+  _cacheDel('mdd_' + entity);
+  _cacheDel('mlist_' + entity);
+}
+
 const _TZ_ = Session.getScriptTimeZone();
 function rowToObj(headers, row) {
   const obj = {};
@@ -156,18 +171,23 @@ function assertValidEntity(entity) {
 
 function getMasterList(entity) {
   assertValidEntity(entity);
+  const cacheKey = 'mlist_' + entity;
+  const cached = _cacheGet(cacheKey);
+  if (cached) return { success: true, data: cached };
   const sheet = getSheet(entity);
   const rows = sheet.getDataRange().getValues();
   if (rows.length < 2) return { success: true, data: [] };
   const headers = rows[0];
-  const data = rows.slice(1).map(row => {
-    return rowToObj(headers, row);
-  });
+  const data = rows.slice(1).map(row => rowToObj(headers, row));
+  _cachePut(cacheKey, data, 120);
   return { success: true, data };
 }
 
 function getMasterDropdown(entity) {
   assertValidEntity(entity);
+  const cacheKey = 'mdd_' + entity;
+  const cached = _cacheGet(cacheKey);
+  if (cached) return { success: true, data: cached };
   const sheet = getSheet(entity);
   const rows = sheet.getDataRange().getValues();
   if (rows.length < 2) return { success: true, data: [] };
@@ -176,6 +196,7 @@ function getMasterDropdown(entity) {
   const data = rows.slice(1)
     .filter(row => row[0])
     .map(row => ({ id: row[0], name: row[nameCol] }));
+  _cachePut(cacheKey, data, 120);
   return { success: true, data };
 }
 
@@ -192,10 +213,12 @@ function saveMaster(data) {
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][0]) === String(idVal)) {
       sheet.getRange(i + 1, 1, 1, values.length).setValues([values]);
+      _cacheBustMaster(entity);
       return { success: true };
     }
   }
   sheet.appendRow(values);
+  _cacheBustMaster(entity);
   return { success: true };
 }
 
@@ -212,6 +235,7 @@ function deactivateMaster(data) {
     if (String(rows[i][0]) === String(id)) {
       const isStatusField = headers[statusCol] === 'Status';
       sheet.getRange(i + 1, statusCol + 1).setValue(isStatusField ? 'Inactive' : false);
+      _cacheBustMaster(entity);
       return { success: true };
     }
   }
@@ -800,37 +824,63 @@ function seedQualityData() {
 // ── Dashboard ────────────────────────────────────────────────────────────────
 
 function getDashboardStats() {
+  const cached = _cacheGet('dashboard_stats');
+  if (cached) return { success: true, data: cached };
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // openGRNs: GRN sheet, status (col J, index 9) !== 'Closed'
-  const grnRows = getSheet('GRN').getDataRange().getValues();
-  const openGRNs = grnRows.slice(1).filter(r => r[9] && r[9] !== 'Closed').length;
+  function sheetRows(name) {
+    const s = ss.getSheetByName(name);
+    return s ? s.getDataRange().getValues() : [[]];
+  }
 
-  // activeBatches: BatchOrders sheet, status (col H, index 7) === 'Planned'
-  const batchRows = getSheet('BatchOrders').getDataRange().getValues();
-  const activeBatches = batchRows.slice(1).filter(r => r[7] === 'Planned').length;
+  const grnRows   = sheetRows('GRN');
+  const openGRNs  = grnRows.slice(1).filter(r => r[9] && r[9] !== 'Closed').length;
 
-  // openBreakdowns: Breakdown_Log sheet, status (col L, index 11) === 'Open'
-  const bdRows = getSheet('Breakdown_Log').getDataRange().getValues();
-  const openBreakdowns = bdRows.slice(1).filter(r => r[11] === 'Open').length;
+  const batchRows    = sheetRows('BatchOrders');
+  const activeBatches = batchRows.slice(1).filter(r => r[7] === 'Planned' || r[7] === 'InProgress').length;
 
-  // openCapas: CAPA_Register sheet, status (col H, index 7) === 'Open'
-  const capaRows = getSheet('CAPA_Register').getDataRange().getValues();
-  const openCapas = capaRows.slice(1).filter(r => r[7] === 'Open').length;
+  const bdRows        = sheetRows('Breakdown_Log');
+  const bdHeaders     = bdRows[0] || [];
+  const bdStatusIdx   = bdHeaders.indexOf('Status') >= 0 ? bdHeaders.indexOf('Status') : 11;
+  const openBreakdowns = bdRows.slice(1).filter(r => r[bdStatusIdx] === 'Open').length;
 
-  // overdueCompliance: Legal_Register — use header lookup to handle both schema variants
-  const lrRows = getSheet('Legal_Register').getDataRange().getValues();
+  const capaRows    = sheetRows('CAPA_Register');
+  const capaHeaders = capaRows[0] || [];
+  const capaStatusIdx = capaHeaders.indexOf('Status') >= 0 ? capaHeaders.indexOf('Status') : (capaHeaders.indexOf('status') >= 0 ? capaHeaders.indexOf('status') : 7);
+  const openCapas   = capaRows.slice(1).filter(r => (r[capaStatusIdx] === 'Open')).length;
+
+  const lrRows    = sheetRows('Legal_Register');
   const lrHeaders = lrRows[0] || [];
-  const lrStatusIdx = lrHeaders.indexOf('ComplianceStatus') >= 0 ? lrHeaders.indexOf('ComplianceStatus') : lrHeaders.indexOf('status') >= 0 ? lrHeaders.indexOf('status') : 4;
-  const lrDueIdx    = lrHeaders.indexOf('NextReview') >= 0 ? lrHeaders.indexOf('NextReview') : lrHeaders.indexOf('due_date') >= 0 ? lrHeaders.indexOf('due_date') : 3;
+  const lrStatusIdx = lrHeaders.indexOf('ComplianceStatus') >= 0 ? lrHeaders.indexOf('ComplianceStatus') : (lrHeaders.indexOf('status') >= 0 ? lrHeaders.indexOf('status') : 4);
+  const lrDueIdx  = lrHeaders.indexOf('NextReview') >= 0 ? lrHeaders.indexOf('NextReview') : (lrHeaders.indexOf('due_date') >= 0 ? lrHeaders.indexOf('due_date') : 3);
   const overdueCompliance = lrRows.slice(1).filter(r => {
     const status = r[lrStatusIdx];
     const due = r[lrDueIdx] ? new Date(r[lrDueIdx]) : null;
     return status !== 'Compliant' && due && due < today;
   }).length;
 
-  return { success: true, data: { openGRNs, activeBatches, openBreakdowns, openCapas, overdueCompliance } };
+  // Low-stock materials
+  const stockRows  = sheetRows('Stock');
+  const stockHdrs  = stockRows[0] || [];
+  const qtyIdx     = stockHdrs.indexOf('current_qty') >= 0 ? stockHdrs.indexOf('current_qty') : 3;
+  const rlIdx      = stockHdrs.indexOf('reorder_level') >= 0 ? stockHdrs.indexOf('reorder_level') : 4;
+  const lowStockCount = stockRows.slice(1).filter(r => Number(r[qtyIdx]) <= Number(r[rlIdx]) && r[0]).length;
+
+  // Overdue PMs
+  const pmRows    = sheetRows('PM_Schedule');
+  const pmHdrs    = pmRows[0] || [];
+  const pmDueIdx  = pmHdrs.indexOf('NextDue') >= 0 ? pmHdrs.indexOf('NextDue') : 5;
+  const overduePMs = pmRows.slice(1).filter(r => {
+    const d = r[pmDueIdx] ? new Date(r[pmDueIdx]) : null;
+    return d && d < today;
+  }).length;
+
+  const data = { openGRNs, activeBatches, openBreakdowns, openCapas, overdueCompliance, lowStockCount, overduePMs };
+  _cachePut('dashboard_stats', data, 30);
+  return { success: true, data };
 }
 
 // ── Utilities ────────────────────────────────────────────────────────────────

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#EA580C">
+  <title>YPP ERP — NCR / Defects</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/masters.css">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-flex">
+      <button class="back-btn" id="back-to-app">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="header-title">NCR / Defects</span>
+    </div>
+    <div class="header-actions">
+      <button class="lang-toggle" id="lang-toggle">EN</button>
+    </div>
+  </header>
+
+  <div class="sub-tab-bar">
+    <button class="sub-tab active" data-tab="ncr">Non-Conformance</button>
+    <button class="sub-tab" data-tab="defects">Defect Log</button>
+  </div>
+
+  <div class="masters-content" style="padding:var(--space-6) var(--space-4);">
+    <div class="empty-msg" style="margin-top:var(--space-8);">
+      <p style="font-size:var(--text-lg);font-weight:var(--weight-bold);margin-bottom:var(--space-2);">NCR &amp; Defect Tracking</p>
+      <p style="color:var(--color-text-muted);font-size:var(--text-sm);">15 defect codes catalogued including 5 Critical: Pinhole/Leak, Short Shot, Neck/Thread Defect, Parison Burst, and Uneven Wall Thickness.</p>
+      <p style="color:var(--color-text-muted);font-size:var(--text-sm);margin-top:var(--space-2);">Full defect log and NCR workflow — coming in Wave 3 (Quality module expansion).</p>
+    </div>
+  </div>
+
+  <div class="spinner-overlay hidden" id="spinner"><div class="spinner"></div></div>
+  <div class="toast" id="toast"></div>
+
+  <script src="js/api.js" defer></script>
+  <script src="js/auth.js" defer></script>
+  <script src="js/lang.js" defer></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const session = Auth.get();
+      if (!session) { Auth.requireLogin(); return; }
+      document.getElementById('back-to-app').addEventListener('click', () => window.location.href = 'app.html');
+      const langBtn = document.getElementById('lang-toggle');
+      langBtn.textContent = (session.lang || 'en').toUpperCase();
+    });
+  </script>
+</body>
+</html>

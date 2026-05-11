@@ -52,10 +52,11 @@
     <div class="spinner"></div>
   </div>
 
-  <script src="js/api.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/lang.js"></script>
+  <script src="js/api.js" defer></script>
+  <script src="js/auth.js" defer></script>
+  <script src="js/lang.js" defer></script>
   <script>
+  window.addEventListener('DOMContentLoaded', () => {
     (async () => {
       await Api.init();
 
@@ -126,6 +127,7 @@
         if (e.key === 'Enter') document.getElementById('login-btn').click();
       });
     })();
+  });
   </script>
 </body>
 </html>

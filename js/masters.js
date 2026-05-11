@@ -380,6 +380,7 @@ const Masters = (() => {
     try {
       const res = await Api.post('saveMaster', { entity: activeEntity.id, row: editingRecord });
       if (res.success) {
+        Api.bustMasterCache(activeEntity.id);
         showToast(Lang.t('masters.saved'));
         const res2 = await Api.get('getMasterList', { entity: activeEntity.id });
         records = res2.success ? res2.data : records;
@@ -399,6 +400,7 @@ const Masters = (() => {
     try {
       const res = await Api.post('deactivateMaster', { entity: activeEntity.id, id: editingRecord[activeEntity.idField] });
       if (res.success) {
+        Api.bustMasterCache(activeEntity.id);
         showToast(Lang.t('masters.saved'));
         const res2 = await Api.get('getMasterList', { entity: activeEntity.id });
         records = res2.success ? res2.data : records;

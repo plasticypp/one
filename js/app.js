@@ -28,6 +28,9 @@ const App = (() => {
     rmstock:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,
     training:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`,
     personnel:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+    maintenance: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`,
+    compliance:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
+    masters:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>`,
   };
 
   const TILE_CONFIG = {
@@ -53,12 +56,18 @@ const App = (() => {
 
   // Maps tile id → stat key returned by getDashboardStats
   const TILE_STAT = {
-    grn:        'openGRNs',
-    production: 'activeBatches',
-    mybatches:  'activeBatches',
-    capa:       'openCapas',
-    machines:   'openBreakdowns',
-    kpi:        'overdueCompliance'
+    grn:         'openGRNs',
+    production:  'activeBatches',
+    mybatches:   'activeBatches',
+    workorders:  'activeBatches',
+    startbatch:  'activeBatches',
+    capa:        'openCapas',
+    ncr:         'openCapas',
+    machines:    'openBreakdowns',
+    kpi:         'overdueCompliance',
+    calibration: 'overdueCompliance',
+    rmstock:     'lowStockCount',
+    today:       'overduePMs'
   };
 
   function renderHome(role) {
@@ -104,29 +113,76 @@ const App = (() => {
   }
 
   const TILE_ROUTES = {
-    grn:        'grn.html',
-    rmstock:    'grn.html',
-    production: 'production.html',
-    startbatch: 'production.html',
-    mybatches:  'production.html',
-    workorders: 'production.html',
-    today:      'production.html',
-    logparams:  'production.html',
-    quality:    'quality.html',
-    ncr:        'quality.html',
-    defect:     'quality.html',
-    dispatch:   'dispatch.html',
-    machines:   'maintenance.html',
-    capa:       'compliance.html',
-    calibration:'compliance.html',
-    kpi:        'compliance.html',
-    training:   'masters.html',
-    personnel:  'masters.html'
+    grn:         'grn.html',
+    rmstock:     'grn.html',
+    production:  'production.html',
+    startbatch:  'production.html?view=new',
+    mybatches:   'production.html?view=mine',
+    workorders:  'production.html?view=plan',
+    today:       'production.html?view=today',
+    logparams:   'production.html?view=params',
+    quality:     'quality.html',
+    ncr:         'ncr.html',
+    defect:      'quality.html?view=defect',
+    dispatch:    'dispatch.html',
+    machines:    'maintenance.html',
+    capa:        'compliance.html',
+    calibration: 'calibration.html',
+    kpi:         'kpi.html',
+    training:    'masters.html',
+    personnel:   'masters.html'
   };
+
+  // All modules accessible from the drawer (role-independent visibility for director)
+  const ALL_MODULES = [
+    { id: 'production',  label: 'Production',   href: 'production.html' },
+    { id: 'quality',     label: 'Quality',       href: 'quality.html' },
+    { id: 'dispatch',    label: 'Dispatch',      href: 'dispatch.html' },
+    { id: 'grn',         label: 'Inventory / GRN', href: 'grn.html' },
+    { id: 'maintenance', label: 'Maintenance',   href: 'maintenance.html' },
+    { id: 'compliance',  label: 'Compliance',    href: 'compliance.html' },
+    { id: 'calibration', label: 'Calibration',   href: 'calibration.html' },
+    { id: 'ncr',         label: 'NCR / Defects', href: 'ncr.html' },
+    { id: 'kpi',         label: 'KPI Dashboard', href: 'kpi.html' },
+    { id: 'masters',     label: 'Masters',       href: 'masters.html' },
+  ];
 
   function handleTile(tileId) {
     const route = TILE_ROUTES[tileId];
     if (route) window.location.href = route;
+  }
+
+  function openDrawer() {
+    let drawer = document.getElementById('modules-drawer');
+    if (!drawer) {
+      drawer = document.createElement('div');
+      drawer.id = 'modules-drawer';
+      drawer.className = 'modules-drawer';
+      drawer.innerHTML = `
+        <div class="drawer-overlay"></div>
+        <div class="drawer-panel">
+          <div class="drawer-header">
+            <span class="drawer-title">All Modules</span>
+            <button class="drawer-close" id="drawer-close-btn">✕</button>
+          </div>
+          <nav class="drawer-nav">
+            ${ALL_MODULES.map(m => `
+              <a class="drawer-item" href="${m.href}">
+                <span class="drawer-item-icon">${SVG[m.id] || SVG.kpi}</span>
+                <span>${m.label}</span>
+              </a>`).join('')}
+          </nav>
+        </div>`;
+      document.body.appendChild(drawer);
+      drawer.querySelector('.drawer-overlay').addEventListener('click', closeDrawer);
+      drawer.querySelector('#drawer-close-btn').addEventListener('click', closeDrawer);
+    }
+    requestAnimationFrame(() => drawer.classList.add('open'));
+  }
+
+  function closeDrawer() {
+    const drawer = document.getElementById('modules-drawer');
+    if (drawer) drawer.classList.remove('open');
   }
 
   async function updateLangPreference(langCode) {
@@ -157,16 +213,20 @@ const App = (() => {
 
   function setupHeader(session) {
     const langBtn = document.getElementById('lang-toggle');
-    if (!langBtn) return;
-    langBtn.textContent = Lang.getCurrent().toUpperCase();
-    langBtn.addEventListener('click', async () => {
-      const next = Lang.getCurrent() === 'en' ? 'hi' : 'en';
-      await Lang.toggle(next, updateLangPreference);
-      langBtn.textContent = next.toUpperCase();
-      Nav.render(session.role);
-      renderHome(session.role);
-      renderProfile(session);
-    });
+    if (langBtn) {
+      langBtn.textContent = Lang.getCurrent().toUpperCase();
+      langBtn.addEventListener('click', async () => {
+        const next = Lang.getCurrent() === 'en' ? 'hi' : 'en';
+        await Lang.toggle(next, updateLangPreference);
+        langBtn.textContent = next.toUpperCase();
+        Nav.render(session.role);
+        renderHome(session.role);
+        renderProfile(session);
+      });
+    }
+
+    const menuBtn = document.getElementById('menu-btn');
+    if (menuBtn) menuBtn.addEventListener('click', openDrawer);
 
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) logoutBtn.addEventListener('click', Auth.logout);
