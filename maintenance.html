@@ -16,7 +16,7 @@
 
   <!-- Header -->
   <header class="header">
-    <div style="display:flex;align-items:center;gap:10px;">
+    <div class="header-flex">
       <button class="back-btn" id="back-to-app"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
       <span class="header-title">Maintenance</span>
     </div>
@@ -84,9 +84,9 @@
             <tbody id="pm-tbody"></tbody>
           </table>
         </div>
-        <div style="padding:8px 12px;font-size:.75rem;color:#555;">
-          <span style="display:inline-block;width:12px;height:12px;background:#ffebee;border:1px solid #ef9a9a;margin-right:4px;vertical-align:middle;"></span>Overdue
-          <span style="display:inline-block;width:12px;height:12px;background:#fff8e1;border:1px solid #ffe082;margin:0 4px 0 12px;vertical-align:middle;"></span>Due within 7 days
+        <div class="pm-legend">
+          <span><span class="pm-legend-dot overdue"></span>Overdue</span>
+          <span><span class="pm-legend-dot upcoming"></span>Due within 7 days</span>
         </div>
       </div>
 

@@ -647,6 +647,144 @@ select.form-control {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 
+/* ── Header flex helper (back-btn + title row) ── */
+.header-flex { display: flex; align-items: center; gap: 10px; }
+
+/* ── Module page content wrapper ── */
+.comp-content {
+  margin-top: calc(56px + 44px); /* header + sub-tab-bar */
+  min-height: calc(100vh - 56px - 44px);
+}
+.comp-panel        { display: block; }
+.comp-panel.hidden { display: none !important; }
+
+/* ── Module page loading / empty inline message ── */
+.empty-msg {
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+/* ── Error message (login screen) ── */
+.error-msg {
+  min-height: 20px;
+  font-size: var(--text-sm);
+  color: var(--color-error);
+  font-weight: var(--weight-semibold);
+  margin-bottom: var(--space-3);
+}
+
+/* ── CAPA filter buttons (same as .filter-btn) ── */
+.capa-filter-btn {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  min-height: 36px;
+  transition: all var(--dur-fast) var(--ease-out);
+  white-space: nowrap;
+}
+.capa-filter-btn.active {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+.capa-filter-btn:hover:not(.active) { border-color: var(--color-primary); color: var(--color-primary); }
+
+/* ── Add CAPA button ── */
+.add-capa-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  min-height: 36px;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.add-capa-btn:hover { background: var(--color-primary-light); }
+
+/* ── Add/Log button (maintenance filter bar) ── */
+.add-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  min-height: 36px;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.add-btn:hover { background: var(--color-primary-light); }
+
+/* ── CAPA form panel (same as .form-panel from masters.css) ── */
+.capa-form-panel {
+  position: fixed;
+  inset: 0;
+  background: var(--color-bg);
+  transform: translateX(100%);
+  transition: transform var(--dur-default) var(--ease-out);
+  z-index: var(--z-modal);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  max-width: 600px;
+  margin: 0 auto;
+}
+.capa-form-panel.slide-in { transform: translateX(0); }
+
+/* ── PM legend ── */
+.pm-legend {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.pm-legend-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.pm-legend-dot.overdue  { background: var(--color-status-overdue-bg);  border: 1px solid var(--color-error); }
+.pm-legend-dot.upcoming { background: #FEF3C7; border: 1px solid var(--color-warning); }
+
+/* ── Table loading cell (replaces inline color:#757575) ── */
+.td-loading {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: var(--space-6) !important;
+  font-size: var(--text-sm);
+}
+
 /* ══════════════════════════════════════════════════════
    Legacy class aliases — module pages not yet migrated
    ══════════════════════════════════════════════════════ */
@@ -827,8 +965,14 @@ select.form-control {
 .row-overdue td  { background: #FFF5F5 !important; }
 .row-upcoming td { background: #FFF7ED !important; }
 
-/* Main-content layout wrapper */
-#main-content { display: flex; flex-direction: column; overflow: hidden; }
+/* Main-content layout wrapper (production, quality, dispatch) */
+#main-content {
+  display: flex;
+  flex-direction: column;
+  margin-top: calc(56px + 44px); /* header + sub-tab-bar */
+  min-height: calc(100vh - 56px - 44px);
+  overflow: hidden;
+}
 
 /* Summary/KPI grid (quality page) */
 .summary-grid {
