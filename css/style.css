@@ -476,11 +476,16 @@ select.form-control {
 /* ── Filter Bar ── */
 .filter-bar {
   display: flex;
+  align-items: center;
   gap: var(--space-2);
-  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
   overflow-x: auto;
-  padding-bottom: 2px;
+  flex-wrap: nowrap;
 }
+.filter-bar .filter-spacer { flex: 1; }
+.filter-bar .btn-primary { margin-left: auto; flex-shrink: 0; }
 .filter-btn {
   flex-shrink: 0;
   padding: var(--space-2) var(--space-3);
@@ -853,7 +858,7 @@ select.form-control {
 .prod-table-wrap, .grn-table-wrap, .dispatch-table-wrap,
 .qual-table-wrap, .maint-table-wrap, .comp-table-wrap {
   overflow-x: auto;
-  padding: 0 var(--space-4) var(--space-4);
+  padding: 0;
 }
 .prod-table, .grn-table, .dispatch-table,
 .qual-table, .maint-table, .comp-table,
@@ -885,10 +890,11 @@ select.form-control {
 .prod-table td, .grn-table td, .dispatch-table td,
 .qual-table td, .maint-table td, .comp-table td,
 .checks-table td, .so-table td {
-  padding: var(--space-3);
+  padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--color-border);
   color: var(--color-text);
   vertical-align: middle;
+  white-space: nowrap;
 }
 .prod-table tr:hover td, .grn-table tr:hover td,
 .dispatch-table tr:hover td, .qual-table tr:hover td,
@@ -903,11 +909,9 @@ select.form-control {
 .tab-panel          { display: block; }
 .tab-panel.hidden   { display: none !important; }
 
-/* Old layout bars */
+/* Action bars — hidden; button is now inside filter-bar */
 .new-batch-bar, .new-grn-bar, .new-so-bar, .new-check-bar {
-  padding: var(--space-3) var(--space-4);
-  display: flex;
-  justify-content: flex-end;
+  display: none;
 }
 
 /* Standalone btn-primary / btn-danger without .btn wrapper */
