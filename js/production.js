@@ -40,7 +40,7 @@ const Production = (() => {
   // ── Tabs ──────────────────────────────────────────────────────────────────
 
   function renderTabs() {
-    document.querySelectorAll('.prod-tab').forEach(btn => {
+    document.querySelectorAll('.sub-tab').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.tab === activeTab);
       btn.addEventListener('click', async () => {
         activeTab = btn.dataset.tab;

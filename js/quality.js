@@ -39,7 +39,7 @@ const Quality = (() => {
   // ── Tabs ──────────────────────────────────────────────────────────────────
 
   function renderTabs() {
-    document.querySelectorAll('.qc-tab').forEach(btn => {
+    document.querySelectorAll('.sub-tab').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.tab === activeTab);
       btn.addEventListener('click', async () => {
         activeTab = btn.dataset.tab;

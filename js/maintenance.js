@@ -34,9 +34,9 @@ const Maintenance = (() => {
   // ── Tabs ──────────────────────────────────────────────────────────────────
 
   function setupTabs() {
-    document.querySelectorAll('.maint-tab').forEach(btn => {
+    document.querySelectorAll('.sub-tab').forEach(btn => {
       btn.addEventListener('click', async () => {
-        document.querySelectorAll('.maint-tab').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         activeTab = btn.dataset.tab;
         document.getElementById('tab-breakdowns').classList.toggle('hidden', activeTab !== 'breakdowns');

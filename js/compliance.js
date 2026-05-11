@@ -38,7 +38,7 @@ const Compliance = (() => {
   }
 
   async function switchTab(tab) {
-    document.querySelectorAll('.comp-tab').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.sub-tab').forEach(btn => btn.classList.remove('active'));
     document.getElementById('tab-' + tab).classList.add('active');
     document.getElementById('panel-legal').classList.toggle('hidden', tab !== 'legal');
     document.getElementById('panel-capa').classList.toggle('hidden', tab !== 'capa');
