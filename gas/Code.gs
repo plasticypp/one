@@ -1,5 +1,36 @@
 // ── Entry Points ────────────────────────────────────────────────────────────
 
+// ── Wave 4 KB Constants ──────────────────────────────────────────────────────
+
+const SUPPLIERS_KB = [
+  { id: 'S001', name: 'Primary HDPE Supplier', category: 'RM', items: ['HDPE Resin'] },
+  { id: 'S002', name: 'Alternate HDPE Supplier', category: 'RM', items: ['HDPE Resin'] },
+  { id: 'S003', name: 'Masterbatch Supplier', category: 'RM', items: ['Masterbatch'] },
+  { id: 'S004', name: 'Carton Supplier', category: 'Packaging', items: ['Cartons'] },
+  { id: 'S005', name: 'Label Supplier', category: 'Label', items: ['Labels'] }
+];
+
+const PACKAGING_SPECS_KB = [
+  { product_id: 'PRD001', product_name: 'CAN-5L',    polybag_qty: 1,  marking_fields: ['product_name','batch_no','qty','mfg_date','customer_name','net_weight'] },
+  { product_id: 'PRD002', product_name: 'BTL-1L',    polybag_qty: 6,  marking_fields: ['product_name','batch_no','qty','mfg_date','customer_name','net_weight'] },
+  { product_id: 'PRD003', product_name: 'BTL-200ML', polybag_qty: 12, marking_fields: ['product_name','batch_no','qty','mfg_date','customer_name','net_weight'] },
+  { product_id: 'PRD004', product_name: 'BTL-100ML', polybag_qty: 24, marking_fields: ['product_name','batch_no','qty','mfg_date','customer_name','net_weight'] }
+];
+
+const LABEL_SPECS_KB = [
+  { product_id: 'PRD001', batch_format: 'YPP-BYYMM-NNN', fields: ['product_name','capacity','material','batch_no','mfg_date','net_weight','manufacturer_name','manufacturer_address','gstin','customer_name','caution_marks'] },
+  { product_id: 'PRD002', batch_format: 'YPP-BYYMM-NNN', fields: ['product_name','capacity','material','batch_no','mfg_date','net_weight','manufacturer_name','manufacturer_address','gstin','customer_name','caution_marks'] },
+  { product_id: 'PRD003', batch_format: 'YPP-BYYMM-NNN', fields: ['product_name','capacity','material','batch_no','mfg_date','net_weight','manufacturer_name','manufacturer_address','gstin','customer_name','caution_marks'] },
+  { product_id: 'PRD004', batch_format: 'YPP-BYYMM-NNN', fields: ['product_name','capacity','material','batch_no','mfg_date','net_weight','manufacturer_name','manufacturer_address','gstin','customer_name','caution_marks'] }
+];
+
+const BOM_KB = [
+  { product_id: 'PRD001', rm_items: [{ material: 'HDPE Resin', supplier_id: 'S001', qty_per_unit_kg: 0.5  }] },
+  { product_id: 'PRD002', rm_items: [{ material: 'HDPE Resin', supplier_id: 'S001', qty_per_unit_kg: 0.12 }] },
+  { product_id: 'PRD003', rm_items: [{ material: 'HDPE Resin', supplier_id: 'S001', qty_per_unit_kg: 0.025 }] },
+  { product_id: 'PRD004', rm_items: [{ material: 'HDPE Resin', supplier_id: 'S001', qty_per_unit_kg: 0.013 }] }
+];
+
 // ── Server-Side Validation ──────────────────────────────────────────────────
 
 function validateSession(params) {
@@ -116,6 +147,10 @@ function doGet(e) {
     if (action === 'getInspectionParams') return respond(getInspectionParams(e.parameter));
     if (action === 'getDefectCatalogue')  return respond(getDefectCatalogue());
     if (action === 'getNCRList') return respond(getNCRList(e.parameter));
+    if (action === 'getBatchRecord')  return respond(getBatchRecord(e.parameter));
+    if (action === 'getOQCBatchList') return respond(getOQCBatchList());
+    if (action === 'getRMStock')      return respond(getRMStock());
+    if (action === 'getSuppliers')    return respond(getSuppliers());
 
     return respond({ success: false, error: 'unknown_action' });
   } catch (err) {
@@ -1143,6 +1178,18 @@ function getSheet(name) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(name);
   if (!sheet) throw new Error('Sheet not found: ' + name);
+  return sheet;
+}
+
+function ensureSheet(name, headers) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(name);
+  if (!sheet) {
+    sheet = ss.insertSheet(name);
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    sheet.setFrozenRows(1);
+    sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
+  }
   return sheet;
 }
 
