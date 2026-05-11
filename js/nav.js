@@ -1,8 +1,6 @@
 const Nav = (() => {
   const TABS = [
     { id: 'home',    icon: '🏠', labelKey: 'nav.home',    roles: ['director','qmr','supervisor','operator','store','hr'] },
-    { id: 'work',    icon: '⚙️', labelKey: 'nav.work',    roles: ['director','qmr','supervisor','operator'] },
-    { id: 'stock',   icon: '📦', labelKey: 'nav.stock',   roles: ['director','qmr','supervisor','store'] },
     { id: 'profile', icon: '👤', labelKey: 'nav.profile', roles: ['director','qmr','supervisor','operator','store','hr'] },
     { id: 'masters',     icon: '🗂️', labelKey: 'nav.masters',     roles: ['director','qmr'] },
     { id: 'grn',         icon: '📥', labelKey: 'nav.grn',         roles: ['director','qmr','store'] },
