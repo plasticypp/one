@@ -81,8 +81,30 @@ const App = (() => {
     } catch (_) {}
   }
 
+  const TILE_ROUTES = {
+    grn:        'grn.html',
+    rmstock:    'grn.html',
+    production: 'production.html',
+    startbatch: 'production.html',
+    mybatches:  'production.html',
+    workorders: 'production.html',
+    today:      'production.html',
+    logparams:  'production.html',
+    quality:    'quality.html',
+    ncr:        'quality.html',
+    defect:     'quality.html',
+    dispatch:   'dispatch.html',
+    machines:   'maintenance.html',
+    capa:       'compliance.html',
+    calibration:'compliance.html',
+    kpi:        'compliance.html',
+    training:   'masters.html',
+    personnel:  'masters.html'
+  };
+
   function handleTile(tileId) {
-    alert(Lang.t('coming.soon'));
+    const route = TILE_ROUTES[tileId];
+    if (route) window.location.href = route;
   }
 
   async function updateLangPreference(langCode) {
