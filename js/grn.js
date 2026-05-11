@@ -24,6 +24,8 @@ const GRN = (() => {
     document.getElementById('detail-back').addEventListener('click', slideDetailOut);
     document.getElementById('btn-new-grn').addEventListener('click', openGRNForm);
     document.getElementById('btn-save-grn').addEventListener('click', submitGRN);
+    document.getElementById('iqc-form-back').addEventListener('click', () => document.getElementById('iqc-form-panel').classList.remove('slide-in'));
+    document.getElementById('btn-save-iqc').addEventListener('click', submitIQCResult);
     const langBtn = document.getElementById('lang-toggle');
     langBtn.textContent = Lang.getCurrent().toUpperCase();
     langBtn.addEventListener('click', async () => {
@@ -345,5 +347,102 @@ const GRN = (() => {
     t._timer = setTimeout(() => { t.className = 'toast'; }, 2500);
   }
 
-  return { init, loadGRNList, loadStockLevels, editGRN, deleteGRN, loadReorderList, openReorderForm, closeReorderForm, submitReorderRequest, markOrdered };
+  // ── IQC ──────────────────────────────────────────────────────────────
+  async function loadIQCList() {
+    const tbody = document.getElementById('iqc-tbody');
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:var(--space-8);">Loading…</td></tr>';
+    try {
+      const res = await Api.get('getGRNList');
+      const rows = res.success ? res.data : [];
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:var(--space-8);">No GRNs found</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map(r => {
+        const status = r.iqc_status || 'Pending';
+        const cls = status === 'Accept' ? 'status-approved' : status === 'Reject' ? 'status-rejected' : status === 'Hold' ? 'status-hold' : 'status-pending';
+        return `<tr>
+          <td>${esc(r.grn_id)}</td>
+          <td>${esc(r.lot_no)}</td>
+          <td>${esc(r.material)}</td>
+          <td>${esc(r.supplier_name || r.supplier_id)}</td>
+          <td>${esc(r.qty_kg)}</td>
+          <td><span class="status-chip ${cls}">${esc(status)}</span></td>
+          <td><button class="btn btn-sm" onclick="GRN.openIQCForm('${esc(r.grn_id)}','${esc(r.lot_no)}')">Log IQC</button></td>
+        </tr>`;
+      }).join('');
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Failed to load</td></tr>';
+    }
+  }
+
+  function openIQCForm(grnId, lotNo) {
+    document.getElementById('iqc-grn-id').value = grnId;
+    document.getElementById('iqc-lot-no').value = lotNo;
+    document.getElementById('iqc-lot-display').value = grnId + ' / ' + lotNo;
+    document.getElementById('iqc-mfi').value = '';
+    document.getElementById('iqc-density').value = '';
+    document.getElementById('iqc-visual').value = '';
+    document.getElementById('iqc-coa').value = 'Yes';
+    document.getElementById('iqc-decision').value = '';
+    document.getElementById('iqc-remarks').value = '';
+    document.getElementById('iqc-form-panel').classList.add('slide-in');
+  }
+
+  async function submitIQCResult() {
+    const decision = document.getElementById('iqc-decision').value;
+    if (!decision) { showToast('Select a decision'); return; }
+    const payload = {
+      grn_id:         document.getElementById('iqc-grn-id').value,
+      lot_no:         document.getElementById('iqc-lot-no').value,
+      insp_date:      new Date().toISOString().slice(0, 10),
+      inspector_id:   session.id,
+      mfi_result:     document.getElementById('iqc-mfi').value,
+      density_result: document.getElementById('iqc-density').value,
+      visual_result:  document.getElementById('iqc-visual').value,
+      coa_ok:         document.getElementById('iqc-coa').value,
+      decision,
+      remarks:        document.getElementById('iqc-remarks').value
+    };
+    try {
+      const res = await Api.post('saveIQCResult', payload);
+      if (!res.success) throw new Error(res.error || 'Save failed');
+      showToast('IQC result saved');
+      document.getElementById('iqc-form-panel').classList.remove('slide-in');
+      loadIQCList();
+    } catch (e) {
+      showToast('Error: ' + e.message);
+    }
+  }
+
+  // ── Supplier Scorecard ────────────────────────────────────────────────
+  async function loadScorecard() {
+    const tbody = document.getElementById('scorecard-tbody');
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted" style="padding:var(--space-8);">Loading…</td></tr>';
+    try {
+      const res = await Api.get('getSupplierScorecard');
+      const rows = res.success ? res.data : [];
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted" style="padding:var(--space-8);">No data</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map(r => {
+        const rate = r.accept_rate != null ? r.accept_rate.toFixed(1) + '%' : '—';
+        const rateClass = r.accept_rate >= 95 ? 'status-approved' : r.accept_rate >= 80 ? 'status-pending' : 'status-rejected';
+        return `<tr>
+          <td>${esc(r.supplier_name || r.supplier_id)}</td>
+          <td>${esc(r.grn_count)}</td>
+          <td>${esc(r.rejected)}</td>
+          <td>${esc(r.total_kg)}</td>
+          <td><span class="status-chip ${rateClass}">${rate}</span></td>
+        </tr>`;
+      }).join('');
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Failed to load</td></tr>';
+    }
+  }
+
+  function esc(v) { return (v == null ? '' : String(v)).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+  return { init, loadGRNList, loadStockLevels, editGRN, deleteGRN, loadReorderList, openReorderForm, closeReorderForm, submitReorderRequest, markOrdered, loadIQCList, openIQCForm, submitIQCResult, loadScorecard };
 })();

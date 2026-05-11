@@ -263,6 +263,8 @@ const Maintenance = (() => {
       const res = await Api.post('resolveBreakdown', {
         breakdown_id:     resolvingBdId,
         resolution:       notes,
+        root_cause:       (document.getElementById('resolve-root-cause') || {}).value || '',
+        spare_used:       (document.getElementById('resolve-spares') || {}).value || '',
         resolved_by:      resolvedBy,
         fixed_date:       resolvedDate,
         downtime_min:     Number(document.getElementById('resolve-downtime').value) || 0,

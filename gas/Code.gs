@@ -203,6 +203,8 @@ function doGet(e) {
       if (action === 'planBatchFromSO')       return respond(planBatchFromSO(data));
       if (action === 'saveReorderRequest')    return respond(saveReorderRequest(data));
       if (action === 'closeReorderRequest')   return respond(closeReorderRequest(data));
+      if (action === 'saveProductionLog')     return respond(saveProductionLog(data));
+      if (action === 'saveIQCResult')         return respond(saveIQCResult(data));
       if (action === 'saveLegalEntry')        return respond(saveLegalEntry(data));
       if (action === 'saveQualityParam')      return respond(saveQualityParam(data));
       if (action === 'saveTrainingLog')       return respond(saveTrainingLog(data));
@@ -230,8 +232,12 @@ function doGet(e) {
     if (action === 'getTrainingPlanKB')    return respond({ success: true, data: TRAINING_PLAN_KB });
     if (action === 'getCalibrationList')   return respond(getCalibrationList(e.parameter));
     if (action === 'getInstrumentsKB')     return respond({ success: true, data: INSTRUMENTS_KB });
-    if (action === 'getReorderList')       return respond(getReorderList(e.parameter));
-    if (action === 'getSOListForPlanning') return respond(getSOListForPlanning());
+    if (action === 'getReorderList')              return respond(getReorderList(e.parameter));
+    if (action === 'getSOListForPlanning')        return respond(getSOListForPlanning());
+    if (action === 'getProductionLog')            return respond(getProductionLog(e.parameter));
+    if (action === 'getBatchTraceabilitySearch')  return respond(getBatchTraceabilitySearch(e.parameter));
+    if (action === 'getIQCList')                  return respond(getIQCList(e.parameter));
+    if (action === 'getSupplierScorecard')        return respond(getSupplierScorecard());
 
     return respond({ success: false, error: 'unknown_action' });
   } catch (err) {
@@ -1253,7 +1259,35 @@ function saveNCR(data) {
     today
   ]);
 
-  return { success: true, ncr_id: ncrId, capa_required: capaRequired, capa_trigger_reason: capaTriggerReason };
+  // Auto-create CAPA when triggered
+  let capaId = null;
+  if (capaRequired) {
+    try {
+      const capaSheet = getSheet('CAPA_Register');
+      const capaRows = capaSheet.getDataRange().getValues();
+      capaId = 'CAPA' + String(capaRows.length).padStart(4, '0');
+      const capaHeaders = capaRows[0];
+      const is13col = capaHeaders.length >= 13;
+      if (is13col) {
+        capaSheet.appendRow([capaId, today, 'NCR', ncrId, data.remarks || data.defect_type || '', '', '', '', data.userId || '', '', 'Open', '', '']);
+      } else {
+        capaSheet.appendRow([capaId, today, 'NCR', data.remarks || data.defect_type || '', '', '', '', 'Open']);
+      }
+      // Write capa_id back to NCR row
+      const ncrHeaders = ncrSheet.getDataRange().getValues()[0];
+      // find last appended row
+      const ncrAllRows = ncrSheet.getDataRange().getValues();
+      const ncrIdIdx2 = ncrAllRows[0].indexOf('ncr_id');
+      for (let i = 1; i < ncrAllRows.length; i++) {
+        if (String(ncrAllRows[i][ncrIdIdx2]) === String(ncrId)) {
+          // no capa_id column in NCR schema — just log; front-end gets it in response
+          break;
+        }
+      }
+    } catch(e) { Logger.log('CAPA auto-create failed: ' + e.message); }
+  }
+
+  return { success: true, ncr_id: ncrId, capa_required: capaRequired, capa_trigger_reason: capaTriggerReason, capa_id: capaId };
 }
 
 function getNCRList(params) {
@@ -2442,4 +2476,389 @@ function closeCustomerComplaint(data) {
     }
   }
   return { success: false, error: 'not_found' };
+}
+
+// ── Production Parameters Log ─────────────────────────────────────────────────
+
+const PROD_LOG_HEADERS = ['log_id','batch_id','log_time','zone1_temp','zone2_temp','blow_pressure_bar','cycle_time_sec','parison_weight_g','operator_id','remarks'];
+
+function saveProductionLog(data) {
+  var authError = requireRole(data, ['director','supervisor','operator']);
+  if (authError) return { success: false, error: authError };
+  var fieldError = validateFields(data, ['batch_id']);
+  if (fieldError) return { success: false, error: fieldError };
+
+  const sheet = ensureSheet('Production_Log', PROD_LOG_HEADERS);
+  const rows = sheet.getDataRange().getValues();
+  const logId = 'PL' + String(rows.length).padStart(4, '0');
+  const now = new Date().toISOString();
+  sheet.appendRow([
+    logId,
+    data.batch_id,
+    data.log_time || now,
+    Number(data.zone1_temp) || '',
+    Number(data.zone2_temp) || '',
+    Number(data.blow_pressure_bar) || '',
+    Number(data.cycle_time_sec) || '',
+    Number(data.parison_weight_g) || '',
+    data.operator_id || data.userId || '',
+    data.remarks || ''
+  ]);
+  return { success: true, log_id: logId };
+}
+
+function getProductionLog(params) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('Production_Log');
+  if (!sheet) return { success: true, data: [] };
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length < 2) return { success: true, data: [] };
+  const headers = rows[0];
+  let data = rows.slice(1).map(r => rowToObj(headers, r));
+  if (params && params.batch_id) data = data.filter(r => String(r.batch_id) === String(params.batch_id));
+  return { success: true, data };
+}
+
+// ── Batch Traceability Search ─────────────────────────────────────────────────
+
+function getBatchTraceabilitySearch(params) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const q = (params.q || '').toLowerCase().trim();
+
+  // Resolve batch_no from various entry points
+  let batchNo = params.batch_no || '';
+
+  if (!batchNo && q) {
+    // Try to find batch by lot_no in RMStock
+    const rmSheet = ss.getSheetByName('RMStock');
+    if (rmSheet) {
+      const rmRows = rmSheet.getDataRange().getValues();
+      const rmHdrs = rmRows[0];
+      const lotIdx = rmHdrs.indexOf('lot_no');
+      const batchIdxRM = rmHdrs.indexOf('batch_id');
+      for (let i = 1; i < rmRows.length; i++) {
+        if (lotIdx >= 0 && String(rmRows[i][lotIdx]).toLowerCase().includes(q)) {
+          if (batchIdxRM >= 0 && rmRows[i][batchIdxRM]) batchNo = rmRows[i][batchIdxRM];
+          break;
+        }
+      }
+    }
+    if (!batchNo) batchNo = q.toUpperCase();
+  }
+
+  if (!batchNo) return { success: false, error: 'batch_no or q required' };
+
+  // BatchOrders
+  const boSheet = ss.getSheetByName('BatchOrders');
+  let batchOrder = null;
+  if (boSheet) {
+    const boRows = boSheet.getDataRange().getValues();
+    const boHdrs = boRows[0];
+    for (let i = 1; i < boRows.length; i++) {
+      if (String(boRows[i][0]).toUpperCase() === batchNo.toUpperCase()) {
+        batchOrder = rowToObj(boHdrs, boRows[i]);
+        break;
+      }
+    }
+  }
+
+  // BatchTraceability
+  const btSheet = ss.getSheetByName('BatchTraceability');
+  let traceability = null;
+  if (btSheet) {
+    const btRows = btSheet.getDataRange().getValues();
+    const btHdrs = btRows[0];
+    for (let i = 1; i < btRows.length; i++) {
+      if (String(btRows[i][0]).toUpperCase() === batchNo.toUpperCase()) {
+        traceability = rowToObj(btHdrs, btRows[i]);
+        break;
+      }
+    }
+  }
+
+  // GRN/RMStock — RM lot used
+  const rmSheet = ss.getSheetByName('RMStock');
+  let rmLots = [];
+  if (rmSheet && traceability && traceability.rm_lot_no) {
+    const rmRows = rmSheet.getDataRange().getValues();
+    const rmHdrs = rmRows[0];
+    const lotNos = String(traceability.rm_lot_no).split(',').map(s => s.trim());
+    rmLots = rmRows.slice(1)
+      .map(r => rowToObj(rmHdrs, r))
+      .filter(r => lotNos.includes(String(r.lot_no)));
+  }
+
+  // Quality checks
+  const qcSheet = ss.getSheetByName('QualityChecks');
+  let qualityChecks = [];
+  if (qcSheet) {
+    const qcRows = qcSheet.getDataRange().getValues();
+    const qcHdrs = qcRows[0];
+    qualityChecks = qcRows.slice(1)
+      .map(r => rowToObj(qcHdrs, r))
+      .filter(r => String(r.batch_id).toUpperCase() === batchNo.toUpperCase());
+  }
+
+  // NCRs
+  const ncrSheet = ss.getSheetByName('NCR_Log');
+  let ncrs = [];
+  if (ncrSheet) {
+    const ncrRows = ncrSheet.getDataRange().getValues();
+    const ncrHdrs = ncrRows[0];
+    ncrs = ncrRows.slice(1)
+      .map(r => rowToObj(ncrHdrs, r))
+      .filter(r => String(r.batch_id).toUpperCase() === batchNo.toUpperCase());
+  }
+
+  // Production log
+  const plSheet = ss.getSheetByName('Production_Log');
+  let prodLog = [];
+  if (plSheet) {
+    const plRows = plSheet.getDataRange().getValues();
+    const plHdrs = plRows[0];
+    prodLog = plRows.slice(1)
+      .map(r => rowToObj(plHdrs, r))
+      .filter(r => String(r.batch_id).toUpperCase() === batchNo.toUpperCase());
+  }
+
+  // Dispatch
+  const dispSheet = ss.getSheetByName('Dispatch');
+  let dispatch = null;
+  if (dispSheet && traceability && traceability.dispatch_id) {
+    const dispRows = dispSheet.getDataRange().getValues();
+    const dispHdrs = dispRows[0];
+    for (let i = 1; i < dispRows.length; i++) {
+      if (String(dispRows[i][0]) === String(traceability.dispatch_id)) {
+        dispatch = rowToObj(dispHdrs, dispRows[i]);
+        break;
+      }
+    }
+  }
+
+  if (!batchOrder && !traceability) return { success: false, error: 'not_found' };
+
+  return { success: true, data: { batch_no: batchNo, batch_order: batchOrder, traceability, rm_lots: rmLots, quality_checks: qualityChecks, ncrs, prod_log: prodLog, dispatch } };
+}
+
+// ── IQC Hold / Release ────────────────────────────────────────────────────────
+
+const IQC_HEADERS = ['iqc_id','grn_id','lot_no','material','supplier_id','insp_date','inspector_id','mfi_result','density_result','visual_result','coa_ok','decision','remarks','released_by','released_at'];
+
+function saveIQCResult(data) {
+  var authError = requireRole(data, ['director','qmr','supervisor']);
+  if (authError) return { success: false, error: authError };
+  var fieldError = validateFields(data, ['grn_id','lot_no','decision']);
+  if (fieldError) return { success: false, error: fieldError };
+
+  const sheet = ensureSheet('IQC_Records', IQC_HEADERS);
+  const rows = sheet.getDataRange().getValues();
+  const iqcId = 'IQC' + String(rows.length).padStart(4, '0');
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Check if record exists for this grn_id
+  const headers = rows[0];
+  const grnIdx = headers.indexOf('grn_id');
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][grnIdx]) === String(data.grn_id)) {
+      // Update existing
+      const set = (col, val) => { const idx = headers.indexOf(col); if (idx >= 0) sheet.getRange(i+1, idx+1).setValue(val); };
+      set('mfi_result', data.mfi_result || '');
+      set('density_result', data.density_result || '');
+      set('visual_result', data.visual_result || '');
+      set('coa_ok', data.coa_ok || '');
+      set('decision', data.decision);
+      set('remarks', data.remarks || '');
+      set('inspector_id', data.userId || '');
+      set('insp_date', today);
+      // Update RMStock lot status
+      _updateRMStockIQCStatus(data.lot_no, data.decision);
+      return { success: true, iqc_id: rows[i][0] };
+    }
+  }
+
+  sheet.appendRow([
+    iqcId, data.grn_id, data.lot_no, data.material || '', data.supplier_id || '',
+    today, data.userId || '', data.mfi_result || '', data.density_result || '',
+    data.visual_result || '', data.coa_ok || '', data.decision, data.remarks || '', '', ''
+  ]);
+  _updateRMStockIQCStatus(data.lot_no, data.decision);
+  return { success: true, iqc_id: iqcId };
+}
+
+function _updateRMStockIQCStatus(lotNo, decision) {
+  // Sets a status field on RMStock row if it exists
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('RMStock');
+  if (!sheet) return;
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+  const lotIdx    = headers.indexOf('lot_no');
+  const statusIdx = headers.indexOf('iqc_status');
+  if (lotIdx < 0) return;
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][lotIdx]) === String(lotNo)) {
+      if (statusIdx >= 0) sheet.getRange(i+1, statusIdx+1).setValue(decision);
+      return;
+    }
+  }
+}
+
+function getIQCList(params) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('IQC_Records');
+  if (!sheet) return { success: true, data: [] };
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length < 2) return { success: true, data: [] };
+  const headers = rows[0];
+  let data = rows.slice(1).map(r => rowToObj(headers, r));
+  if (params && params.decision) data = data.filter(r => r.decision === params.decision);
+  return { success: true, data };
+}
+
+// ── Supplier Scorecard ────────────────────────────────────────────────────────
+
+function getSupplierScorecard() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // GRNs per supplier
+  const rmSheet = ss.getSheetByName('RMStock');
+  const grnBySupplier = {};
+  if (rmSheet) {
+    const rows = rmSheet.getDataRange().getValues();
+    const hdrs = rows[0];
+    rows.slice(1).forEach(r => {
+      const obj = rowToObj(hdrs, r);
+      const sid = obj.supplier_id || '';
+      if (!sid) return;
+      if (!grnBySupplier[sid]) grnBySupplier[sid] = { grn_count: 0, rejected: 0, total_kg: 0 };
+      grnBySupplier[sid].grn_count++;
+      grnBySupplier[sid].total_kg += Number(obj.qty_kg) || 0;
+      if (obj.iqc_status === 'Reject') grnBySupplier[sid].rejected++;
+    });
+  }
+
+  // NCRs sourced from suppliers (stage=IQC)
+  const ncrSheet = ss.getSheetByName('NCR_Log');
+  const ncrByBatch = {};
+  if (ncrSheet) {
+    const rows = ncrSheet.getDataRange().getValues();
+    const hdrs = rows[0];
+    rows.slice(1).forEach(r => {
+      const obj = rowToObj(hdrs, r);
+      if (obj.stage === 'IQC') {
+        // We can't directly link NCR→supplier; track by count
+        ncrByBatch[obj.batch_id] = (ncrByBatch[obj.batch_id] || 0) + 1;
+      }
+    });
+  }
+
+  // Supplier master
+  const suppSheet = ss.getSheetByName('Suppliers');
+  const suppMap = {};
+  if (suppSheet) {
+    const rows = suppSheet.getDataRange().getValues();
+    const hdrs = rows[0];
+    rows.slice(1).forEach(r => {
+      const obj = rowToObj(hdrs, r);
+      suppMap[obj.SupplierID] = obj.Name || obj.SupplierID;
+    });
+  }
+
+  const data = Object.entries(grnBySupplier).map(([sid, s]) => {
+    const acceptRate = s.grn_count > 0 ? Math.round(((s.grn_count - s.rejected) / s.grn_count) * 100) : 100;
+    return {
+      supplier_id:   sid,
+      supplier_name: suppMap[sid] || sid,
+      grn_count:     s.grn_count,
+      rejected:      s.rejected,
+      total_kg:      s.total_kg,
+      accept_rate:   acceptRate
+    };
+  });
+
+  return { success: true, data };
+}
+
+// ── Full PM Schedule Seed ─────────────────────────────────────────────────────
+
+const MAINTENANCE_PLAN_KB = [
+  // Hydraulic system
+  { task: 'Hydraulic oil level check',          equip: 'EQ001', freq: 7  },
+  { task: 'Hydraulic oil change',               equip: 'EQ001', freq: 180 },
+  { task: 'Hydraulic filter replacement',       equip: 'EQ001', freq: 90  },
+  { task: 'Hydraulic hose inspection',          equip: 'EQ001', freq: 30  },
+  { task: 'Hydraulic pressure calibration',     equip: 'EQ001', freq: 90  },
+  // Pneumatic system
+  { task: 'Pneumatic line lubrication',         equip: 'EQ002', freq: 7  },
+  { task: 'Air filter/dryer clean',             equip: 'EQ002', freq: 14  },
+  { task: 'Blow pressure gauge check',          equip: 'EQ002', freq: 30  },
+  { task: 'Pneumatic cylinder seal check',      equip: 'EQ002', freq: 90  },
+  // Extrusion & die head
+  { task: 'Die head cleaning',                  equip: 'EQ001', freq: 7  },
+  { task: 'Parison head temperature check',     equip: 'EQ001', freq: 7  },
+  { task: 'Extruder screw & barrel inspection', equip: 'EQ001', freq: 180 },
+  { task: 'Heater band continuity check',       equip: 'EQ001', freq: 30  },
+  { task: 'Thermocouple calibration check',     equip: 'EQ001', freq: 90  },
+  // Mould & clamping
+  { task: 'Mould cooling water flow check',     equip: 'EQ003', freq: 7  },
+  { task: 'Mould parting surface cleaning',     equip: 'EQ003', freq: 14  },
+  { task: 'Clamp force verification',           equip: 'EQ003', freq: 30  },
+  { task: 'Mould guide pin lubrication',        equip: 'EQ003', freq: 30  },
+  { task: 'Mould cavity dimensional check',     equip: 'EQ003', freq: 180 },
+  // Drive & electrical
+  { task: 'V-belt tension check',               equip: 'EQ004', freq: 7  },
+  { task: 'V-belt replacement',                 equip: 'EQ004', freq: 365 },
+  { task: 'Motor bearing lubrication',          equip: 'EQ004', freq: 90  },
+  { task: 'Electrical panel dust blow-out',     equip: 'EQ004', freq: 30  },
+  { task: 'Drive coupling check',               equip: 'EQ004', freq: 30  },
+  // General machine
+  { task: 'Machine external cleaning',          equip: 'EQ001', freq: 7  },
+  { task: 'Lubrication of moving parts',        equip: 'EQ001', freq: 14  },
+  { task: 'Safety guard & interlock check',     equip: 'EQ001', freq: 30  },
+  { task: 'Emergency stop test',                equip: 'EQ001', freq: 30  },
+  { task: 'Oil leak check (all systems)',       equip: 'EQ001', freq: 7  },
+  // Conveyors & handling
+  { task: 'Conveyor belt tension check',        equip: 'EQ005', freq: 14  },
+  { task: 'Conveyor roller lubrication',        equip: 'EQ005', freq: 30  },
+  // Chillers & cooling
+  { task: 'Chiller water level check',          equip: 'EQ006', freq: 7  },
+  { task: 'Chiller condenser cleaning',         equip: 'EQ006', freq: 90  },
+  { task: 'Cooling tower cleaning',             equip: 'EQ006', freq: 30  },
+  // Air compressor
+  { task: 'Compressor oil level check',         equip: 'EQ007', freq: 7  },
+  { task: 'Compressor air filter cleaning',     equip: 'EQ007', freq: 14  },
+  { task: 'Compressor safety valve test',       equip: 'EQ007', freq: 90  },
+  { task: 'Compressor belt check',              equip: 'EQ007', freq: 30  },
+  // Tooling/instruments
+  { task: 'Wall thickness gauge calibration',   equip: 'EQ008', freq: 180 },
+  { task: 'Weighing scale calibration',         equip: 'EQ008', freq: 90  },
+  { task: 'Vernier caliper calibration',        equip: 'EQ008', freq: 180 },
+  { task: 'Pressure gauge calibration',         equip: 'EQ008', freq: 180 },
+  // Safety
+  { task: 'Fire extinguisher inspection',       equip: 'EQ009', freq: 30  },
+  { task: 'First aid kit restocking check',     equip: 'EQ009', freq: 30  }
+];
+
+function seedFullPMSchedule() {
+  const sheet = ensureSheet('PM_Schedule', ['PMID','EquipID','TaskType','Frequency','LastDone','NextDue','AssignedTo','Status','Remarks']);
+  const existing = sheet.getDataRange().getValues();
+  if (existing.length > 1) {
+    Logger.log('PM_Schedule: already has data (' + (existing.length - 1) + ' rows), skipping full seed.');
+    return { seeded: 0, skipped: existing.length - 1 };
+  }
+  const today = new Date();
+  let count = 0;
+  MAINTENANCE_PLAN_KB.forEach((t, idx) => {
+    const pmId = 'PM' + String(idx + 1).padStart(3, '0');
+    const nextDue = new Date(today);
+    nextDue.setDate(nextDue.getDate() + t.freq);
+    sheet.appendRow([pmId, t.equip, t.task, t.freq, '', nextDue.toISOString().slice(0, 10), '', 'Scheduled', '']);
+    count++;
+  });
+  Logger.log('PM_Schedule: seeded ' + count + ' tasks.');
+  return { seeded: count };
+}
+
+function _cacheInvalidate(key) {
+  _cacheDel(key);
 }

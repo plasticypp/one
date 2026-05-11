@@ -205,7 +205,10 @@ const NCR = (() => {
         slideFormOut();
         await loadNCRs();
         showToast('NCR saved — ' + res.ncr_id);
-        if (res.capa_required) showCAPABanner(res.capa_trigger_reason);
+        if (res.capa_required) {
+          showCAPABanner(res.capa_trigger_reason);
+          if (res.capa_id) showToast('CAPA auto-created: ' + res.capa_id);
+        }
       } else {
         showToast('Error: ' + (res.error || 'save failed'));
       }
@@ -235,6 +238,7 @@ const NCR = (() => {
       <div class="detail-row"><span>Detected By</span><strong>${fv(r.detected_by)}</strong></div>
       <div class="detail-row"><span>Status</span><strong>${fv(r.status)}</strong></div>
       <div class="detail-row"><span>CAPA Required</span><strong>${r.capa_required ? 'Yes — ' + fv(r.capa_trigger_reason) : 'No'}</strong></div>
+      ${r.capa_id ? `<div class="detail-row"><span>CAPA</span><strong><a href="compliance.html" style="color:var(--color-primary)">${r.capa_id} → View in Compliance</a></strong></div>` : ''}
       <div class="detail-row"><span>Remarks</span><strong>${fv(r.remarks)}</strong></div>
     `;
     const canEdit = ['director', 'qmr', 'supervisor'].includes(session.role);

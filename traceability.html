@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#EA580C">
+  <title>YPP ERP — Batch Traceability</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/masters.css">
+  <style>
+    .trace-section { margin-bottom: 20px; background: var(--color-surface); border-radius: var(--radius-md); overflow: hidden; }
+    .trace-section-title { font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--color-text-muted); padding: 10px 14px; border-bottom: 1px solid var(--color-border); }
+    .detail-grid { padding: 4px 0; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-flex">
+      <button class="back-btn" id="back-to-app"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span class="header-title">Batch Traceability</span>
+    </div>
+    <div class="header-actions">
+      <button class="lang-toggle" id="lang-toggle">EN</button>
+    </div>
+  </header>
+
+  <!-- Search Bar -->
+  <div class="masters-content" style="display:block;padding:16px;">
+    <div class="filter-bar" style="margin-bottom:16px;">
+      <input type="text" id="trace-search" class="form-input" placeholder="Batch No or RM Lot No…" style="flex:1;margin:0 8px 0 0;">
+      <button class="btn btn-primary" id="trace-search-btn">Search</button>
+    </div>
+
+    <!-- Results Container -->
+    <div id="trace-results" class="hidden">
+
+      <!-- Batch Order -->
+      <div class="trace-section" id="section-batch">
+        <div class="trace-section-title">Batch Order</div>
+        <div id="trace-batch-body"></div>
+      </div>
+
+      <!-- RM Lots -->
+      <div class="trace-section" id="section-rm">
+        <div class="trace-section-title">RM Lots Used</div>
+        <div class="table-wrap" style="padding:0;">
+          <table class="data-table">
+            <thead><tr><th>Lot No</th><th>Material</th><th>Supplier</th><th>Qty (kg)</th><th>IQC Status</th></tr></thead>
+            <tbody id="trace-rm-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Production Params -->
+      <div class="trace-section" id="section-params">
+        <div class="trace-section-title">Production Parameters</div>
+        <div class="table-wrap" style="padding:0;">
+          <table class="data-table">
+            <thead><tr><th>Log Time</th><th>Zone 1 (°C)</th><th>Zone 2 (°C)</th><th>Blow (bar)</th><th>Cycle (s)</th><th>Parison (g)</th><th>Operator</th></tr></thead>
+            <tbody id="trace-params-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Quality Checks -->
+      <div class="trace-section" id="section-qc">
+        <div class="trace-section-title">Quality Checks</div>
+        <div class="table-wrap" style="padding:0;">
+          <table class="data-table">
+            <thead><tr><th>Check ID</th><th>Type</th><th>Date</th><th>Inspector</th><th>Result</th><th>Remarks</th></tr></thead>
+            <tbody id="trace-qc-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- NCRs -->
+      <div class="trace-section" id="section-ncr">
+        <div class="trace-section-title">Non-Conformance Reports</div>
+        <div class="table-wrap" style="padding:0;">
+          <table class="data-table">
+            <thead><tr><th>NCR ID</th><th>Date</th><th>Defect</th><th>Severity</th><th>Status</th><th>CAPA</th></tr></thead>
+            <tbody id="trace-ncr-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Dispatch -->
+      <div class="trace-section" id="section-dispatch">
+        <div class="trace-section-title">Dispatch</div>
+        <div class="table-wrap" style="padding:0;">
+          <table class="data-table">
+            <thead><tr><th>Dispatch ID</th><th>Date</th><th>Customer</th><th>Qty</th><th>Vehicle</th><th>Driver</th></tr></thead>
+            <tbody id="trace-dispatch-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Empty state -->
+    <div id="trace-empty" class="empty-state hidden">
+      <p>No results found. Try a different batch number or lot number.</p>
+    </div>
+  </div>
+
+  <!-- Spinner -->
+  <div class="spinner-overlay hidden" id="spinner">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="js/api.js" defer></script>
+  <script src="js/auth.js" defer></script>
+  <script src="js/lang.js" defer></script>
+  <script src="js/traceability.js" defer></script>
+  <script>
+  window.addEventListener('DOMContentLoaded', () => {
+    (async () => {
+      await Api.init();
+      await Traceability.init();
+    })();
+  });
+  </script>
+</body>
+</html>

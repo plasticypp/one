@@ -29,6 +29,7 @@
   <div class="sub-tab-bar">
     <button class="sub-tab active" data-tab="batches">Batch Orders</button>
     <button class="sub-tab" data-tab="fg">Finished Goods</button>
+    <button class="sub-tab" data-tab="params">Params Log</button>
   </div>
 
   <!-- Main Content -->
@@ -88,6 +89,71 @@
       </div>
     </div>
 
+    <!-- Production Params Log Tab -->
+    <div id="tab-params" class="tab-content hidden">
+      <div class="filter-bar">
+        <select id="filter-params-batch">
+          <option value="">All Batches</option>
+        </select>
+        <button class="btn-apply" onclick="Production.loadParamsLog()">Apply</button>
+        <span class="filter-spacer"></span>
+        <button class="btn-primary" id="btn-log-params">+ Log Params</button>
+      </div>
+      <div class="prod-table-wrap">
+        <table class="prod-table">
+          <thead>
+            <tr>
+              <th>Log ID</th><th>Batch</th><th>Time</th><th>Zone1 (°C)</th><th>Zone2 (°C)</th><th>Blow P (bar)</th><th>Cycle (s)</th><th>Parison (g)</th><th>Operator</th>
+            </tr>
+          </thead>
+          <tbody id="params-tbody">
+            <tr><td colspan="9" class="td-loading">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Params Log Form Panel -->
+  <div class="form-panel" id="params-panel">
+    <div class="form-header">
+      <button class="back-btn" onclick="Production.slideParamsPanelOut()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <span class="form-title">Log Production Parameters</span>
+    </div>
+    <div class="form-body">
+      <div class="field-group">
+        <label>Batch *</label>
+        <select id="params-batch-sel"><option value="">— select batch —</option></select>
+      </div>
+      <div class="field-group">
+        <label>Zone 1 Temp (°C)</label>
+        <input type="number" id="params-zone1" placeholder="e.g. 185" step="0.1">
+      </div>
+      <div class="field-group">
+        <label>Zone 2 Temp (°C)</label>
+        <input type="number" id="params-zone2" placeholder="e.g. 190" step="0.1">
+      </div>
+      <div class="field-group">
+        <label>Blow Pressure (bar)</label>
+        <input type="number" id="params-blow" placeholder="e.g. 6.5" step="0.1">
+      </div>
+      <div class="field-group">
+        <label>Cycle Time (sec)</label>
+        <input type="number" id="params-cycle" placeholder="e.g. 45" step="0.1">
+      </div>
+      <div class="field-group">
+        <label>Parison Weight (g)</label>
+        <input type="number" id="params-parison" placeholder="e.g. 120" step="0.1">
+      </div>
+      <div class="field-group">
+        <label>Remarks</label>
+        <input type="text" id="params-remarks" placeholder="Optional">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" onclick="Production.submitParamsLog()">Save Log</button>
+    </div>
   </div>
 
   <!-- Form Panel (slide-in) -->

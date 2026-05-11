@@ -32,6 +32,8 @@
     <button class="sub-tab active" data-pane="history">GRN History</button>
     <button class="sub-tab" data-pane="stock">Stock Levels</button>
     <button class="sub-tab" data-pane="reorder">Reorder</button>
+    <button class="sub-tab" data-pane="iqc">IQC</button>
+    <button class="sub-tab" data-pane="scorecard">Scorecard</button>
   </div>
 
   <!-- GRN History pane -->
@@ -104,6 +106,92 @@
           <tr><td colspan="7" class="text-center text-muted" style="padding:var(--space-8);">Loading…</td></tr>
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- IQC pane -->
+  <div id="pane-iqc" class="tab-pane" style="padding:var(--space-4);">
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>GRN ID</th><th>Lot No</th><th>Material</th><th>Supplier</th><th>Qty (kg)</th><th>IQC Status</th><th></th></tr>
+        </thead>
+        <tbody id="iqc-tbody">
+          <tr><td colspan="7" class="text-center text-muted" style="padding:var(--space-8);">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Supplier Scorecard pane -->
+  <div id="pane-scorecard" class="tab-pane" style="padding:var(--space-4);">
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>Supplier</th><th>GRNs</th><th>Rejected</th><th>Total (kg)</th><th>Accept Rate</th></tr>
+        </thead>
+        <tbody id="scorecard-tbody">
+          <tr><td colspan="5" class="text-center text-muted" style="padding:var(--space-8);">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- IQC Form Panel -->
+  <div class="form-panel" id="iqc-form-panel">
+    <div class="form-header">
+      <button class="back-btn" id="iqc-form-back" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <span class="form-title">Log IQC Result</span>
+    </div>
+    <div class="form-body">
+      <input type="hidden" id="iqc-grn-id">
+      <input type="hidden" id="iqc-lot-no">
+      <div class="field-group">
+        <label>GRN / Lot</label>
+        <input type="text" id="iqc-lot-display" class="form-input" readonly>
+      </div>
+      <div class="field-group">
+        <label>MFI Result (g/10min)</label>
+        <input type="number" id="iqc-mfi" class="form-input" step="0.01" placeholder="Optional">
+      </div>
+      <div class="field-group">
+        <label>Density Result (g/cm³)</label>
+        <input type="number" id="iqc-density" class="form-input" step="0.0001" placeholder="Optional">
+      </div>
+      <div class="field-group">
+        <label>Visual Result</label>
+        <select id="iqc-visual" class="form-input">
+          <option value="">— select —</option>
+          <option value="Pass">Pass</option>
+          <option value="Fail">Fail</option>
+          <option value="Minor">Minor issue</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>CoA Available</label>
+        <select id="iqc-coa" class="form-input">
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Decision *</label>
+        <select id="iqc-decision" class="form-input" required>
+          <option value="">— select —</option>
+          <option value="Accept">Accept</option>
+          <option value="Hold">Hold</option>
+          <option value="Reject">Reject</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Remarks</label>
+        <textarea id="iqc-remarks" class="form-input" rows="2" placeholder="Optional notes"></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary btn-full" id="btn-save-iqc">Save IQC Result</button>
     </div>
   </div>
 
@@ -215,6 +303,8 @@
           document.getElementById('pane-' + btn.dataset.pane).classList.add('active');
           if (btn.dataset.pane === 'stock') GRN.loadStockLevels();
           if (btn.dataset.pane === 'reorder') GRN.loadReorderList();
+          if (btn.dataset.pane === 'iqc') GRN.loadIQCList();
+          if (btn.dataset.pane === 'scorecard') GRN.loadScorecard();
         });
       });
 

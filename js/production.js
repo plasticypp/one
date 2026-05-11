@@ -37,6 +37,7 @@ const Production = (() => {
     document.getElementById('close-back').addEventListener('click', slideClosePanelOut);
     document.getElementById('detail-back').addEventListener('click', slideDetailOut);
     document.getElementById('btn-new-batch').addEventListener('click', () => openBatchForm());
+    document.getElementById('btn-log-params').addEventListener('click', openParamsForm);
     const langBtn = document.getElementById('lang-toggle');
     langBtn.textContent = Lang.getCurrent().toUpperCase();
     langBtn.addEventListener('click', async () => {
@@ -56,12 +57,15 @@ const Production = (() => {
         renderTabs();
         document.getElementById('tab-batches').classList.toggle('hidden', activeTab !== 'batches');
         document.getElementById('tab-fg').classList.toggle('hidden', activeTab !== 'fg');
+        document.getElementById('tab-params').classList.toggle('hidden', activeTab !== 'params');
         if (activeTab === 'fg') await loadFinishedGoods();
         if (activeTab === 'batches') await loadBatches();
+        if (activeTab === 'params') await loadParamsLog();
       });
     });
     document.getElementById('tab-batches').classList.toggle('hidden', activeTab !== 'batches');
     document.getElementById('tab-fg').classList.toggle('hidden', activeTab !== 'fg');
+    document.getElementById('tab-params').classList.toggle('hidden', activeTab !== 'params');
   }
 
   // ── Dropdowns ─────────────────────────────────────────────────────────────
@@ -75,6 +79,83 @@ const Production = (() => {
     productCache = pRes.success ? pRes.data : [];
     machineCache = mRes.success ? mRes.data : [];
     operatorCache = oRes.success ? oRes.data : [];
+  }
+
+  // ── Production Params Log ─────────────────────────────────────────────────
+
+  async function loadParamsLog() {
+    showSpinner(true);
+    try {
+      const batchSel = document.getElementById('filter-params-batch');
+      const batchId = batchSel ? batchSel.value : '';
+      const params = batchId ? { batch_id: batchId } : {};
+      const res = await Api.get('getProductionLog', params);
+      renderParamsTable(res.success ? res.data : []);
+    } finally { showSpinner(false); }
+  }
+
+  function renderParamsTable(rows) {
+    const tbody = document.getElementById('params-tbody');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="9" class="td-loading">No param logs yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td style="font-size:var(--text-xs);color:var(--color-text-muted)">${r.log_id || ''}</td>
+        <td style="font-weight:600">${r.batch_id || ''}</td>
+        <td style="font-size:var(--text-xs)">${String(r.log_time || '').slice(0, 16).replace('T',' ')}</td>
+        <td>${r.zone1_temp !== '' && r.zone1_temp !== null ? r.zone1_temp : '—'}</td>
+        <td>${r.zone2_temp !== '' && r.zone2_temp !== null ? r.zone2_temp : '—'}</td>
+        <td>${r.blow_pressure_bar !== '' && r.blow_pressure_bar !== null ? r.blow_pressure_bar : '—'}</td>
+        <td>${r.cycle_time_sec !== '' && r.cycle_time_sec !== null ? r.cycle_time_sec : '—'}</td>
+        <td>${r.parison_weight_g !== '' && r.parison_weight_g !== null ? r.parison_weight_g : '—'}</td>
+        <td>${(operatorCache.find(o => String(o.id) === String(r.operator_id)) || {}).name || r.operator_id || '—'}</td>
+      </tr>`).join('');
+  }
+
+  function openParamsForm() {
+    const sel = document.getElementById('params-batch-sel');
+    sel.innerHTML = '<option value="">— select batch —</option>';
+    batchCache.filter(b => b.status !== 'Closed').forEach(b => {
+      const pName = (productCache.find(p => String(p.id) === String(b.product_id)) || {}).name || b.product_id;
+      const o = document.createElement('option');
+      o.value = b.batch_id;
+      o.textContent = b.batch_id + ' — ' + pName;
+      sel.appendChild(o);
+    });
+    ['params-zone1','params-zone2','params-blow','params-cycle','params-parison','params-remarks'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    document.getElementById('params-panel').classList.add('slide-in');
+  }
+
+  function slideParamsPanelOut() {
+    document.getElementById('params-panel').classList.remove('slide-in');
+  }
+
+  async function submitParamsLog() {
+    const batchId = document.getElementById('params-batch-sel').value;
+    if (!batchId) { showToast('Select a batch'); return; }
+    showSpinner(true);
+    try {
+      const res = await Api.post('saveProductionLog', {
+        batch_id:          batchId,
+        zone1_temp:        document.getElementById('params-zone1').value,
+        zone2_temp:        document.getElementById('params-zone2').value,
+        blow_pressure_bar: document.getElementById('params-blow').value,
+        cycle_time_sec:    document.getElementById('params-cycle').value,
+        parison_weight_g:  document.getElementById('params-parison').value,
+        remarks:           document.getElementById('params-remarks').value,
+        userId:            Auth.getUserId()
+      });
+      if (res.success) {
+        showToast('Params logged — ' + res.log_id);
+        slideParamsPanelOut();
+        await loadParamsLog();
+      } else { showToast('Error: ' + res.error); }
+    } finally { showSpinner(false); }
   }
 
   function populateFormDropdowns() {
@@ -118,6 +199,19 @@ const Production = (() => {
       const rows = res.success ? res.data : [];
       batchCache = rows;
       renderBatchTable(rows);
+      // Sync params batch filter
+      const sel = document.getElementById('filter-params-batch');
+      if (sel) {
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">All Batches</option>';
+        rows.forEach(b => {
+          const pName = (productCache.find(p => String(p.id) === String(b.product_id)) || {}).name || b.product_id;
+          const o = document.createElement('option');
+          o.value = b.batch_id; o.textContent = b.batch_id + ' — ' + pName;
+          if (b.batch_id === cur) o.selected = true;
+          sel.appendChild(o);
+        });
+      }
     } finally {
       showSpinner(false);
     }
@@ -410,5 +504,5 @@ const Production = (() => {
     setTimeout(() => t.classList.remove('show'), 2500);
   }
 
-  return { init, loadBatches, submitBatch, closeBatchAction, submitClose, editBatch, deleteBatch };
+  return { init, loadBatches, submitBatch, closeBatchAction, submitClose, editBatch, deleteBatch, loadParamsLog, submitParamsLog, slideParamsPanelOut };
 })();

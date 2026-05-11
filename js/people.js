@@ -19,6 +19,7 @@ const People = (() => {
 
     document.getElementById('tab-personnel-btn').addEventListener('click', () => switchTab('personnel'));
     document.getElementById('tab-training-btn').addEventListener('click',  () => switchTab('training'));
+    document.getElementById('tab-matrix-btn').addEventListener('click',    () => switchTab('matrix'));
     document.getElementById('add-training-btn').addEventListener('click',  openTrainingForm);
     document.getElementById('training-form-back').addEventListener('click', closeTrainingForm);
     document.getElementById('training-submit-btn').addEventListener('click', submitTraining);
@@ -35,11 +36,15 @@ const People = (() => {
     activeTab = tab;
     document.getElementById('tab-personnel-btn').classList.toggle('active', tab === 'personnel');
     document.getElementById('tab-training-btn').classList.toggle('active',  tab === 'training');
+    document.getElementById('tab-matrix-btn').classList.toggle('active',    tab === 'matrix');
     document.getElementById('panel-personnel').classList.toggle('hidden', tab !== 'personnel');
     document.getElementById('panel-training').classList.toggle('hidden',  tab !== 'training');
+    document.getElementById('panel-matrix').classList.toggle('hidden',    tab !== 'matrix');
     document.getElementById('add-training-btn').classList.toggle('hidden', tab !== 'training');
     if (tab === 'personnel') {
       await loadPersonnel();
+    } else if (tab === 'matrix') {
+      await loadTrainingMatrix();
     } else {
       await loadTraining();
     }
@@ -176,6 +181,64 @@ const People = (() => {
     t.textContent = msg;
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // ── Training Matrix ───────────────────────────────────────────────────────
+
+  async function loadTrainingMatrix() {
+    const wrap = document.getElementById('matrix-wrap');
+    wrap.innerHTML = '<p class="text-muted" style="padding:var(--space-8);text-align:center;">Loading…</p>';
+    showSpinner(true);
+    try {
+      const [pRes, tRes] = await Promise.all([
+        Api.get('getPersonnelList'),
+        Api.get('getTrainingLog')
+      ]);
+      const personnel = pRes && pRes.success ? pRes.data : [];
+      const logs = tRes && tRes.success ? tRes.data : [];
+
+      if (!personnel.length || !logs.length) {
+        wrap.innerHTML = '<p class="text-muted" style="padding:var(--space-8);text-align:center;">Not enough data to build matrix.</p>';
+        return;
+      }
+
+      // Unique topics (columns)
+      const topics = [...new Set(logs.map(l => l.topic).filter(Boolean))].sort();
+      // Build lookup: topic → Set of participant tokens
+      const topicParticipants = {};
+      logs.forEach(l => {
+        if (!l.topic || l.status !== 'Completed') return;
+        if (!topicParticipants[l.topic]) topicParticipants[l.topic] = [];
+        (l.participants || '').split(',').forEach(p => {
+          const token = p.trim().toLowerCase();
+          if (token) topicParticipants[l.topic].push(token);
+        });
+      });
+
+      let html = '<table class="data-table" style="white-space:nowrap;"><thead><tr><th>Name</th>';
+      topics.forEach(t => { html += `<th style="writing-mode:vertical-rl;padding:8px 4px;max-width:40px;" title="${t}">${t.length > 18 ? t.slice(0, 16) + '…' : t}</th>`; });
+      html += '</tr></thead><tbody>';
+
+      personnel.forEach(p => {
+        const name = (p.name || '').toLowerCase();
+        const id = (p.id || '').toLowerCase();
+        html += `<tr><td style="white-space:nowrap;">${p.name || p.id}</td>`;
+        topics.forEach(t => {
+          const participants = topicParticipants[t] || [];
+          const trained = participants.some(tok => tok.includes(name) || (id && tok.includes(id)) || name.includes(tok));
+          html += trained
+            ? '<td style="text-align:center;color:var(--color-success)">✓</td>'
+            : '<td style="text-align:center;color:var(--color-muted)">—</td>';
+        });
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+      wrap.innerHTML = html;
+    } catch (e) {
+      wrap.innerHTML = '<p class="text-muted" style="padding:var(--space-8);text-align:center;">Failed to load matrix.</p>';
+    } finally {
+      showSpinner(false);
+    }
   }
 
   return { init };
