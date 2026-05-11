@@ -40,14 +40,9 @@ const Lang = (() => {
   }
 
   async function init(langCode) {
-    const lang = langCode || detectBrowserLang();
+    const lang = langCode || 'en';
     await load(lang);
     return lang;
-  }
-
-  function detectBrowserLang() {
-    const nav = navigator.language || 'en';
-    return (nav.startsWith('hi') || nav.startsWith('mr')) ? 'hi' : 'en';
   }
 
   return { init, load, apply, t, getCurrent, toggle };
