@@ -1,0 +1,1942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YPP ERP — Design Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Tokens (inline — guide is standalone) ── */
+:root {
+  --orange:        #EA580C;
+  --orange-light:  #FB923C;
+  --orange-dark:   #C2410C;
+  --orange-bg:     #FFF7ED;
+  --ink:           #0F172A;
+  --ink-2:         #1E293B;
+  --ink-3:         #334155;
+  --bg:            #F8FAFC;
+  --surface:       #FFFFFF;
+  --border:        #E2E8F0;
+  --divider:       #CBD5E1;
+  --muted:         #64748B;
+  --subtle:        #94A3B8;
+  --success:       #16A34A;
+  --success-bg:    #DCFCE7;
+  --warning:       #D97706;
+  --warning-bg:    #FEF3C7;
+  --error:         #DC2626;
+  --error-bg:      #FEE2E2;
+  --info:          #0369A1;
+  --info-bg:       #E0F2FE;
+  --purple:        #7C3AED;
+  --purple-bg:     #EDE9FE;
+
+  --font-d: 'Barlow Condensed', sans-serif;
+  --font-b: 'Barlow', sans-serif;
+  --mono: 'Courier New', monospace;
+
+  --sp1: 4px; --sp2: 8px; --sp3: 12px; --sp4: 16px;
+  --sp5: 20px; --sp6: 24px; --sp7: 32px; --sp8: 40px;
+  --sp9: 48px; --sp10: 64px;
+
+  --r-sm: 3px; --r-md: 4px; --r-lg: 6px; --r-full: 9999px;
+
+  --sh-sm: 0 1px 3px rgba(15,23,42,0.08);
+  --sh-md: 0 2px 8px rgba(15,23,42,0.10);
+  --sh-lg: 0 8px 24px rgba(15,23,42,0.12);
+
+  --t-fast: 120ms ease-out;
+  --t-def:  220ms ease-out;
+}
+
+/* ── Layout ── */
+body {
+  font-family: var(--font-b);
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.guide-header {
+  background: var(--ink);
+  border-bottom: 3px solid var(--orange);
+  padding: var(--sp7) var(--sp8);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.guide-header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp4);
+}
+.guide-wordmark {
+  font-family: var(--font-d);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--orange);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.guide-subtitle {
+  font-family: var(--font-d);
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.55);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.guide-nav {
+  display: flex;
+  gap: 2px;
+}
+.guide-nav a {
+  font-family: var(--font-d);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.50);
+  text-decoration: none;
+  padding: var(--sp2) var(--sp3);
+  border-radius: var(--r-sm);
+  transition: color var(--t-fast), background var(--t-fast);
+}
+.guide-nav a:hover { color: #fff; background: rgba(255,255,255,0.08); }
+
+.guide-body {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--sp9) var(--sp8);
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: var(--sp8);
+  align-items: start;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  position: sticky;
+  top: calc(56px + var(--sp6));
+}
+.sidebar-section { margin-bottom: var(--sp4); }
+.sidebar-label {
+  font-family: var(--font-d);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--subtle);
+  padding: 0 var(--sp3);
+  margin-bottom: var(--sp1);
+}
+.sidebar-link {
+  display: block;
+  font-family: var(--font-d);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  padding: var(--sp2) var(--sp3);
+  border-radius: var(--r-sm);
+  border-left: 2px solid transparent;
+  transition: all var(--t-fast);
+}
+.sidebar-link:hover { color: var(--orange); border-left-color: var(--orange); background: var(--orange-bg); }
+
+/* ── Sections ── */
+.guide-main { min-width: 0; }
+
+.section {
+  margin-bottom: var(--sp10);
+  scroll-margin-top: calc(56px + var(--sp6));
+}
+.section-eyebrow {
+  font-family: var(--font-d);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--orange);
+  margin-bottom: var(--sp2);
+}
+.section-title {
+  font-family: var(--font-d);
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-bottom: var(--sp3);
+  line-height: 1.1;
+}
+.section-desc {
+  font-size: 15px;
+  color: var(--muted);
+  max-width: 65ch;
+  margin-bottom: var(--sp6);
+  line-height: 1.6;
+}
+.divider-line {
+  height: 1px;
+  background: var(--border);
+  margin-bottom: var(--sp6);
+}
+
+/* ── Token group ── */
+.token-group { margin-bottom: var(--sp6); }
+.token-group-title {
+  font-family: var(--font-d);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: var(--sp3);
+  padding-bottom: var(--sp2);
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Color swatches ── */
+.swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--sp3);
+}
+.swatch {
+  border-radius: var(--r-md);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: var(--sh-sm);
+}
+.swatch-color {
+  height: 56px;
+}
+.swatch-info {
+  background: var(--surface);
+  padding: var(--sp2) var(--sp3);
+}
+.swatch-name {
+  font-family: var(--font-d);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.swatch-hex {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+.swatch-token {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--subtle);
+  margin-top: 1px;
+}
+
+/* ── Status badge row ── */
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp3);
+  align-items: center;
+  padding: var(--sp4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--sp2);
+  border-radius: var(--r-sm);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-d);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ── Type scale ── */
+.type-scale-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp4);
+  padding: var(--sp4) 0;
+  border-bottom: 1px solid var(--border);
+}
+.type-scale-row:last-child { border-bottom: none; }
+.type-meta {
+  width: 120px;
+  flex-shrink: 0;
+}
+.type-token { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.type-size  { font-family: var(--font-d); font-size: 11px; font-weight: 700; color: var(--subtle); letter-spacing: 0.04em; text-transform: uppercase; }
+.type-spec  { font-size: 12px; color: var(--subtle); margin-top: 2px; }
+.type-sample-b { font-family: var(--font-b); }
+.type-sample-d { font-family: var(--font-d); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+
+/* ── Spacing scale ── */
+.space-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp4);
+  padding: var(--sp2) 0;
+}
+.space-bar-wrap { flex: 1; }
+.space-bar {
+  background: var(--orange);
+  height: 20px;
+  border-radius: 2px;
+  opacity: 0.75;
+}
+.space-label { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 80px; flex-shrink: 0; }
+.space-px    { font-family: var(--font-d); font-size: 11px; font-weight: 700; color: var(--subtle); letter-spacing: 0.04em; width: 40px; flex-shrink: 0; }
+
+/* ── Component demos ── */
+.demo-surface {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: var(--sp5);
+  margin-bottom: var(--sp4);
+}
+.demo-label {
+  font-family: var(--font-d);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--subtle);
+  margin-bottom: var(--sp3);
+}
+.demo-dark {
+  background: var(--ink);
+  border-color: var(--ink-2);
+}
+
+/* Header demo */
+.demo-header {
+  background: var(--ink);
+  border-bottom: 3px solid var(--orange);
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--sp4);
+  border-radius: var(--r-md) var(--r-md) 0 0;
+}
+.demo-header-title {
+  font-family: var(--font-d);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+}
+.demo-header-actions { display: flex; gap: var(--sp3); align-items: center; }
+.demo-lang-btn {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.30);
+  color: #fff;
+  border-radius: var(--r-sm);
+  padding: 0 var(--sp3);
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font-d);
+  letter-spacing: 0.05em;
+  height: 36px;
+  cursor: pointer;
+}
+.demo-back-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: var(--sp1);
+  display: flex;
+  align-items: center;
+  border-radius: var(--r-sm);
+}
+.demo-add-btn {
+  background: var(--orange);
+  border: none;
+  color: #fff;
+  border-radius: var(--r-sm);
+  padding: 0 var(--sp3);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-d);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  height: 36px;
+  cursor: pointer;
+}
+
+/* Tile demo */
+.demo-tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp3);
+  max-width: 340px;
+}
+.demo-tile {
+  background: var(--surface);
+  border-radius: var(--r-md);
+  padding: var(--sp4);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp2);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--orange);
+  min-height: 96px;
+  position: relative;
+  cursor: pointer;
+  transition: box-shadow var(--t-fast), transform var(--t-fast);
+}
+.demo-tile:hover { box-shadow: var(--sh-md); transform: translateY(-1px); }
+.demo-tile-icon { width: 26px; height: 26px; color: var(--orange); }
+.demo-tile-label {
+  font-family: var(--font-d);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ink);
+  line-height: 1.2;
+}
+.demo-tile-badge {
+  position: absolute;
+  top: var(--sp3);
+  right: var(--sp3);
+  background: var(--error);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 20px;
+  height: 20px;
+  border-radius: var(--r-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+}
+
+/* Button demo */
+.btn-row { display: flex; flex-wrap: wrap; gap: var(--sp3); align-items: center; }
+.demo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp2);
+  padding: 0 var(--sp4);
+  height: 40px;
+  border-radius: var(--r-md);
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font-d);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: none;
+  min-height: 44px;
+  transition: background var(--t-fast);
+}
+.btn-primary  { background: var(--orange); color: #fff; box-shadow: 0 2px 4px rgba(234,88,12,0.30); }
+.btn-primary:hover  { background: var(--orange-light); }
+.btn-secondary { background: transparent; color: var(--orange); border: 2px solid var(--orange); }
+.btn-secondary:hover { background: var(--orange-bg); }
+.btn-danger    { background: var(--error); color: #fff; }
+.btn-ghost     { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.btn-sm        { height: 32px; font-size: 11px; min-height: 36px; padding: 0 var(--sp3); }
+.btn-lg        { height: 48px; font-size: 16px; }
+
+/* Table demo */
+.demo-table-wrap {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.demo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: var(--surface);
+}
+.demo-table thead { background: var(--ink); border-bottom: 2px solid var(--orange); }
+.demo-table th {
+  padding: var(--sp2) var(--sp3);
+  text-align: left;
+  font-family: var(--font-d);
+  font-weight: 700;
+  color: rgba(255,255,255,0.85);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.demo-table td {
+  padding: var(--sp3);
+  border-bottom: 1px solid var(--border);
+  color: var(--ink);
+  vertical-align: middle;
+}
+.demo-table tbody tr:last-child td { border-bottom: none; }
+.demo-table tbody tr:hover td { background: var(--orange-bg); }
+
+/* Form demo */
+.demo-form-panel {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  max-width: 380px;
+}
+.demo-form-header {
+  background: var(--ink);
+  border-bottom: 3px solid var(--orange);
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: var(--sp3);
+  padding: 0 var(--sp4);
+}
+.demo-form-title {
+  font-family: var(--font-d);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  flex: 1;
+}
+.demo-form-body { padding: var(--sp5) var(--sp4); }
+.demo-form-group { margin-bottom: var(--sp4); }
+.demo-form-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-d);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: var(--sp2);
+}
+.demo-form-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--sp3);
+  border: 1px solid var(--divider);
+  border-radius: var(--r-md);
+  font-size: 16px;
+  font-family: var(--font-b);
+  background: var(--surface);
+  color: var(--ink);
+  appearance: none;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.demo-form-input:focus {
+  outline: none;
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px rgba(234,88,12,0.15);
+}
+.demo-form-input.focused {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px rgba(234,88,12,0.15);
+}
+
+/* KPI card demo */
+.demo-kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp2);
+  max-width: 340px;
+}
+.demo-kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--orange);
+  border-radius: var(--r-md);
+  padding: var(--sp3);
+}
+.demo-kpi-value {
+  font-family: var(--font-d);
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--orange);
+  line-height: 1;
+}
+.demo-kpi-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+  font-family: var(--font-d);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* FAB demo */
+.demo-fab {
+  width: 52px; height: 52px;
+  border-radius: var(--r-full);
+  background: var(--orange);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(234,88,12,0.45);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 300;
+  transition: transform var(--t-fast), box-shadow var(--t-fast);
+}
+.demo-fab:hover { transform: scale(1.06); box-shadow: 0 6px 20px rgba(234,88,12,0.55); }
+
+/* Toast demo */
+.demo-toast {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp3);
+  background: var(--ink);
+  color: #fff;
+  padding: var(--sp3) var(--sp5);
+  border-radius: var(--r-md);
+  border-left: 4px solid var(--orange);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-d);
+  letter-spacing: 0.03em;
+  box-shadow: var(--sh-lg);
+}
+.demo-toast.t-success { background: var(--success); border-left-color: #14532D; }
+.demo-toast.t-error   { background: var(--error);   border-left-color: #7F1D1D; }
+
+/* Tab bar demo */
+.demo-tab-bar {
+  display: flex;
+  background: var(--surface);
+  border-top: 2px solid var(--border);
+  border-radius: 0 0 var(--r-md) var(--r-md);
+  max-width: 340px;
+}
+.demo-tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: var(--sp2) 0 var(--sp3);
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-d);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  position: relative;
+  cursor: pointer;
+}
+.demo-tab-item.active { color: var(--orange); }
+.demo-tab-item.active::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 15%; right: 15%;
+  height: 3px;
+  background: var(--orange);
+}
+.demo-tab-icon { width: 24px; height: 24px; }
+
+/* Filter bar demo */
+.demo-filter-bar {
+  display: flex;
+  gap: var(--sp2);
+  padding: var(--sp3) var(--sp4);
+}
+.demo-filter-btn {
+  padding: var(--sp2) var(--sp3);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-d);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  min-height: 36px;
+  transition: all var(--t-fast);
+}
+.demo-filter-btn.active {
+  background: var(--orange);
+  color: #fff;
+  border-color: var(--orange);
+}
+
+/* Sub-tab demo */
+.demo-sub-tab-bar {
+  display: flex;
+  background: var(--surface);
+  border-bottom: 2px solid var(--border);
+  padding: 0 var(--sp4);
+  max-width: 340px;
+}
+.demo-sub-tab {
+  flex-shrink: 0;
+  padding: var(--sp3) var(--sp4);
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-d);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 44px;
+  transition: color var(--t-fast), border-color var(--t-fast);
+}
+.demo-sub-tab.active { color: var(--orange); border-bottom-color: var(--orange); }
+
+/* Record row demo */
+.demo-record-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp4);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  gap: var(--sp3);
+  transition: background var(--t-fast), border-left-color var(--t-fast);
+}
+.demo-record-row:hover { background: var(--orange-bg); border-left-color: var(--orange); }
+.demo-record-row:last-child { border-bottom: none; }
+.demo-record-name { font-family: var(--font-d); font-weight: 700; font-size: 16px; letter-spacing: 0.01em; }
+.demo-record-detail { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+/* Alert demo */
+.demo-alert {
+  padding: var(--sp3) var(--sp4);
+  border-radius: var(--r-md);
+  font-size: 13px;
+  margin-bottom: var(--sp3);
+  border-left: 4px solid;
+}
+.alert-error   { background: var(--error-bg);   border-color: var(--error);   color: #7F1D1D; }
+.alert-success { background: var(--success-bg); border-color: var(--success); color: #14532D; }
+.alert-warning { background: var(--warning-bg); border-color: var(--warning); color: #92400E; }
+.alert-info    { background: var(--info-bg);    border-color: var(--info);    color: #0C4A6E; }
+
+/* Code snippet */
+.code-block {
+  background: var(--ink);
+  border-radius: var(--r-md);
+  padding: var(--sp4);
+  margin: var(--sp3) 0;
+  overflow-x: auto;
+}
+.code-block code {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: rgba(255,255,255,0.85);
+  line-height: 1.6;
+  white-space: pre;
+}
+.code-key   { color: #FB923C; }
+.code-val   { color: #86EFAC; }
+.code-str   { color: #FDE68A; }
+.code-class { color: #93C5FD; }
+
+/* Rule card */
+.rule-card {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: var(--sp4);
+  margin-bottom: var(--sp3);
+  background: var(--surface);
+  display: flex;
+  gap: var(--sp3);
+}
+.rule-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+.rule-body {}
+.rule-title {
+  font-family: var(--font-d);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-bottom: var(--sp1);
+}
+.rule-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+.rule-card.rule-do   { border-left: 4px solid var(--success); }
+.rule-card.rule-dont { border-left: 4px solid var(--error); }
+
+/* Login demo */
+.demo-login {
+  background: var(--ink);
+  border-radius: var(--r-md);
+  padding: var(--sp7) var(--sp6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp5);
+  max-width: 360px;
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 20px,
+    rgba(234,88,12,0.07) 20px,
+    rgba(234,88,12,0.07) 21px
+  );
+}
+.demo-login-mark {
+  font-family: var(--font-d);
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--orange);
+}
+.demo-login-sub {
+  font-family: var(--font-d);
+  font-size: 14px;
+  color: rgba(255,255,255,0.55);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: -var(--sp4);
+}
+.demo-login-card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  padding: var(--sp6) var(--sp6);
+  width: 100%;
+  border-top: 4px solid var(--orange);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.40);
+}
+
+/* Z-index reference */
+.z-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp3);
+  padding: var(--sp2) 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.z-row:last-child { border-bottom: none; }
+.z-name  { font-family: var(--mono); color: var(--orange); width: 180px; flex-shrink: 0; font-size: 12px; }
+.z-val   { font-family: var(--font-d); font-weight: 700; width: 60px; flex-shrink: 0; }
+.z-desc  { color: var(--muted); }
+
+/* Radius reference */
+.radius-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp4);
+  padding: var(--sp3) 0;
+  border-bottom: 1px solid var(--border);
+}
+.radius-row:last-child { border-bottom: none; }
+.radius-name { font-family: var(--mono); color: var(--orange); width: 120px; flex-shrink: 0; font-size: 12px; }
+.radius-val  { font-family: var(--font-d); font-weight: 700; width: 40px; flex-shrink: 0; font-size: 12px; color: var(--muted); }
+.radius-swatch {
+  background: var(--orange);
+  width: 48px;
+  height: 24px;
+  opacity: 0.7;
+}
+.radius-usage { font-size: 12px; color: var(--muted); }
+
+/* Shadow reference */
+.shadow-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp4);
+  padding: var(--sp4) 0;
+  border-bottom: 1px solid var(--border);
+}
+.shadow-row:last-child { border-bottom: none; }
+.shadow-name { font-family: var(--mono); color: var(--orange); width: 120px; flex-shrink: 0; font-size: 12px; }
+.shadow-swatch {
+  width: 80px;
+  height: 36px;
+  background: var(--surface);
+  border-radius: var(--r-md);
+  flex-shrink: 0;
+}
+.shadow-desc { font-size: 12px; color: var(--muted); }
+
+/* Login badge */
+.login-stripe {
+  background: var(--ink);
+  background-image: repeating-linear-gradient(
+    45deg, transparent, transparent 20px,
+    rgba(234,88,12,0.07) 20px, rgba(234,88,12,0.07) 21px
+  );
+  border-radius: var(--r-md);
+  padding: var(--sp6);
+}
+
+/* Intro block */
+.intro-block {
+  background: var(--ink);
+  border-radius: var(--r-md);
+  padding: var(--sp7) var(--sp7);
+  margin-bottom: var(--sp7);
+  position: relative;
+  overflow: hidden;
+}
+.intro-block::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    45deg, transparent, transparent 30px,
+    rgba(234,88,12,0.06) 30px, rgba(234,88,12,0.06) 31px
+  );
+}
+.intro-inner { position: relative; }
+.intro-tag {
+  font-family: var(--font-d);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--orange);
+  margin-bottom: var(--sp3);
+}
+.intro-headline {
+  font-family: var(--font-d);
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #fff;
+  line-height: 1.0;
+  margin-bottom: var(--sp4);
+}
+.intro-body {
+  font-size: 15px;
+  color: rgba(255,255,255,0.60);
+  max-width: 60ch;
+  line-height: 1.6;
+}
+.intro-meta {
+  display: flex;
+  gap: var(--sp6);
+  margin-top: var(--sp5);
+}
+.intro-stat-val {
+  font-family: var(--font-d);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--orange);
+  line-height: 1;
+}
+.intro-stat-label {
+  font-family: var(--font-d);
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.40);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .guide-body { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .guide-body { padding: var(--sp6) var(--sp4); }
+  .guide-header { padding: var(--sp4); }
+  .guide-header-inner { flex-direction: column; gap: var(--sp2); }
+  .guide-nav { display: none; }
+  .intro-headline { font-size: 32px; }
+}
+
+/* Utilities */
+.row { display: flex; gap: var(--sp3); align-items: flex-start; flex-wrap: wrap; }
+.col { flex: 1; min-width: 200px; }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header class="guide-header">
+  <div class="guide-header-inner">
+    <div>
+      <div class="guide-wordmark">YPP ERP</div>
+      <div class="guide-subtitle">Design Guide — v1.0</div>
+    </div>
+    <nav class="guide-nav">
+      <a href="#foundations">Foundations</a>
+      <a href="#typography">Typography</a>
+      <a href="#spacing">Spacing</a>
+      <a href="#components">Components</a>
+      <a href="#patterns">Patterns</a>
+      <a href="#rules">Rules</a>
+    </nav>
+  </div>
+</header>
+
+<div class="guide-body">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Foundations</div>
+      <a class="sidebar-link" href="#color">Color</a>
+      <a class="sidebar-link" href="#typography">Typography</a>
+      <a class="sidebar-link" href="#spacing">Spacing</a>
+      <a class="sidebar-link" href="#radius">Radius</a>
+      <a class="sidebar-link" href="#shadows">Shadows</a>
+      <a class="sidebar-link" href="#motion">Motion</a>
+      <a class="sidebar-link" href="#zindex">Z-Index</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Components</div>
+      <a class="sidebar-link" href="#header">Header</a>
+      <a class="sidebar-link" href="#tabs">Tab Bar</a>
+      <a class="sidebar-link" href="#tiles">Tiles</a>
+      <a class="sidebar-link" href="#buttons">Buttons</a>
+      <a class="sidebar-link" href="#badges">Badges</a>
+      <a class="sidebar-link" href="#forms">Forms</a>
+      <a class="sidebar-link" href="#tables">Tables</a>
+      <a class="sidebar-link" href="#panels">Panels</a>
+      <a class="sidebar-link" href="#kpi">KPI Cards</a>
+      <a class="sidebar-link" href="#fab">FAB</a>
+      <a class="sidebar-link" href="#toast">Toast</a>
+      <a class="sidebar-link" href="#alerts">Alerts</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Patterns</div>
+      <a class="sidebar-link" href="#login">Login Screen</a>
+      <a class="sidebar-link" href="#rules">Design Rules</a>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="guide-main">
+
+    <!-- Intro -->
+    <div class="intro-block">
+      <div class="intro-inner">
+        <div class="intro-tag">Yash Poly Pack — Internal Tool</div>
+        <div class="intro-headline">Design<br>System</div>
+        <div class="intro-body">
+          A utilitarian design language for a plastic packaging ERP.
+          Built for operators, QMRs, and directors on shop-floor smartphones.
+          Every pixel earns its place. Speed and clarity over decoration.
+        </div>
+        <div class="intro-meta">
+          <div>
+            <div class="intro-stat-val">600px</div>
+            <div class="intro-stat-label">Max width</div>
+          </div>
+          <div>
+            <div class="intro-stat-val">8pt</div>
+            <div class="intro-stat-label">Spacing grid</div>
+          </div>
+          <div>
+            <div class="intro-stat-val">2</div>
+            <div class="intro-stat-label">Fonts</div>
+          </div>
+          <div>
+            <div class="intro-stat-val">15</div>
+            <div class="intro-stat-label">Modules</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ COLOR ═══ -->
+    <section class="section" id="color">
+      <div class="section-eyebrow">Foundations</div>
+      <div class="section-title">Color</div>
+      <div class="section-desc">Safety orange is the only accent. Near-black anchors all surfaces. White is data. Nothing else competes.</div>
+      <div class="divider-line"></div>
+
+      <div class="token-group">
+        <div class="token-group-title">Primary — Safety Orange</div>
+        <div class="swatch-grid">
+          <div class="swatch">
+            <div class="swatch-color" style="background:#EA580C"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Primary</div>
+              <div class="swatch-hex">#EA580C</div>
+              <div class="swatch-token">--orange</div>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background:#FB923C"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Light</div>
+              <div class="swatch-hex">#FB923C</div>
+              <div class="swatch-token">--orange-light</div>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background:#C2410C"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Dark</div>
+              <div class="swatch-hex">#C2410C</div>
+              <div class="swatch-token">--orange-dark</div>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background:#FFF7ED"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Background</div>
+              <div class="swatch-hex">#FFF7ED</div>
+              <div class="swatch-token">--orange-bg</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="token-group">
+        <div class="token-group-title">Accent — Near-Black</div>
+        <div class="swatch-grid">
+          <div class="swatch">
+            <div class="swatch-color" style="background:#0F172A"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Ink</div>
+              <div class="swatch-hex">#0F172A</div>
+              <div class="swatch-token">--ink</div>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background:#1E293B"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Ink 2</div>
+              <div class="swatch-hex">#1E293B</div>
+              <div class="swatch-token">--ink-2</div>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background:#334155"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Ink 3</div>
+              <div class="swatch-hex">#334155</div>
+              <div class="swatch-token">--ink-3</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="token-group">
+        <div class="token-group-title">Neutrals</div>
+        <div class="swatch-grid">
+          <div class="swatch">
+            <div class="swatch-color" style="background:#F8FAFC;border-bottom:1px solid #E2E8F0"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Page BG</div>
+              <div class="swatch-hex">#F8FAFC</div>
+              <div class="swatch-token">--bg</div>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background:#FFFFFF;border-bottom:1px solid #E2E8F0"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Surface</div>
+              <div class="swatch-hex">#FFFFFF</div>
+              <div class="swatch-token">--surface</div>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background:#E2E8F0"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Border</div>
+              <div class="swatch-hex">#E2E8F0</div>
+              <div class="swatch-token">--border</div>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background:#64748B"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Muted</div>
+              <div class="swatch-hex">#64748B</div>
+              <div class="swatch-token">--muted</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="token-group">
+        <div class="token-group-title">Semantic</div>
+        <div class="swatch-grid">
+          <div class="swatch">
+            <div class="swatch-color" style="background:#16A34A"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Success</div>
+              <div class="swatch-hex">#16A34A</div>
+              <div class="swatch-token">--success</div>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background:#D97706"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Warning</div>
+              <div class="swatch-hex">#D97706</div>
+              <div class="swatch-token">--warning</div>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background:#DC2626"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Error</div>
+              <div class="swatch-hex">#DC2626</div>
+              <div class="swatch-token">--error</div>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background:#0369A1"></div>
+            <div class="swatch-info">
+              <div class="swatch-name">Info</div>
+              <div class="swatch-hex">#0369A1</div>
+              <div class="swatch-token">--info</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="token-group">
+        <div class="token-group-title">Status Badge Colors</div>
+        <div class="badge-row">
+          <span class="badge" style="background:#FEF3C7;color:#92400E">Open</span>
+          <span class="badge" style="background:#DCFCE7;color:#14532D">Closed</span>
+          <span class="badge" style="background:#E0F2FE;color:#0C4A6E">Pending</span>
+          <span class="badge" style="background:#FEE2E2;color:#7F1D1D">Overdue</span>
+          <span class="badge" style="background:#EDE9FE;color:#4C1D95">Planned</span>
+          <span class="badge" style="background:#DCFCE7;color:#14532D">OK</span>
+          <span class="badge" style="background:#FEE2E2;color:#7F1D1D">Fail</span>
+          <span class="badge" style="background:#F1F5F9;color:#475569">Depleted</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ TYPOGRAPHY ═══ -->
+    <section class="section" id="typography">
+      <div class="section-eyebrow">Foundations</div>
+      <div class="section-title">Typography</div>
+      <div class="section-desc">Two fonts. Barlow Condensed is the voice of the system — every label, heading, and badge speaks in it. Barlow handles data and readable body copy.</div>
+      <div class="divider-line"></div>
+
+      <div class="token-group">
+        <div class="token-group-title">Font Families</div>
+        <div class="demo-surface">
+          <div style="margin-bottom:var(--sp5)">
+            <div class="demo-label">Barlow Condensed — Display / Headers / Labels / Badges</div>
+            <div style="font-family:var(--font-d);font-size:36px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:var(--ink)">BATCH LOG — GRN-2605-001</div>
+            <div style="font-family:var(--font-d);font-size:16px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:var(--muted);margin-top:var(--sp2)">PRODUCTION · QUALITY · DISPATCH · COMPLIANCE</div>
+          </div>
+          <div>
+            <div class="demo-label">Barlow — Body / Inputs / Data</div>
+            <div style="font-family:var(--font-b);font-size:16px;color:var(--ink);max-width:55ch;line-height:1.5">Batch YPP-B2605-001 logged 1,240 kg output with 12 defects. OQC cleared — ready for dispatch to Hindustan Unilever, Silvassa.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="token-group">
+        <div class="token-group-title">Type Scale</div>
+        <div class="demo-surface" style="padding:0">
+          <div class="type-scale-row" style="padding:var(--sp4) var(--sp5)">
+            <div class="type-meta">
+              <div class="type-token">--text-2xl</div>
+              <div class="type-size">30px</div>
+              <div class="type-spec">KPI values, stats</div>
+            </div>
+            <div class="type-sample-d" style="font-size:30px;font-weight:700">1,240</div>
+          </div>
+          <div class="type-scale-row" style="padding:var(--sp4) var(--sp5)">
+            <div class="type-meta">
+              <div class="type-token">--text-xl</div>
+              <div class="type-size">24px</div>
+              <div class="type-spec">Section titles</div>
+            </div>
+            <div class="type-sample-d" style="font-size:24px;font-weight:700;text-transform:uppercase">Quality Register</div>
+          </div>
+          <div class="type-scale-row" style="padding:var(--sp4) var(--sp5)">
+            <div class="type-meta">
+              <div class="type-token">--text-lg</div>
+              <div class="type-size">19px</div>
+              <div class="type-spec">Sub-headings</div>
+            </div>
+            <div class="type-sample-d" style="font-size:19px;font-weight:600;text-transform:uppercase">Batch Parameters</div>
+          </div>
+          <div class="type-scale-row" style="padding:var(--sp4) var(--sp5)">
+            <div class="type-meta">
+              <div class="type-token">--text-base</div>
+              <div class="type-size">16px</div>
+              <div class="type-spec">Body / inputs / tiles</div>
+            </div>
+            <div class="type-sample-b" style="font-size:16px">Batch started at 09:14. Melt temp 220°C. Cycle time 4.2s.</div>
+          </div>
+          <div class="type-scale-row" style="padding:var(--sp4) var(--sp5)">
+            <div class="type-meta">
+              <div class="type-token">--text-sm</div>
+              <div class="type-size">13px</div>
+              <div class="type-spec">Table body, meta</div>
+            </div>
+            <div class="type-sample-b" style="font-size:13px;color:var(--muted)">Last updated 11:45 · Supervisor: Rajesh K.</div>
+          </div>
+          <div class="type-scale-row" style="padding:var(--sp4) var(--sp5);border-bottom:none">
+            <div class="type-meta">
+              <div class="type-token">--text-xs</div>
+              <div class="type-size">11px</div>
+              <div class="type-spec">Labels / badges / th</div>
+            </div>
+            <div class="type-sample-d" style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase">Batch No · Product · Status · OQC</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ SPACING ═══ -->
+    <section class="section" id="spacing">
+      <div class="section-eyebrow">Foundations</div>
+      <div class="section-title">Spacing</div>
+      <div class="section-desc">8pt grid. All spacing values are multiples of 4px. Use the token names in CSS — never raw pixel values.</div>
+      <div class="divider-line"></div>
+
+      <div class="demo-surface" style="padding:var(--sp4) var(--sp5)">
+        <div style="margin-bottom:var(--sp3)"><span style="font-family:var(--mono);font-size:11px;color:var(--muted)">--sp1</span><span style="font-family:var(--font-d);font-weight:700;font-size:11px;color:var(--subtle);margin-left:var(--sp3)">4px</span></div>
+        <div class="space-row"><div class="space-label">--sp1</div><div class="space-px">4px</div><div class="space-bar-wrap"><div class="space-bar" style="width:4px"></div></div></div>
+        <div class="space-row"><div class="space-label">--sp2</div><div class="space-px">8px</div><div class="space-bar-wrap"><div class="space-bar" style="width:8px"></div></div></div>
+        <div class="space-row"><div class="space-label">--sp3</div><div class="space-px">12px</div><div class="space-bar-wrap"><div class="space-bar" style="width:12px"></div></div></div>
+        <div class="space-row"><div class="space-label">--sp4</div><div class="space-px">16px</div><div class="space-bar-wrap"><div class="space-bar" style="width:16px"></div></div></div>
+        <div class="space-row"><div class="space-label">--sp5</div><div class="space-px">20px</div><div class="space-bar-wrap"><div class="space-bar" style="width:20px"></div></div></div>
+        <div class="space-row"><div class="space-label">--sp6</div><div class="space-px">24px</div><div class="space-bar-wrap"><div class="space-bar" style="width:24px"></div></div></div>
+        <div class="space-row"><div class="space-label">--sp7</div><div class="space-px">32px</div><div class="space-bar-wrap"><div class="space-bar" style="width:32px"></div></div></div>
+        <div class="space-row"><div class="space-label">--sp8</div><div class="space-px">40px</div><div class="space-bar-wrap"><div class="space-bar" style="width:40px"></div></div></div>
+        <div class="space-row"><div class="space-label">--sp9</div><div class="space-px">48px</div><div class="space-bar-wrap"><div class="space-bar" style="width:48px"></div></div></div>
+        <div class="space-row"><div class="space-label">--sp10</div><div class="space-px">64px</div><div class="space-bar-wrap"><div class="space-bar" style="width:64px"></div></div></div>
+      </div>
+    </section>
+
+    <!-- ═══ RADIUS ═══ -->
+    <section class="section" id="radius">
+      <div class="section-eyebrow">Foundations</div>
+      <div class="section-title">Border Radius</div>
+      <div class="section-desc">Subtle rounding only. This is a tool, not a consumer app. Corners are tight and intentional.</div>
+      <div class="divider-line"></div>
+      <div class="demo-surface" style="padding:var(--sp4) var(--sp5)">
+        <div class="radius-row">
+          <div class="radius-name">--r-sm</div>
+          <div class="radius-val">3px</div>
+          <div class="radius-swatch" style="border-radius:3px"></div>
+          <div class="radius-usage">Badges, filter chips, button small</div>
+        </div>
+        <div class="radius-row">
+          <div class="radius-name">--r-md</div>
+          <div class="radius-val">4px</div>
+          <div class="radius-swatch" style="border-radius:4px"></div>
+          <div class="radius-usage">Cards, inputs, buttons, tables</div>
+        </div>
+        <div class="radius-row">
+          <div class="radius-name">--r-lg</div>
+          <div class="radius-val">6px</div>
+          <div class="radius-swatch" style="border-radius:6px"></div>
+          <div class="radius-usage">Login card</div>
+        </div>
+        <div class="radius-row">
+          <div class="radius-name">--r-full</div>
+          <div class="radius-val">9999px</div>
+          <div class="radius-swatch" style="border-radius:9999px"></div>
+          <div class="radius-usage">FAB, tile badge counters</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ SHADOWS ═══ -->
+    <section class="section" id="shadows">
+      <div class="section-eyebrow">Foundations</div>
+      <div class="section-title">Shadows</div>
+      <div class="section-desc">Three levels. Use sparingly — elevation is not decoration here.</div>
+      <div class="divider-line"></div>
+      <div class="demo-surface" style="padding:var(--sp4) var(--sp5)">
+        <div class="shadow-row">
+          <div class="shadow-name">--sh-sm</div>
+          <div class="shadow-swatch" style="box-shadow:0 1px 3px rgba(15,23,42,0.08);border:1px solid var(--border)"></div>
+          <div class="shadow-desc">Default card, table wrap</div>
+        </div>
+        <div class="shadow-row">
+          <div class="shadow-name">--sh-md</div>
+          <div class="shadow-swatch" style="box-shadow:0 2px 8px rgba(15,23,42,0.10);border:1px solid var(--border)"></div>
+          <div class="shadow-desc">Tile hover state</div>
+        </div>
+        <div class="shadow-row">
+          <div class="shadow-name">--sh-lg</div>
+          <div class="shadow-swatch" style="box-shadow:0 8px 24px rgba(15,23,42,0.12);border:1px solid var(--border)"></div>
+          <div class="shadow-desc">Floating elements, toast</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ MOTION ═══ -->
+    <section class="section" id="motion">
+      <div class="section-eyebrow">Foundations</div>
+      <div class="section-title">Motion</div>
+      <div class="section-desc">Fast and purposeful. No bounce, no elastic. Panels slide in from the right. Everything else fades or scales simply.</div>
+      <div class="divider-line"></div>
+      <div class="demo-surface">
+        <div class="demo-label">Timing tokens</div>
+        <div style="display:flex;gap:var(--sp6);flex-wrap:wrap">
+          <div>
+            <div style="font-family:var(--mono);font-size:12px;color:var(--orange);margin-bottom:var(--sp1)">--t-fast</div>
+            <div style="font-family:var(--font-d);font-weight:700;font-size:14px">120ms ease-out</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">Hover states, badge show/hide</div>
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:12px;color:var(--orange);margin-bottom:var(--sp1)">--t-def</div>
+            <div style="font-family:var(--font-d);font-weight:700;font-size:14px">220ms ease-out</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">Panel slide, drawer open, toast</div>
+          </div>
+        </div>
+        <div style="margin-top:var(--sp5)">
+          <div class="demo-label">Animation rules</div>
+          <div style="font-size:13px;color:var(--muted);line-height:1.8">
+            Form panels: <code style="font-family:var(--mono);color:var(--ink);background:var(--bg);padding:1px 4px;border-radius:2px">translateX(100%) → translateX(0)</code><br>
+            Drawer: <code style="font-family:var(--mono);color:var(--ink);background:var(--bg);padding:1px 4px;border-radius:2px">translateX(-100%) → translateX(0)</code><br>
+            Toast: <code style="font-family:var(--mono);color:var(--ink);background:var(--bg);padding:1px 4px;border-radius:2px">translateY(16px) → translateY(0)</code>, opacity 0→1<br>
+            Never animate: layout properties (width, height, top, left, margin)
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ Z-INDEX ═══ -->
+    <section class="section" id="zindex">
+      <div class="section-eyebrow">Foundations</div>
+      <div class="section-title">Z-Index</div>
+      <div class="divider-line"></div>
+      <div class="demo-surface" style="padding:var(--sp4) var(--sp5)">
+        <div class="z-row"><div class="z-name">--z-dropdown</div><div class="z-val">1000</div><div class="z-desc">Dropdowns, FAB, sub-tab bar</div></div>
+        <div class="z-row"><div class="z-name">--z-sticky</div><div class="z-val">1020</div><div class="z-desc">Header, tab bar</div></div>
+        <div class="z-row"><div class="z-name">--z-overlay</div><div class="z-val">1030</div><div class="z-desc">Spinner overlay</div></div>
+        <div class="z-row"><div class="z-name">--z-modal</div><div class="z-val">1040</div><div class="z-desc">Form panels, CAPA panel</div></div>
+        <div class="z-row"><div class="z-name">drawer (inline)</div><div class="z-val">1050</div><div class="z-desc">Module drawer (z-modal + 10)</div></div>
+        <div class="z-row"><div class="z-name">--z-toast</div><div class="z-val">1070</div><div class="z-desc">Toast notifications</div></div>
+      </div>
+    </section>
+
+    <!-- ═══ HEADER ═══ -->
+    <section class="section" id="header">
+      <div class="section-eyebrow">Components</div>
+      <div class="section-title">Header</div>
+      <div class="section-desc">56px fixed. Near-black background, 3px orange bottom border. Page title in Barlow Condensed Bold uppercase. Right side holds lang toggle and action button.</div>
+      <div class="divider-line"></div>
+
+      <div class="demo-label">Page header (back + title + lang)</div>
+      <div class="demo-header" style="margin-bottom:var(--sp4)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <button class="demo-back-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <span class="demo-header-title">Quality Checks</span>
+        </div>
+        <div class="demo-header-actions">
+          <button class="demo-lang-btn">EN</button>
+          <button class="demo-add-btn">+ New</button>
+        </div>
+      </div>
+
+      <div class="demo-label">Home header (wordmark + menu)</div>
+      <div class="demo-header" style="border-radius:var(--r-md)">
+        <span class="demo-header-title">YPP ERP</span>
+        <div class="demo-header-actions">
+          <button class="demo-lang-btn">EN</button>
+          <button class="demo-back-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ TAB BAR ═══ -->
+    <section class="section" id="tabs">
+      <div class="section-eyebrow">Components</div>
+      <div class="section-title">Tab Bars</div>
+      <div class="divider-line"></div>
+
+      <div class="demo-label">Bottom tab bar (global navigation)</div>
+      <div class="demo-surface" style="padding:0;margin-bottom:var(--sp5)">
+        <div class="demo-tab-bar">
+          <button class="demo-tab-item active">
+            <svg class="demo-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Home
+          </button>
+          <button class="demo-tab-item">
+            <svg class="demo-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            Quality
+          </button>
+          <button class="demo-tab-item">
+            <svg class="demo-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            Dispatch
+          </button>
+          <button class="demo-tab-item">
+            <svg class="demo-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            KPI
+          </button>
+        </div>
+      </div>
+
+      <div class="demo-label">Sub-tab bar (in-page tabs)</div>
+      <div class="demo-sub-tab-bar">
+        <button class="demo-sub-tab active">Breakdowns</button>
+        <button class="demo-sub-tab">PM Schedule</button>
+        <button class="demo-sub-tab">History</button>
+      </div>
+    </section>
+
+    <!-- ═══ TILES ═══ -->
+    <section class="section" id="tiles">
+      <div class="section-eyebrow">Components</div>
+      <div class="section-title">Tiles</div>
+      <div class="section-desc">Home screen navigation. 2-column grid. White surface, 4px left orange border, icon + uppercase label. Badge shows live count from dashboard stats.</div>
+      <div class="divider-line"></div>
+
+      <div class="demo-tiles">
+        <div class="demo-tile">
+          <svg class="demo-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span class="demo-tile-label">GRN</span>
+          <div class="demo-tile-badge">3</div>
+        </div>
+        <div class="demo-tile">
+          <svg class="demo-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          <span class="demo-tile-label">Quality</span>
+        </div>
+        <div class="demo-tile">
+          <svg class="demo-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          <span class="demo-tile-label">Dispatch</span>
+        </div>
+        <div class="demo-tile">
+          <svg class="demo-tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span class="demo-tile-label">KPI</span>
+          <div class="demo-tile-badge" style="background:var(--warning)">2</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ BUTTONS ═══ -->
+    <section class="section" id="buttons">
+      <div class="section-eyebrow">Components</div>
+      <div class="section-title">Buttons</div>
+      <div class="section-desc">40px height (48px min-touch). Barlow Condensed Bold, uppercase, letter-spacing 0.04em. Orange = primary action only. One primary per screen.</div>
+      <div class="divider-line"></div>
+
+      <div class="demo-surface" style="margin-bottom:var(--sp4)">
+        <div class="demo-label">Variants</div>
+        <div class="btn-row">
+          <button class="demo-btn btn-primary">Save GRN</button>
+          <button class="demo-btn btn-secondary">Cancel</button>
+          <button class="demo-btn btn-danger">Delete</button>
+          <button class="demo-btn btn-ghost">Back</button>
+        </div>
+      </div>
+
+      <div class="demo-surface" style="margin-bottom:var(--sp4)">
+        <div class="demo-label">Sizes</div>
+        <div class="btn-row" style="align-items:center">
+          <button class="demo-btn btn-primary btn-sm">Small</button>
+          <button class="demo-btn btn-primary">Default</button>
+          <button class="demo-btn btn-primary btn-lg">Large</button>
+          <button class="demo-btn btn-primary" disabled>Disabled</button>
+        </div>
+      </div>
+
+      <div class="code-block"><code><span class="code-class">.btn-primary</span>  {
+  <span class="code-key">background:</span> <span class="code-val">var(--orange)</span>;
+  <span class="code-key">color:</span> <span class="code-val">#fff</span>;
+  <span class="code-key">height:</span> <span class="code-val">40px</span>;   <span style="color:#6B7280">/* min-height: 44px for touch */</span>
+  <span class="code-key">font-family:</span> <span class="code-val">var(--font-d)</span>;
+  <span class="code-key">font-weight:</span> <span class="code-val">700</span>;
+  <span class="code-key">text-transform:</span> <span class="code-val">uppercase</span>;
+  <span class="code-key">letter-spacing:</span> <span class="code-val">0.04em</span>;
+}</code></div>
+    </section>
+
+    <!-- ═══ BADGES ═══ -->
+    <section class="section" id="badges">
+      <div class="section-eyebrow">Components</div>
+      <div class="section-title">Badges & Status Chips</div>
+      <div class="section-desc">11px Barlow Condensed Bold, uppercase. Pill on 3px radius. Used in tables and detail views for status, result, and category.</div>
+      <div class="divider-line"></div>
+
+      <div class="demo-surface">
+        <div class="badge-row">
+          <span class="badge" style="background:#FEF3C7;color:#92400E">Open</span>
+          <span class="badge" style="background:#DCFCE7;color:#14532D">Closed</span>
+          <span class="badge" style="background:#E0F2FE;color:#0C4A6E">Pending</span>
+          <span class="badge" style="background:#FEE2E2;color:#7F1D1D">Overdue</span>
+          <span class="badge" style="background:#EDE9FE;color:#4C1D95">Planned</span>
+          <span class="badge" style="background:#DCFCE7;color:#14532D">OK / Pass</span>
+          <span class="badge" style="background:#FEE2E2;color:#7F1D1D">NG / Fail</span>
+          <span class="badge" style="background:#DCFCE7;color:#14532D">Compliant</span>
+          <span class="badge" style="background:#FEF3C7;color:#92400E">Due Soon</span>
+          <span class="badge" style="background:#F1F5F9;color:#475569">Depleted</span>
+          <span class="badge" style="background:#DCFCE7;color:#14532D">Active</span>
+          <span class="badge" style="background:#FEE2E2;color:#7F1D1D">Inactive</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ FORMS ═══ -->
+    <section class="section" id="forms">
+      <div class="section-eyebrow">Components</div>
+      <div class="section-title">Forms</div>
+      <div class="section-desc">Labels are 11px uppercase condensed — they're instructions, not decoration. Inputs are 40px, full-width. Focus ring is orange 3px at 15% alpha.</div>
+      <div class="divider-line"></div>
+
+      <div class="row">
+        <div class="col">
+          <div class="demo-label">Field group</div>
+          <div class="demo-form-group">
+            <label class="demo-form-label">Batch Number</label>
+            <input class="demo-form-input" type="text" value="YPP-B2605-001" readonly>
+          </div>
+          <div class="demo-form-group">
+            <label class="demo-form-label">Product *</label>
+            <input class="demo-form-input focused" type="text" placeholder="Select product…">
+          </div>
+          <div class="demo-form-group">
+            <label class="demo-form-label">Output (kg)</label>
+            <input class="demo-form-input" type="number" placeholder="0.0">
+          </div>
+        </div>
+        <div class="col">
+          <div class="demo-label">Filter bar inputs</div>
+          <div class="demo-filter-bar" style="flex-direction:column;gap:var(--sp3);padding:0">
+            <div class="demo-filter-btn active">All</div>
+            <div class="demo-filter-btn">Open</div>
+            <div class="demo-filter-btn">Closed</div>
+            <div class="demo-filter-btn">Overdue</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ TABLES ═══ -->
+    <section class="section" id="tables">
+      <div class="section-eyebrow">Components</div>
+      <div class="section-title">Tables</div>
+      <div class="section-desc">Dark header, 2px orange border below it. White rows. Row hover turns orange-tinted. Default choice for tabular ERP data.</div>
+      <div class="divider-line"></div>
+
+      <div class="demo-table-wrap">
+        <table class="demo-table">
+          <thead>
+            <tr>
+              <th>Batch No</th>
+              <th>Product</th>
+              <th>Output kg</th>
+              <th>Defects</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>YPP-B2605-001</td>
+              <td>CAN-5L</td>
+              <td>1,240</td>
+              <td>12</td>
+              <td><span class="badge" style="background:#DCFCE7;color:#14532D">Closed</span></td>
+              <td><button style="background:none;border:2px solid var(--orange);color:var(--orange);padding:0 8px;height:28px;border-radius:3px;font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;cursor:pointer">View</button></td>
+            </tr>
+            <tr>
+              <td>YPP-B2605-002</td>
+              <td>BTL-1L</td>
+              <td>860</td>
+              <td>4</td>
+              <td><span class="badge" style="background:#FEF3C7;color:#92400E">Open</span></td>
+              <td><button style="background:none;border:2px solid var(--orange);color:var(--orange);padding:0 8px;height:28px;border-radius:3px;font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;cursor:pointer">View</button></td>
+            </tr>
+            <tr>
+              <td>YPP-B2605-003</td>
+              <td>BTL-200ML</td>
+              <td>320</td>
+              <td>0</td>
+              <td><span class="badge" style="background:#EDE9FE;color:#4C1D95">Planned</span></td>
+              <td><button style="background:none;border:2px solid var(--orange);color:var(--orange);padding:0 8px;height:28px;border-radius:3px;font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;cursor:pointer">View</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══ PANELS ═══ -->
+    <section class="section" id="panels">
+      <div class="section-eyebrow">Components</div>
+      <div class="section-title">Form Panels</div>
+      <div class="section-desc">Slide in from the right (translateX). Always full-screen (max 600px). Header mirrors the page header style. Never use modals for forms.</div>
+      <div class="divider-line"></div>
+
+      <div class="demo-form-panel">
+        <div class="demo-form-header">
+          <button class="demo-back-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <span class="demo-form-title">Log GRN</span>
+        </div>
+        <div class="demo-form-body">
+          <div class="demo-form-group">
+            <label class="demo-form-label">Supplier *</label>
+            <input class="demo-form-input" type="text" placeholder="Select supplier…">
+          </div>
+          <div class="demo-form-group">
+            <label class="demo-form-label">Material *</label>
+            <input class="demo-form-input" type="text" placeholder="HDPE Resin">
+          </div>
+          <div class="demo-form-group">
+            <label class="demo-form-label">Quantity (kg) *</label>
+            <input class="demo-form-input" type="number" placeholder="0.0">
+          </div>
+          <button class="demo-btn btn-primary" style="width:100%;margin-top:var(--sp2)">Save GRN</button>
+        </div>
+      </div>
+
+      <div class="code-block" style="margin-top:var(--sp4)"><code><span class="code-class">.form-panel</span> {
+  <span class="code-key">position:</span> <span class="code-val">fixed</span>; <span class="code-key">inset:</span> <span class="code-val">0</span>;
+  <span class="code-key">transform:</span> <span class="code-val">translateX(100%)</span>;
+  <span class="code-key">transition:</span> <span class="code-val">transform 220ms ease-out</span>;
+  <span class="code-key">z-index:</span> <span class="code-val">var(--z-modal)</span>;
+}
+<span class="code-class">.form-panel.slide-in</span> {
+  <span class="code-key">transform:</span> <span class="code-val">translateX(0)</span>;
+}</code></div>
+    </section>
+
+    <!-- ═══ KPI ═══ -->
+    <section class="section" id="kpi">
+      <div class="section-eyebrow">Components</div>
+      <div class="section-title">KPI Cards</div>
+      <div class="section-desc">2-column grid. White surface, 3px orange top border. Large condensed value in orange, small uppercase label below.</div>
+      <div class="divider-line"></div>
+
+      <div class="demo-kpi-grid">
+        <div class="demo-kpi-card">
+          <div class="demo-kpi-value">82%</div>
+          <div class="demo-kpi-label">OEE</div>
+        </div>
+        <div class="demo-kpi-card">
+          <div class="demo-kpi-value">1,240</div>
+          <div class="demo-kpi-label">Output kg</div>
+        </div>
+        <div class="demo-kpi-card">
+          <div class="demo-kpi-value" style="color:var(--error)">12</div>
+          <div class="demo-kpi-label">Defects</div>
+        </div>
+        <div class="demo-kpi-card">
+          <div class="demo-kpi-value">97%</div>
+          <div class="demo-kpi-label">FPY</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ FAB ═══ -->
+    <section class="section" id="fab">
+      <div class="section-eyebrow">Components</div>
+      <div class="section-title">FAB</div>
+      <div class="section-desc">52px circle, fixed bottom-right, above the tab bar. Orange with orange glow shadow. Only shown to roles that can create records on that screen.</div>
+      <div class="divider-line"></div>
+
+      <div class="demo-surface" style="display:flex;gap:var(--sp4);align-items:center">
+        <button class="demo-fab">+</button>
+        <div>
+          <div style="font-family:var(--font-d);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em">52 × 52px</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">Fixed · bottom: 80px (above tab bar) · right: 20px</div>
+          <div style="font-size:12px;color:var(--muted)">box-shadow: 0 4px 16px rgba(234,88,12,0.45)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ TOAST ═══ -->
+    <section class="section" id="toast">
+      <div class="section-eyebrow">Components</div>
+      <div class="section-title">Toast</div>
+      <div class="section-desc">Slides up from bottom, above tab bar. Auto-dismiss after 3 seconds. Three variants. Never block critical content.</div>
+      <div class="divider-line"></div>
+
+      <div class="demo-surface" style="display:flex;flex-direction:column;gap:var(--sp3)">
+        <div class="demo-toast">GRN saved successfully</div>
+        <div class="demo-toast t-success">Calibration log recorded</div>
+        <div class="demo-toast t-error">Save failed — check connection</div>
+      </div>
+    </section>
+
+    <!-- ═══ ALERTS ═══ -->
+    <section class="section" id="alerts">
+      <div class="section-eyebrow">Components</div>
+      <div class="section-title">Alerts</div>
+      <div class="section-desc">Inline contextual messages. 4px left border in semantic color. Used for form-level errors, warnings, or info — not system status.</div>
+      <div class="divider-line"></div>
+
+      <div class="demo-surface">
+        <div class="demo-alert alert-error">Batch YPP-B2605-002 has 4 open defects — OQC not cleared.</div>
+        <div class="demo-alert alert-warning">RM Stock for HDPE Resin is below reorder level (48 kg remaining).</div>
+        <div class="demo-alert alert-success">CAPA-009 closed successfully. Root cause documented.</div>
+        <div class="demo-alert alert-info" style="margin-bottom:0">Calibration due in 7 days for Vernier Caliper (INST001).</div>
+      </div>
+    </section>
+
+    <!-- ═══ LOGIN PATTERN ═══ -->
+    <section class="section" id="login">
+      <div class="section-eyebrow">Patterns</div>
+      <div class="section-title">Login Screen</div>
+      <div class="section-desc">Full-screen near-black background with diagonal orange hatching. White card floats centered with orange top border and deep shadow.</div>
+      <div class="divider-line"></div>
+
+      <div class="login-stripe">
+        <div class="demo-login">
+          <div>
+            <div class="demo-login-mark">YPP ERP</div>
+            <div class="demo-login-sub">Yash Poly Pack</div>
+          </div>
+          <div class="demo-login-card">
+            <div style="font-family:var(--font-d);font-size:20px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:var(--sp5)">Sign In</div>
+            <div class="demo-form-group">
+              <label class="demo-form-label">User ID</label>
+              <input class="demo-form-input" type="text" placeholder="Enter your ID">
+            </div>
+            <div class="demo-form-group">
+              <label class="demo-form-label">PIN</label>
+              <input class="demo-form-input" type="password" placeholder="••••">
+            </div>
+            <button class="demo-btn btn-primary" style="width:100%;margin-top:var(--sp3)">Sign In</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ RULES ═══ -->
+    <section class="section" id="rules">
+      <div class="section-eyebrow">Patterns</div>
+      <div class="section-title">Design Rules</div>
+      <div class="section-desc">Non-negotiable constraints. These govern every screen, every component, every decision.</div>
+      <div class="divider-line"></div>
+
+      <div class="rule-card rule-do">
+        <div class="rule-icon">✓</div>
+        <div class="rule-body">
+          <div class="rule-title">One primary action per screen</div>
+          <div class="rule-desc">Each page has one orange button. The FAB counts. The "Save" button in a form counts. Never two orange buttons competing.</div>
+        </div>
+      </div>
+      <div class="rule-card rule-do">
+        <div class="rule-icon">✓</div>
+        <div class="rule-body">
+          <div class="rule-title">Barlow Condensed Bold + uppercase for ALL labels</div>
+          <div class="rule-desc">Table headers, form labels, tile labels, badge text, button text, filter chips — all condensed, bold, uppercase. This is the system voice.</div>
+        </div>
+      </div>
+      <div class="rule-card rule-do">
+        <div class="rule-icon">✓</div>
+        <div class="rule-body">
+          <div class="rule-title">Form panels slide from the right</div>
+          <div class="rule-desc">All create/edit flows use translateX(100%) → 0. No modals. The list stays in place beneath. Back button always present.</div>
+        </div>
+      </div>
+      <div class="rule-card rule-do">
+        <div class="rule-icon">✓</div>
+        <div class="rule-body">
+          <div class="rule-title">Tables over cards for tabular data</div>
+          <div class="rule-desc">If there are 3+ columns of data, it's a table. Cards are for single records (CAPA detail, legal register entry). Never both on the same screen.</div>
+        </div>
+      </div>
+      <div class="rule-card rule-do">
+        <div class="rule-icon">✓</div>
+        <div class="rule-body">
+          <div class="rule-title">Min 44px touch targets everywhere</div>
+          <div class="rule-desc">Buttons, tab items, filter chips, FAB. Operators use these with gloves. No small tap targets.</div>
+        </div>
+      </div>
+      <div class="rule-card rule-dont">
+        <div class="rule-icon">✗</div>
+        <div class="rule-body">
+          <div class="rule-title">No modal dialogs for forms</div>
+          <div class="rule-desc">Modals clip content on mobile and fight the browser back button. Always use slide-in panels or inline expansion.</div>
+        </div>
+      </div>
+      <div class="rule-card rule-dont">
+        <div class="rule-icon">✗</div>
+        <div class="rule-body">
+          <div class="rule-title">No decorative orange — orange = action</div>
+          <div class="rule-desc">Orange left borders on tiles are structural (navigation affordance). Orange used as decoration elsewhere dilutes the primary signal.</div>
+        </div>
+      </div>
+      <div class="rule-card rule-dont">
+        <div class="rule-icon">✗</div>
+        <div class="rule-body">
+          <div class="rule-title">No gradient text or glassmorphism</div>
+          <div class="rule-desc">Both read as consumer-app softness. This is a QMS tool. Clarity over style.</div>
+        </div>
+      </div>
+      <div class="rule-card rule-dont">
+        <div class="rule-icon">✗</div>
+        <div class="rule-body">
+          <div class="rule-title">Never animate layout properties</div>
+          <div class="rule-desc">No transitions on width, height, top, left, or margin. Use transform and opacity only. Performance on low-end Android devices matters.</div>
+        </div>
+      </div>
+      <div class="rule-card rule-dont">
+        <div class="rule-icon">✗</div>
+        <div class="rule-body">
+          <div class="rule-title">No raw pixel values in CSS</div>
+          <div class="rule-desc">Every spacing value must reference --sp1 through --sp10. Every color must reference a token. No inline style="padding:16px" in production code.</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+// Sidebar active state on scroll
+const sections = document.querySelectorAll('.section[id]');
+const links = document.querySelectorAll('.sidebar-link');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active', 'sidebar-active'));
+      const a = document.querySelector('.sidebar-link[href="#' + e.target.id + '"]');
+      if (a) { a.style.color = 'var(--orange)'; a.style.borderLeftColor = 'var(--orange)'; a.style.background = 'var(--orange-bg)'; }
+    }
+  });
+}, { rootMargin: '-30% 0px -60% 0px' });
+sections.forEach(s => observer.observe(s));
+// Reset
+document.querySelectorAll('.sidebar-link').forEach(l => {
+  l.addEventListener('mouseenter', () => {});
+});
+</script>
+</body>
+</html>
