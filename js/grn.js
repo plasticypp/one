@@ -150,12 +150,9 @@ const GRN = (() => {
       <div class="detail-row"><span>GRN ID</span><strong>${r.grn_id}</strong></div>
       <div class="detail-row"><span>Date</span><strong>${r.date || '—'}</strong></div>
       <div class="detail-row"><span>Supplier</span><strong>${supplierName}</strong></div>
-      <div class="detail-row"><span>Material ID</span><strong>${r.material_id || '—'}</strong></div>
-      <div class="detail-row"><span>Qty Received</span><strong>${r.qty_received} ${r.unit || ''}</strong></div>
-      <div class="detail-row"><span>Rate</span><strong>₹${r.rate || 0}</strong></div>
-      <div class="detail-row"><span>Invoice No</span><strong>${r.invoice_no || '—'}</strong></div>
-      <div class="detail-row"><span>Received By</span><strong>${r.received_by || '—'}</strong></div>
-      <div class="detail-row"><span>Status</span><strong>${r.status || '—'}</strong></div>
+      <div class="detail-row"><span>Material</span><strong>${r.material || '—'}</strong></div>
+      <div class="detail-row"><span>Lot No</span><strong>${r.lot_no || '—'}</strong></div>
+      <div class="detail-row"><span>Qty Received</span><strong>${r.qty_kg ?? '—'} kg</strong></div>
     `;
     const canEdit = ['director','store','qmr'].includes(session.role);
     document.getElementById('detail-actions').innerHTML = canEdit
@@ -182,15 +179,15 @@ const GRN = (() => {
     sel.disabled = true;
     document.getElementById('field-material-select').value = '';
     document.getElementById('field-material-select').disabled = true;
-    document.getElementById('field-material-id').value = r.material_id || '';
+    document.getElementById('field-material-id').value = r.material || '';
     document.getElementById('field-material-id').readOnly = true;
-    document.getElementById('field-material').value = '';
+    document.getElementById('field-material').value = r.material || '';
     document.getElementById('field-date').value = r.date || '';
-    document.getElementById('field-qty').value = r.qty_received || '';
-    document.getElementById('field-unit').value = r.unit || 'kg';
-    document.getElementById('field-rate').value = r.rate || '';
-    document.getElementById('field-invoice').value = r.invoice_no || '';
-    document.getElementById('field-received-by').value = r.received_by || '';
+    document.getElementById('field-qty').value = r.qty_kg || '';
+    document.getElementById('field-unit').value = 'kg';
+    document.getElementById('field-rate').value = '';
+    document.getElementById('field-invoice').value = r.lot_no || '';
+    document.getElementById('field-received-by').value = '';
     document.getElementById('form-error').textContent = '';
     slideFormIn();
   }

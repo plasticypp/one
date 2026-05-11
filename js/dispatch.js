@@ -323,6 +323,7 @@ const Dispatch = (() => {
         dispatch_date: date,
         invoice_no:    invoice,
         vehicle_no:    vehicle,
+        driver_name:   '',
         batch_no:      batchNo,
         polybag_qty:   polybagQty,
         dispatched_by: session.username || session.name || '',
