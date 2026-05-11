@@ -1657,24 +1657,42 @@ function saveSO(data) {
 }
 
 function saveDispatch(data) {
-  var authError = requireRole(data, ['director','store']);
+  var authError = requireRole(data, ['director','supervisor','store_dispatch','store']);
   if (authError) return { success: false, error: authError };
 
-  var fieldError = validateFields(data, ['so_id','qty']);
+  var fieldError = validateFields(data, ['so_id','qty','batch_no']);
   if (fieldError) return { success: false, error: fieldError };
 
   const qty = Number(data.qty);
   if (!Number.isFinite(qty) || qty <= 0) return { success: false, error: 'invalid_qty' };
 
-  // Check available FG stock before writing anything
-  const fgSheet = getSheet('FinishedGoods');
-  const fgRows = fgSheet.getDataRange().getValues();
-  const totalAvailable = fgRows.slice(1)
-    .filter(r => String(r[2]) === String(data.product_id) && r[6] === 'Available')
-    .reduce((sum, r) => sum + (Number(r[3]) || 0), 0);
-  if (totalAvailable < qty) return { success: false, error: 'insufficient_stock' };
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  const dispSheet = getSheet('Dispatch');
+  // Enforce OQC clearance via BatchTraceability
+  const btSheet = ss.getSheetByName('BatchTraceability');
+  if (btSheet) {
+    const btRows = btSheet.getDataRange().getValues();
+    const btHeaders = btRows[0];
+    const batchRow = btRows.slice(1).map(r => rowToObj(btHeaders, r))
+      .find(r => String(r.batch_no) === String(data.batch_no));
+    if (!batchRow) return { success: false, error: 'batch_not_found' };
+    if (batchRow.oqc_status !== 'OK') return { success: false, error: 'batch_not_oqc_cleared' };
+    if (batchRow.dispatch_id) return { success: false, error: 'batch_already_dispatched' };
+  }
+
+  // Check available FG stock before writing anything
+  const fgSheet = ss.getSheetByName('FinishedGoods');
+  if (fgSheet) {
+    const fgRows = fgSheet.getDataRange().getValues();
+    const totalAvailable = fgRows.slice(1)
+      .filter(r => String(r[2]) === String(data.product_id) && r[6] === 'Available')
+      .reduce((sum, r) => sum + (Number(r[3]) || 0), 0);
+    if (totalAvailable < qty) return { success: false, error: 'insufficient_stock' };
+  }
+
+  const label_url = 'https://plasticypp.github.io/one/batch.html?batch=' + encodeURIComponent(data.batch_no);
+  const DISP_HEADERS = ['dispatch_id','so_id','dispatch_date','qty','vehicle_no','driver_name','dispatched_by','batch_no','polybag_qty','label_url'];
+  const dispSheet = ensureSheet('Dispatch', DISP_HEADERS);
   const dispRows = dispSheet.getDataRange().getValues();
   const rowCount = dispRows.length;
   const dispatch_id = 'DIS' + String(rowCount).padStart(3, '0');
@@ -1683,41 +1701,63 @@ function saveDispatch(data) {
     dispatch_id,
     data.so_id,
     data.dispatch_date || today,
-    data.qty,
+    qty,
     data.vehicle_no || '',
     data.driver_name || '',
-    data.dispatched_by || ''
+    data.dispatched_by || '',
+    data.batch_no,
+    Number(data.polybag_qty) || 0,
+    label_url
   ]);
 
-  const soSheet = getSheet('SalesOrders');
-  const soRows = soSheet.getDataRange().getValues();
-  for (let i = 1; i < soRows.length; i++) {
-    if (String(soRows[i][0]) === String(data.so_id)) {
-      const qtyOrdered    = Number(soRows[i][4]) || 0;
-      const qtyDispatched = (Number(soRows[i][5]) || 0) + Number(data.qty);
-      soSheet.getRange(i + 1, 6).setValue(qtyDispatched);
-      const newStatus = qtyDispatched >= qtyOrdered ? 'Dispatched' : 'Partial';
-      soSheet.getRange(i + 1, 7).setValue(newStatus);
-      break;
-    }
-  }
-
-  let remaining = Number(data.qty);
-  for (let i = 1; i < fgRows.length && remaining > 0; i++) {
-    if (String(fgRows[i][2]) === String(data.product_id) && fgRows[i][6] === 'Available') {
-      const available = Number(fgRows[i][3]) || 0;
-      if (available <= remaining) {
-        fgSheet.getRange(i + 1, 4).setValue(0);
-        fgSheet.getRange(i + 1, 7).setValue('Depleted');
-        remaining -= available;
-      } else {
-        fgSheet.getRange(i + 1, 4).setValue(available - remaining);
-        remaining = 0;
+  // Write dispatch_id back to BatchTraceability
+  if (btSheet) {
+    const btRows2 = btSheet.getDataRange().getValues();
+    const btHeaders2 = btRows2[0];
+    const dispIdIdx = btHeaders2.indexOf('dispatch_id');
+    const batchNoIdx = btHeaders2.indexOf('batch_no');
+    for (let i = 1; i < btRows2.length; i++) {
+      if (String(btRows2[i][batchNoIdx]) === String(data.batch_no)) {
+        btSheet.getRange(i + 1, dispIdIdx + 1).setValue(dispatch_id);
+        break;
       }
     }
   }
 
-  return { success: true, dispatch_id };
+  const soSheet = ss.getSheetByName('SalesOrders');
+  if (soSheet) {
+    const soRows = soSheet.getDataRange().getValues();
+    for (let i = 1; i < soRows.length; i++) {
+      if (String(soRows[i][0]) === String(data.so_id)) {
+        const qtyOrdered    = Number(soRows[i][4]) || 0;
+        const qtyDispatched = (Number(soRows[i][5]) || 0) + qty;
+        soSheet.getRange(i + 1, 6).setValue(qtyDispatched);
+        soSheet.getRange(i + 1, 7).setValue(qtyDispatched >= qtyOrdered ? 'Dispatched' : 'Partial');
+        break;
+      }
+    }
+  }
+
+  const fgSheet2 = ss.getSheetByName('FinishedGoods');
+  if (fgSheet2) {
+    const fgRows2 = fgSheet2.getDataRange().getValues();
+    let remaining = qty;
+    for (let i = 1; i < fgRows2.length && remaining > 0; i++) {
+      if (String(fgRows2[i][2]) === String(data.product_id) && fgRows2[i][6] === 'Available') {
+        const available = Number(fgRows2[i][3]) || 0;
+        if (available <= remaining) {
+          fgSheet2.getRange(i + 1, 4).setValue(0);
+          fgSheet2.getRange(i + 1, 7).setValue('Depleted');
+          remaining -= available;
+        } else {
+          fgSheet2.getRange(i + 1, 4).setValue(available - remaining);
+          remaining = 0;
+        }
+      }
+    }
+  }
+
+  return { success: true, dispatch_id, label_url };
 }
 
 function getDispatchList(params) {
