@@ -28,6 +28,9 @@
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   padding: 0 var(--space-4);
+  position: sticky;
+  top: 56px;
+  z-index: var(--z-dropdown);
 }
 .sub-tab-bar::-webkit-scrollbar { display: none; }
 .sub-tab {
