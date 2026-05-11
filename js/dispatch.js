@@ -272,15 +272,46 @@ const Dispatch = (() => {
     slideDispatchActionPanelOut();
   }
 
+  async function loadOQCBatches() {
+    const res = await Api.get('getOQCBatchList');
+    return res.success ? res.data : [];
+  }
+
+  async function openBatchSelectPanel() {
+    const tbody = document.getElementById('batch-select-tbody');
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Loading…</td></tr>';
+    document.getElementById('batch-select-panel').classList.add('slide-in');
+    const so = soCache.find(s => String(s.so_id) === String(dispatchingSOId));
+    const batches = await loadOQCBatches();
+    const filtered = so ? batches.filter(b => !b.product_id || b.product_id === so.product_id) : batches;
+    tbody.innerHTML = filtered.length
+      ? filtered.map(b => `
+          <tr>
+            <td style="font-weight:600;">${b.batch_no}</td>
+            <td>${b.product_id || '—'}</td>
+            <td>${b.production_date || '—'}</td>
+            <td><button class="btn btn-sm btn-primary" onclick="Dispatch.selectBatch('${b.batch_no}')">Select</button></td>
+          </tr>`).join('')
+      : '<tr><td colspan="4" class="text-center text-muted" style="padding:16px;">No OQC-cleared batches available</td></tr>';
+  }
+
+  function selectBatch(batchNo) {
+    const el = document.getElementById('dispatch-batch-no');
+    if (el) el.value = batchNo;
+    document.getElementById('batch-select-panel').classList.remove('slide-in');
+  }
+
   async function submitDispatchAction() {
-    const qty     = Number(document.getElementById('dispatch-qty').value);
-    const invoice = document.getElementById('dispatch-invoice').value.trim();
-    const date    = document.getElementById('dispatch-date').value;
-    const vehicle = document.getElementById('dispatch-vehicle').value.trim();
+    const qty       = Number(document.getElementById('dispatch-qty').value);
+    const invoice   = document.getElementById('dispatch-invoice').value.trim();
+    const date      = document.getElementById('dispatch-date').value;
+    const vehicle   = document.getElementById('dispatch-vehicle').value.trim();
+    const batchNo   = document.getElementById('dispatch-batch-no')?.value?.trim() || '';
+    const polybagQty = Number(document.getElementById('dispatch-polybag-qty')?.value) || 0;
 
     if (!qty || qty <= 0)  { showToast('Enter a valid dispatch quantity'); return; }
-    if (!invoice)          { showToast('Invoice number is required'); return; }
     if (!date)             { showToast('Dispatch date is required'); return; }
+    if (!batchNo)          { showToast('Select a batch first'); return; }
 
     const so = soCache.find(s => String(s.so_id) === String(dispatchingSOId));
     showSpinner(true);
@@ -292,6 +323,8 @@ const Dispatch = (() => {
         dispatch_date: date,
         invoice_no:    invoice,
         vehicle_no:    vehicle,
+        batch_no:      batchNo,
+        polybag_qty:   polybagQty,
         dispatched_by: session.username || session.name || '',
         userId:        Auth.getUserId()
       });
@@ -301,10 +334,19 @@ const Dispatch = (() => {
         slideDispatchActionPanelOut();
         await loadSOList();
         if (activeTab === 'log') await loadDispatchLog();
-      } else if (res.error === 'insufficient_stock') {
-        showToast('Insufficient FG stock for this product');
+        // Open QR label print page
+        if (res.label_url) {
+          const printUrl = res.label_url + '&print=1';
+          window.open(printUrl, '_blank');
+        }
       } else {
-        showToast('Error: ' + res.error);
+        const msgs = {
+          batch_not_oqc_cleared:    'Batch not OQC cleared',
+          batch_already_dispatched: 'Batch already dispatched',
+          batch_not_found:          'Batch not found',
+          insufficient_stock:       'Insufficient FG stock for this product'
+        };
+        showToast(msgs[res.error] || ('Error: ' + res.error));
       }
     } finally { showSpinner(false); }
   }
@@ -484,7 +526,7 @@ const Dispatch = (() => {
     setTimeout(() => t.classList.remove('show'), 2500);
   }
 
-  return { init, loadSOList, submitSO, dispatchAction, submitDispatch, submitDispatchAction, closeDispatchActionPanel, editSO, deleteSO };
+  return { init, loadSOList, submitSO, dispatchAction, submitDispatch, submitDispatchAction, closeDispatchActionPanel, editSO, deleteSO, openBatchSelectPanel, selectBatch };
 })();
 
 // Global shims for inline onclick handlers
