@@ -140,7 +140,7 @@ const Dispatch = (() => {
       tr.style.cursor = 'pointer';
       tr.innerHTML = `
         <td>${r.so_id || ''}</td>
-        <td>${r.date || ''}</td>
+        <td>${String(r.date || "").slice(0,10)}</td>
         <td>${customerName}</td>
         <td>${productName}</td>
         <td>${r.qty_ordered || 0}</td>
@@ -401,7 +401,7 @@ const Dispatch = (() => {
     document.getElementById('detail-title').textContent = 'SO Detail';
     document.getElementById('detail-body').innerHTML = `
       <div class="detail-row"><span>SO ID</span><strong>${r.so_id}</strong></div>
-      <div class="detail-row"><span>Date</span><strong>${r.date || '—'}</strong></div>
+      <div class="detail-row"><span>Date</span><strong>${String(r.date || "").slice(0,10) || "—"}</strong></div>
       <div class="detail-row"><span>Customer</span><strong>${customerName}</strong></div>
       <div class="detail-row"><span>Product</span><strong>${productName}</strong></div>
       <div class="detail-row"><span>Qty Ordered</span><strong>${r.qty_ordered}</strong></div>
@@ -467,7 +467,7 @@ const Dispatch = (() => {
       tr.innerHTML = `
         <td>${r.dispatch_id || ''}</td>
         <td>${r.so_id || ''}</td>
-        <td>${r.dispatch_date || ''}</td>
+        <td>${String(r.dispatch_date || "").slice(0,10)}</td>
         <td>${r.qty || ''}</td>
         <td>${r.vehicle_no || ''}</td>
         <td>${r.driver_name || ''}</td>

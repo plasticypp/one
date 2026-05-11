@@ -152,7 +152,7 @@ const GRN = (() => {
     const supplierName = (supplierCache.find(s => String(s.id) === String(r.supplier_id)) || {}).name || r.supplier_id;
     document.getElementById('detail-body').innerHTML = `
       <div class="detail-row"><span>GRN ID</span><strong>${r.grn_id}</strong></div>
-      <div class="detail-row"><span>Date</span><strong>${r.date || '—'}</strong></div>
+      <div class="detail-row"><span>Date</span><strong>${String(r.date || "").slice(0,10) || "—"}</strong></div>
       <div class="detail-row"><span>Supplier</span><strong>${supplierName}</strong></div>
       <div class="detail-row"><span>Material</span><strong>${r.material || '—'}</strong></div>
       <div class="detail-row"><span>Lot No</span><strong>${r.lot_no || '—'}</strong></div>

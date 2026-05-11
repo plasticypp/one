@@ -129,7 +129,7 @@ const Production = (() => {
       tr.style.cursor = 'pointer';
       tr.innerHTML = `
         <td>${r.batch_id || ''}</td>
-        <td>${r.date || ''}</td>
+        <td>${String(r.date || '').slice(0, 10)}</td>
         <td>${productName}</td>
         <td>${machineName}</td>
         <td>${r.planned_qty || ''}</td>
@@ -274,7 +274,7 @@ const Production = (() => {
     const mName = (machineCache.find(m => String(m.id) === String(r.machine_id)) || {}).name || r.machine_id;
     document.getElementById('detail-body').innerHTML = `
       <div class="detail-row"><span>Batch ID</span><strong>${r.batch_id}</strong></div>
-      <div class="detail-row"><span>Date</span><strong>${r.date || '—'}</strong></div>
+      <div class="detail-row"><span>Date</span><strong>${String(r.date || '').slice(0, 10) || '—'}</strong></div>
       <div class="detail-row"><span>Product</span><strong>${pName}</strong></div>
       <div class="detail-row"><span>Machine</span><strong>${mName}</strong></div>
       <div class="detail-row"><span>Operator</span><strong>${r.operator_id || '—'}</strong></div>
@@ -344,7 +344,7 @@ const Production = (() => {
         <td>${r.batch_id || ''}</td>
         <td>${productName}</td>
         <td>${r.qty || ''}</td>
-        <td>${r.produced_date || ''}</td>
+        <td>${String(r.produced_date || '').slice(0, 10)}</td>
         <td><span class="status-badge active">${r.status || ''}</span></td>
       `;
       tbody.appendChild(tr);
