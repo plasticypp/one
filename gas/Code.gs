@@ -442,12 +442,12 @@ function deductBOMStock(product_id, qty) {
 
   for (let i = 1; i < bomRows.length; i++) {
     if (String(bomRows[i][1]) !== String(product_id)) continue;
-    const materialName = bomRows[i][2];
+    const materialId = bomRows[i][2];
     const qtyPerUnit = Number(bomRows[i][4]) || 0;
     const deduct = qtyPerUnit * qty;
 
     for (let j = 1; j < stockRows.length; j++) {
-      if (String(stockRows[j][1]) === String(materialName)) {
+      if (String(stockRows[j][0]) === String(materialId)) {
         const current = Number(stockRows[j][3]) || 0;
         stockSheet.getRange(j + 1, 4).setValue(Math.max(0, current - deduct));
         stockSheet.getRange(j + 1, 6).setValue(today);
@@ -629,16 +629,16 @@ function getDashboardStats() {
   const batchRows = getSheet('BatchOrders').getDataRange().getValues();
   const activeBatches = batchRows.slice(1).filter(r => r[7] === 'Planned').length;
 
-  // openBreakdowns: Breakdown_Log sheet, status (col G, index 6) === 'Open'
+  // openBreakdowns: Breakdown_Log sheet, status (col L, index 11) === 'Open'
   const bdRows = getSheet('Breakdown_Log').getDataRange().getValues();
-  const openBreakdowns = bdRows.slice(1).filter(r => r[6] === 'Open').length;
+  const openBreakdowns = bdRows.slice(1).filter(r => r[11] === 'Open').length;
 
-  // openCapas: CAPA sheet, status (col H, index 7) === 'Open'
-  const capaRows = getSheet('CAPA').getDataRange().getValues();
+  // openCapas: CAPA_Register sheet, status (col H, index 7) === 'Open'
+  const capaRows = getSheet('CAPA_Register').getDataRange().getValues();
   const openCapas = capaRows.slice(1).filter(r => r[7] === 'Open').length;
 
-  // overdueCompliance: LegalRegister, status (col E, index 4) !== 'Compliant' AND due_date (col D, index 3) < today
-  const lrRows = getSheet('LegalRegister').getDataRange().getValues();
+  // overdueCompliance: Legal_Register, status (col E, index 4) !== 'Compliant' AND due_date (col D, index 3) < today
+  const lrRows = getSheet('Legal_Register').getDataRange().getValues();
   const overdueCompliance = lrRows.slice(1).filter(r => {
     const status = r[4];
     const due = r[3] ? new Date(r[3]) : null;
@@ -799,7 +799,7 @@ function seedInventoryData() {
 // ── Compliance ───────────────────────────────────────────────────────────────
 
 function getLegalRegister() {
-  const sheet = getSheet('LegalRegister');
+  const sheet = getSheet('Legal_Register');
   const rows = sheet.getDataRange().getValues();
   if (rows.length < 2) return { success: true, data: [] };
   const headers = rows[0];
@@ -816,7 +816,7 @@ function getLegalRegister() {
 }
 
 function getCapaList(params) {
-  const sheet = getSheet('CAPA');
+  const sheet = getSheet('CAPA_Register');
   const rows = sheet.getDataRange().getValues();
   if (rows.length < 2) return { success: true, data: [] };
   const headers = rows[0];
@@ -832,7 +832,7 @@ function getCapaList(params) {
 }
 
 function saveCapa(data) {
-  const sheet = getSheet('CAPA');
+  const sheet = getSheet('CAPA_Register');
   const rows = sheet.getDataRange().getValues();
   const rowCount = rows.length;
   const capa_id = 'CAPA' + String(rowCount).padStart(4, '0');
@@ -851,7 +851,7 @@ function saveCapa(data) {
 }
 
 function updateCapaStatus(data) {
-  const sheet = getSheet('CAPA');
+  const sheet = getSheet('CAPA_Register');
   const rows = sheet.getDataRange().getValues();
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][0]) === String(data.capa_id)) {
@@ -879,7 +879,7 @@ function seedComplianceData() {
     Logger.log(sheetName + ': seeded ' + rows.length + ' rows.');
   }
 
-  safeWrite('LegalRegister',
+  safeWrite('Legal_Register',
     ['reg_id','regulation','applicability','due_date','status','last_reviewed'],
     [
       ['LR001','ISO 9001:2015','Certification','2026-03-31','Compliant','2025-03-31'],
@@ -890,7 +890,7 @@ function seedComplianceData() {
     ]
   );
 
-  safeWrite('CAPA',
+  safeWrite('CAPA_Register',
     ['capa_id','date','source','description','root_cause','action','target_date','status'],
     [
       ['CAPA0001','2025-01-10','Customer Complaint','Leakage reported in 1L bottles from batch B2501','Insufficient blow pressure causing thin base wall','Increased blow pressure to 7.5 bar; re-inspected batch','2025-02-10','Closed'],
