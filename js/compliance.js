@@ -261,7 +261,7 @@ const Compliance = (() => {
   }
 
   async function closeCapaItemFromDetail(id) {
-    const effectiveness = prompt('Effectiveness notes (optional):') ?? '';
+    const effectiveness = prompt('Effectiveness notes (optional):');
     if (effectiveness === null) return;
     showSpinner(true);
     try {

@@ -129,6 +129,23 @@ function updateLanguage(data) {
   return { success: false, error: 'user_not_found' };
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const _TZ_ = Session.getScriptTimeZone();
+function rowToObj(headers, row) {
+  const obj = {};
+  headers.forEach((h, i) => {
+    const v = row[i];
+    obj[h] = (v instanceof Date) ? Utilities.formatDate(v, _TZ_, 'yyyy-MM-dd') : v;
+  });
+  return obj;
+}
+function rowsToObjects(rows) {
+  if (rows.length < 2) return [];
+  const headers = rows[0];
+  return rows.slice(1).map(row => rowToObj(headers, row));
+}
+
 // ── Master Data CRUD ─────────────────────────────────────────────────────────
 
 const MASTER_ENTITIES = ['Products','Customers','Suppliers','Equipment','Tooling','Spares','Personnel','BOM','QualityParams'];
@@ -144,9 +161,7 @@ function getMasterList(entity) {
   if (rows.length < 2) return { success: true, data: [] };
   const headers = rows[0];
   const data = rows.slice(1).map(row => {
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = row[i]; });
-    return obj;
+    return rowToObj(headers, row);
   });
   return { success: true, data };
 }
@@ -248,9 +263,7 @@ function getQualityParams(params) {
   if (rows.length < 2) return { success: true, data: [] };
   const headers = rows[0];
   let data = rows.slice(1).map(row => {
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = row[i]; });
-    return obj;
+    return rowToObj(headers, row);
   }).filter(r => r.Active !== false && r.Active !== 'FALSE');
   if (params && params.product_id) {
     data = data.filter(r => String(r.ProductID) === String(params.product_id));
@@ -363,9 +376,7 @@ function getGRNList(params) {
   if (rows.length < 2) return { success: true, data: [] };
   const headers = rows[0];
   let data = rows.slice(1).map(row => {
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = row[i]; });
-    return obj;
+    return rowToObj(headers, row);
   });
   if (params.supplier_id) {
     data = data.filter(r => String(r.supplier_id) === String(params.supplier_id));
@@ -420,8 +431,7 @@ function getStockList() {
   if (rows.length < 2) return { success: true, data: [] };
   const headers = rows[0];
   const data = rows.slice(1).map(row => {
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = row[i]; });
+    const obj = rowToObj(headers, row);
     obj.reorder_low = Number(obj.current_qty) <= Number(obj.reorder_level);
     return obj;
   });
@@ -437,9 +447,7 @@ function getBreakdownList(params) {
   if (rows.length < 2) return { success: true, data: [] };
   const headers = rows[0];
   let data = rows.slice(1).map(row => {
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = row[i]; });
-    return obj;
+    return rowToObj(headers, row);
   });
   if (params.status && params.status !== 'all') {
     data = data.filter(r => r.Status === params.status);
@@ -501,8 +509,7 @@ function getPMSchedule() {
   const headers = rows[0];
   const today = new Date();
   const data = rows.slice(1).map(row => {
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = row[i]; });
+    const obj = rowToObj(headers, row);
     const nextDue = obj.NextDue ? new Date(obj.NextDue) : null;
     obj.overdue = nextDue && nextDue < today;
     return obj;
@@ -550,12 +557,10 @@ function getBatchList(params) {
   if (rows.length < 2) return { success: true, data: [] };
   const headers = rows[0];
   let data = rows.slice(1).map(row => {
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = row[i]; });
-    return obj;
+    return rowToObj(headers, row);
   });
   if (params.status && params.status !== 'all') {
-    data = data.filter(r => r.status === params.status);
+    data = data.filter(r => (r.Status || r.status) === params.status);
   }
   return { success: true, data };
 }
@@ -656,9 +661,7 @@ function getFinishedGoods() {
   if (rows.length < 2) return { success: true, data: [] };
   const headers = rows[0];
   const data = rows.slice(1).map(row => {
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = row[i]; });
-    return obj;
+    return rowToObj(headers, row);
   });
   return { success: true, data };
 }
@@ -711,11 +714,7 @@ function getQualityChecks(params) {
   const rows = sheet.getDataRange().getValues();
   if (rows.length < 2) return { success: true, data: [] };
   const headers = rows[0];
-  let data = rows.slice(1).map(row => {
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = row[i]; });
-    return obj;
-  });
+  let data = rows.slice(1).map(row => rowToObj(headers, row));
   if (params.batch_id) {
     data = data.filter(r => String(r.batch_id) === String(params.batch_id));
   }
@@ -754,8 +753,7 @@ function getQualitySummary() {
   const headers = rows[0];
   const map = {};
   rows.slice(1).forEach(row => {
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = row[i]; });
+    const obj = rowToObj(headers, row);
     const bid = obj.batch_id;
     if (!map[bid]) map[bid] = { batch_id: bid, total: 0, ok: 0, ng: 0 };
     map[bid].total++;
@@ -994,8 +992,7 @@ function getLegalRegister() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const data = rows.slice(1).map(row => {
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = row[i]; });
+    const obj = rowToObj(headers, row);
     const due = obj.NextReview ? new Date(obj.NextReview) : (obj.due_date ? new Date(obj.due_date) : null);
     obj.overdue = due && due < today && obj.ComplianceStatus !== 'Compliant' && obj.status !== 'Compliant';
     obj.due_date = obj.NextReview || obj.due_date; // normalise for frontend
@@ -1011,12 +1008,10 @@ function getCapaList(params) {
   if (rows.length < 2) return { success: true, data: [] };
   const headers = rows[0];
   let data = rows.slice(1).map(row => {
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = row[i]; });
-    return obj;
+    return rowToObj(headers, row);
   });
   if (params && params.status && params.status !== 'all') {
-    data = data.filter(r => r.status === params.status);
+    data = data.filter(r => (r.Status || r.status) === params.status);
   }
   return { success: true, data };
 }
@@ -1131,12 +1126,10 @@ function getSOList(params) {
   if (rows.length < 2) return { success: true, data: [] };
   const headers = rows[0];
   let data = rows.slice(1).map(row => {
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = row[i]; });
-    return obj;
+    return rowToObj(headers, row);
   });
   if (params.status && params.status !== 'all') {
-    data = data.filter(r => r.status === params.status);
+    data = data.filter(r => (r.Status || r.status) === params.status);
   }
   return { success: true, data };
 }
@@ -1224,9 +1217,7 @@ function getDispatchList(params) {
   if (rows.length < 2) return { success: true, data: [] };
   const headers = rows[0];
   let data = rows.slice(1).map(row => {
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = row[i]; });
-    return obj;
+    return rowToObj(headers, row);
   });
   if (params.so_id) {
     data = data.filter(r => String(r.so_id) === String(params.so_id));

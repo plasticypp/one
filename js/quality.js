@@ -333,20 +333,23 @@ const Quality = (() => {
   // ── Detail Panel ──────────────────────────────────────────────────────────
 
   function openCheckDetail(checkId) {
-    const r = checkCache.find(c => String(c.check_id) === String(checkId));
+    const r = checkCache.find(c => String(c.check_id || c.CheckID || c.check_id) === String(checkId));
     if (!r) return;
-    const isOK = r.result === 'OK';
+    const fv = (v) => (v === undefined || v === null || v === '') ? '—' : String(v).slice(0, 30);
+    const dateStr = (v) => v ? String(v).slice(0, 10) : '—';
+    const result = r.result || r.Result || '—';
+    const isOK = result === 'OK';
     document.getElementById('detail-body').innerHTML = `
-      <div class="detail-row"><span>Check ID</span><strong>${r.check_id}</strong></div>
-      <div class="detail-row"><span>Batch</span><strong>${r.batch_id}</strong></div>
-      <div class="detail-row"><span>Date</span><strong>${r.check_date || '—'}</strong></div>
-      <div class="detail-row"><span>Inspector</span><strong>${r.inspector_id || '—'}</strong></div>
-      <div class="detail-row"><span>Parameter</span><strong>${r.parameter}</strong></div>
-      <div class="detail-row"><span>Spec Min</span><strong>${r.spec_min}</strong></div>
-      <div class="detail-row"><span>Spec Max</span><strong>${r.spec_max}</strong></div>
-      <div class="detail-row"><span>Actual Value</span><strong>${r.actual_value}</strong></div>
-      <div class="detail-row"><span>Result</span><span class="result-chip ${isOK ? 'chip-ok' : 'chip-ng'}">${r.result}</span></div>
-      <div class="detail-row"><span>Remarks</span><strong>${r.remarks || '—'}</strong></div>
+      <div class="detail-row"><span>Check ID</span><strong>${fv(r.check_id)}</strong></div>
+      <div class="detail-row"><span>Batch</span><strong>${fv(r.batch_id)}</strong></div>
+      <div class="detail-row"><span>Date</span><strong>${dateStr(r.check_date)}</strong></div>
+      <div class="detail-row"><span>Inspector</span><strong>${fv(r.inspector_id)}</strong></div>
+      <div class="detail-row"><span>Parameter</span><strong>${fv(r.parameter)}</strong></div>
+      <div class="detail-row"><span>Spec Min</span><strong>${fv(r.spec_min)}</strong></div>
+      <div class="detail-row"><span>Spec Max</span><strong>${fv(r.spec_max)}</strong></div>
+      <div class="detail-row"><span>Actual Value</span><strong>${fv(r.actual_value)}</strong></div>
+      <div class="detail-row"><span>Result</span><span class="result-chip ${isOK ? 'chip-ok' : 'chip-ng'}">${result}</span></div>
+      <div class="detail-row"><span>Remarks</span><strong>${fv(r.remarks)}</strong></div>
     `;
     const canEdit = ['director','qmr','supervisor'].includes(session.role);
     document.getElementById('detail-actions').innerHTML = canEdit
