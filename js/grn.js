@@ -71,10 +71,11 @@ const GRN = (() => {
     tbody.innerHTML = '';
     rows.forEach(r => {
       const supplierName = (supplierCache.find(s => String(s.id) === String(r.supplier_id)) || {}).name || r.supplier_id;
+      const dateStr = r.date ? String(r.date).slice(0, 10) : '';
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td style="font-weight:600;font-size:var(--text-sm);">${r.grn_id || ''}</td>
-        <td class="text-muted">${r.date || ''}</td>
+        <td class="text-muted">${dateStr}</td>
         <td>${supplierName}</td>
         <td>${r.material || ''}</td>
         <td><strong>${r.qty_kg || ''}</strong> kg</td>

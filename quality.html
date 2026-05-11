@@ -54,8 +54,8 @@
       <div class="checks-table-wrap">
         <table class="checks-table">
           <thead><tr>
-            <th>Check ID</th><th>Batch</th><th>Parameter</th>
-            <th>Spec Min</th><th>Spec Max</th><th>Actual</th><th>Result</th><th>Remarks</th>
+            <th>Date</th><th>Batch</th><th>Inspector</th>
+            <th>Params</th><th>NG</th><th>Result</th>
           </tr></thead>
           <tbody id="checks-tbody-iqc">
             <tr><td colspan="8" class="td-loading">Select a batch to view checks</td></tr>
@@ -75,8 +75,8 @@
       <div class="checks-table-wrap">
         <table class="checks-table">
           <thead><tr>
-            <th>Check ID</th><th>Batch</th><th>Parameter</th>
-            <th>Spec Min</th><th>Spec Max</th><th>Actual</th><th>Result</th><th>Remarks</th>
+            <th>Date</th><th>Batch</th><th>Inspector</th>
+            <th>Params</th><th>NG</th><th>Result</th>
           </tr></thead>
           <tbody id="checks-tbody-ipc">
             <tr><td colspan="8" class="td-loading">Select a batch to view checks</td></tr>
@@ -96,8 +96,8 @@
       <div class="checks-table-wrap">
         <table class="checks-table">
           <thead><tr>
-            <th>Check ID</th><th>Batch</th><th>Parameter</th>
-            <th>Spec Min</th><th>Spec Max</th><th>Actual</th><th>Result</th><th>Remarks</th>
+            <th>Date</th><th>Batch</th><th>Inspector</th>
+            <th>Params</th><th>NG</th><th>Result</th>
           </tr></thead>
           <tbody id="checks-tbody-oqc">
             <tr><td colspan="8" class="td-loading">Select a batch to view checks</td></tr>
@@ -114,7 +114,7 @@
       <button class="back-btn" id="form-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
       <span class="form-title" id="form-title">New Quality Check</span>
     </div>
-    <div class="form-body">
+    <div class="form-body" id="form-body-top">
       <div class="field-group">
         <label>Check Date</label>
         <input type="date" id="field-check-date">
@@ -128,33 +128,13 @@
         <label>Inspector</label>
         <input type="text" id="field-inspector" placeholder="Inspector name">
       </div>
-      <div class="field-group">
-        <label>Parameter</label>
-        <div id="param-btn-group" class="param-btn-group">
-          <span style="font-size:0.85rem;color:var(--neutral-500);">Select a batch first</span>
-        </div>
-        <div id="param-hint" style="font-size:0.78rem;color:var(--color-text-muted);margin-top:4px;"></div>
-      </div>
-      <div class="field-group">
-        <label>Spec Min</label>
-        <input type="number" id="field-spec-min" step="any" placeholder="Enter or auto-filled">
-      </div>
-      <div class="field-group">
-        <label>Spec Max</label>
-        <input type="number" id="field-spec-max" step="any" placeholder="Enter or auto-filled">
-      </div>
-      <div class="field-group">
-        <label>Actual Value *</label>
-        <input type="number" id="field-actual" step="any" placeholder="Measured value">
-        <div class="field-error" id="err-actual"></div>
-      </div>
-      <div class="field-group">
-        <label>Remarks</label>
-        <input type="text" id="field-remarks" placeholder="Optional">
-      </div>
+    </div>
+    <div id="param-sheet-body" style="flex:1;overflow-y:auto;padding:0 var(--space-4);">
+      <p style="font-size:var(--text-sm);color:var(--color-text-muted);padding:var(--space-4) 0;">Select a batch to load parameters.</p>
     </div>
     <div class="form-actions">
-      <button class="btn-primary" onclick="Quality.submitCheck()">Save Check</button>
+      <div class="field-error" id="err-sheet"></div>
+      <button class="btn btn-primary btn-full" onclick="Quality.submitCheckSheet()">Save Check Sheet</button>
     </div>
   </div>
 

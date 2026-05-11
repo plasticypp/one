@@ -5,11 +5,9 @@ const Quality = (() => {
   let session = null;
   let batchCache = [];
   let checkCache = {};
-  let inspectionParamCache = [];
-  let selectedParam = null;
-  let editingCheckId = null;
   let activeTab = 'summary';
   let activeStage = null;
+  let sheetRows = [];       // current check sheet rows being filled
 
   const STAGE_TABS = { iqc: 'IQC', ipc: 'IPC', oqc: 'OQC' };
 
@@ -38,10 +36,7 @@ const Quality = (() => {
     document.getElementById('back-to-app').addEventListener('click', () => {
       window.location.href = 'app.html';
     });
-    document.getElementById('form-back').addEventListener('click', () => {
-      editingCheckId = null;
-      slideFormOut();
-    });
+    document.getElementById('form-back').addEventListener('click', slideFormOut);
     document.getElementById('detail-back').addEventListener('click', slideDetailOut);
     const langBtn = document.getElementById('lang-toggle');
     langBtn.textContent = Lang.getCurrent().toUpperCase();
@@ -64,7 +59,7 @@ const Quality = (() => {
         renderTabs();
         if (activeTab === 'summary') await loadSummary();
         if (activeStage) {
-          const batchId = document.getElementById('filter-batch-' + tab).value;
+          const batchId = document.getElementById('filter-batch-' + tab)?.value || '';
           await loadChecks(batchId, activeStage);
         }
       };
@@ -97,15 +92,13 @@ const Quality = (() => {
       sel.addEventListener('change', async () => {
         await loadChecks(sel.value, STAGE_TABS[tabKey]);
       });
-
       const btn = document.getElementById('btn-new-check-' + tabKey);
-      if (btn) btn.addEventListener('click', () => openCheckForm(STAGE_TABS[tabKey]));
+      if (btn) btn.addEventListener('click', () => openCheckSheet(STAGE_TABS[tabKey]));
     });
-
-    // Also populate form batch dropdown
+    // form batch dropdown
     const formSel = document.getElementById('field-batch');
     if (formSel) {
-      formSel.innerHTML = '<option value="">— select —</option>';
+      formSel.innerHTML = '<option value="">— select batch —</option>';
       batchCache.forEach(b => {
         const o = document.createElement('option');
         o.value = b.batch_id;
@@ -130,18 +123,18 @@ const Quality = (() => {
   function renderSummaryCards(rows) {
     const grid = document.getElementById('summary-grid');
     grid.innerHTML = '';
-    if (rows.length === 0) {
-      grid.innerHTML = '<p class="empty-msg">No quality data</p>';
+    if (!rows.length) {
+      grid.innerHTML = '<p class="empty-msg">No quality data yet. Start by logging a check.</p>';
       return;
     }
     rows.forEach(r => {
-      const rate = r.pass_rate;
+      const rate  = r.pass_rate;
       const color = rate >= 95 ? '#2e7d32' : rate >= 80 ? '#f57f17' : '#c62828';
       const bg    = rate >= 95 ? '#f1f8f1' : rate >= 80 ? '#fffde7' : '#fff5f5';
-      const card = document.createElement('div');
+      const card  = document.createElement('div');
       card.className = 'qc-card';
       card.style.borderColor = color;
-      card.style.background = bg;
+      card.style.background  = bg;
       card.innerHTML = `
         <div class="qc-batch-id">${r.batch_id}</div>
         <div class="qc-pass-rate" style="color:${color}">${rate}%</div>
@@ -183,181 +176,217 @@ const Quality = (() => {
     const tbody = document.getElementById(tbodyId);
     if (!tbody) return;
     tbody.innerHTML = '';
-    if (rows.length === 0) {
+    if (!rows.length) {
       tbody.innerHTML = '<tr><td colspan="8" class="td-loading">No records</td></tr>';
       return;
     }
+    // Group by check_date + inspector to show as sessions
+    const sessions = {};
     rows.forEach(r => {
-      const isOK = r.result === 'OK';
-      const chip = `<span class="result-chip ${isOK ? 'chip-ok' : 'chip-ng'}">${r.result}</span>`;
+      const key = (r.check_date || '').slice(0,10) + '|' + (r.batch_id || '') + '|' + (r.inspector_id || '');
+      if (!sessions[key]) sessions[key] = { date: (r.check_date || '').slice(0,10), batch: r.batch_id, inspector: r.inspector_id, rows: [], ng: 0 };
+      sessions[key].rows.push(r);
+      if (r.result === 'NG') sessions[key].ng++;
+    });
+    Object.values(sessions).reverse().forEach(s => {
+      const result = s.ng > 0 ? 'NG' : 'OK';
+      const chip = `<span class="result-chip ${result === 'OK' ? 'chip-ok' : 'chip-ng'}">${result}</span>`;
       const tr = document.createElement('tr');
       tr.style.cursor = 'pointer';
       tr.innerHTML = `
-        <td>${r.check_id || ''}</td>
-        <td>${r.batch_id || ''}</td>
-        <td>${r.parameter || ''}</td>
-        <td>${r.spec_min ?? ''}</td>
-        <td>${r.spec_max ?? ''}</td>
-        <td>${r.actual_value ?? ''}</td>
+        <td style="font-weight:600">${s.date}</td>
+        <td>${s.batch}</td>
+        <td>${s.inspector || '—'}</td>
+        <td>${s.rows.length} params</td>
+        <td>${s.ng > 0 ? `<span style="color:#c62828">${s.ng} NG</span>` : '—'}</td>
         <td>${chip}</td>
-        <td>${r.remarks || ''}</td>
       `;
-      tr.addEventListener('click', () => openCheckDetail(r.check_id, stage));
+      tr.addEventListener('click', () => openSessionDetail(s, stage));
       tbody.appendChild(tr);
     });
   }
 
-  // ── Check Form ────────────────────────────────────────────────────────────
+  // ── Check Sheet Form ──────────────────────────────────────────────────────
 
-  function openCheckForm(stage) {
-    editingCheckId = null;
-    selectedParam = null;
+  async function openCheckSheet(stage) {
     activeStage = stage;
+    sheetRows = [];
     const today = new Date().toISOString().slice(0, 10);
     document.getElementById('field-check-date').value = today;
     document.getElementById('field-inspector').value = session.name || '';
-    document.getElementById('field-actual').value = '';
-    document.getElementById('field-remarks').value = '';
-    document.getElementById('field-spec-min').value = '';
-    document.getElementById('field-spec-max').value = '';
-    renderParamButtons([]);
+    document.getElementById('form-title').textContent = 'New ' + stage + ' Check Sheet';
 
     const tabKey = stage.toLowerCase();
     const batchSel = document.getElementById('field-batch');
-    const filterVal = document.getElementById('filter-batch-' + tabKey)
-      ? document.getElementById('filter-batch-' + tabKey).value
-      : '';
-    if (filterVal) {
-      batchSel.value = filterVal;
-      const batch = batchCache.find(b => String(b.batch_id) === String(filterVal));
-      if (batch) loadInspectionParams(stage, batch.product_id);
-    }
+    const filterVal = document.getElementById('filter-batch-' + tabKey)?.value || '';
+    if (filterVal) batchSel.value = filterVal;
+
     batchSel.onchange = async () => {
       const batch = batchCache.find(b => String(b.batch_id) === String(batchSel.value));
-      await loadInspectionParams(stage, batch ? batch.product_id : null);
+      await loadParamSheet(stage, batch ? batch.product_id : null);
     };
-    document.getElementById('form-title').textContent = 'New ' + stage + ' Check';
+
+    const errBatch = document.getElementById('err-batch');
+    if (errBatch) errBatch.textContent = '';
+
+    if (filterVal) {
+      const batch = batchCache.find(b => String(b.batch_id) === String(filterVal));
+      await loadParamSheet(stage, batch ? batch.product_id : null);
+    } else {
+      renderParamSheet([]);
+    }
     slideFormIn();
   }
 
-  async function loadInspectionParams(stage, productId) {
-    if (!productId) { renderParamButtons([]); return; }
-    const res = await Api.get('getInspectionParams', { stage, product_id: productId });
-    inspectionParamCache = res.success ? res.data : [];
-    renderParamButtons(inspectionParamCache);
+  async function loadParamSheet(stage, productId) {
+    if (!productId) { renderParamSheet([]); return; }
+    showSpinner(true);
+    try {
+      // Try QualityParams master first, fall back to INSPECTION_PLANS
+      const [masterRes, planRes] = await Promise.all([
+        Api.get('getQualityParams', { product_id: productId, stage }),
+        Api.get('getInspectionParams', { stage, product_id: productId })
+      ]);
+      const masterParams = masterRes.success ? masterRes.data : [];
+      const planParams   = planRes.success   ? planRes.data   : [];
+      // Merge: master params take priority, fill remaining from INSPECTION_PLANS
+      const masterParamNames = masterParams.map(p => p.parameter);
+      const combined = [
+        ...masterParams,
+        ...planParams.filter(p => !masterParamNames.includes(p.parameter))
+      ];
+      renderParamSheet(combined);
+    } finally {
+      showSpinner(false);
+    }
   }
 
-  function renderParamButtons(params) {
-    const container = document.getElementById('param-btn-group');
-    container.innerHTML = '';
-    selectedParam = null;
-    document.getElementById('field-spec-min').value = '';
-    document.getElementById('field-spec-max').value = '';
-
-    if (params.length === 0) {
-      container.innerHTML = '<span style="font-size:0.85rem;color:var(--neutral-500);">Select a batch first.</span>';
+  function renderParamSheet(params) {
+    const container = document.getElementById('param-sheet-body');
+    if (!params.length) {
+      container.innerHTML = `
+        <div style="padding:var(--space-4);text-align:center;color:var(--color-text-muted);font-size:0.9rem;">
+          Select a batch to load parameters.<br>
+          <a href="masters.html" style="color:var(--color-primary);font-weight:600;">+ Add params in Masters → Quality Params</a>
+        </div>`;
+      sheetRows = [];
       return;
     }
-    params.forEach(p => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'param-btn';
-      btn.textContent = p.parameter + (p.unit ? ' (' + p.unit + ')' : '');
-      btn.dataset.paramId = p.id;
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.param-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        selectedParam = p;
-        document.getElementById('field-spec-min').value = p.spec_min ?? '';
-        document.getElementById('field-spec-max').value = p.spec_max ?? '';
-        document.getElementById('field-spec-min').readOnly = false;
-        document.getElementById('field-spec-max').readOnly = false;
-        const hint = document.getElementById('param-hint');
-        if (hint) hint.textContent = p.sample_size ? 'Sample: ' + p.sample_size : '';
+    sheetRows = params.map(p => ({ ...p, actual_value: '', remarks: '' }));
+    container.innerHTML = '';
+    params.forEach((p, i) => {
+      const isVisual = !p.spec_min && !p.spec_max;
+      const row = document.createElement('div');
+      row.className = 'check-sheet-row';
+      row.innerHTML = `
+        <div class="check-sheet-param">
+          <span class="check-sheet-param-name">${p.parameter}</span>
+          <span class="check-sheet-param-unit">${p.unit || ''}</span>
+          ${p.spec_min != null || p.spec_max != null
+            ? `<span class="check-sheet-spec">${p.spec_min ?? '—'} – ${p.spec_max ?? '—'}</span>`
+            : '<span class="check-sheet-spec check-sheet-spec--visual">Visual / Pass-Fail</span>'}
+          ${p.sample_size ? `<span class="check-sheet-sample">${p.sample_size}</span>` : ''}
+        </div>
+        <div class="check-sheet-inputs">
+          ${isVisual
+            ? `<select class="check-sheet-actual" data-idx="${i}" data-visual="1">
+                <option value="">—</option>
+                <option value="OK">OK / Pass</option>
+                <option value="NG">NG / Fail</option>
+               </select>`
+            : `<input type="number" class="check-sheet-actual" data-idx="${i}" placeholder="Actual" step="any">`}
+          <input type="text" class="check-sheet-remarks" data-idx="${i}" placeholder="Remarks">
+          <span class="check-sheet-result" id="result-${i}"></span>
+        </div>
+      `;
+      container.appendChild(row);
+    });
+
+    // Wire live result calc
+    container.querySelectorAll('.check-sheet-actual').forEach(input => {
+      input.addEventListener('input', () => updateRowResult(input));
+      input.addEventListener('change', () => updateRowResult(input));
+    });
+    container.querySelectorAll('.check-sheet-remarks').forEach(input => {
+      input.addEventListener('input', () => {
+        const i = parseInt(input.dataset.idx);
+        if (sheetRows[i]) sheetRows[i].remarks = input.value;
       });
-      container.appendChild(btn);
     });
   }
 
-  async function submitCheck() {
+  function updateRowResult(input) {
+    const i = parseInt(input.dataset.idx);
+    if (!sheetRows[i]) return;
+    const isVisual = input.dataset.visual === '1';
+    if (isVisual) {
+      sheetRows[i].actual_value = input.value;
+      sheetRows[i].result = input.value || '';
+    } else {
+      const val = input.value;
+      sheetRows[i].actual_value = val;
+      const p = sheetRows[i];
+      if (val === '') {
+        sheetRows[i].result = '';
+      } else {
+        const a = parseFloat(val);
+        const sMin = p.spec_min;
+        const sMax = p.spec_max;
+        sheetRows[i].result = (sMin == null && sMax == null) ? 'OK'
+          : (a >= (sMin ?? -Infinity) && a <= (sMax ?? Infinity)) ? 'OK' : 'NG';
+      }
+    }
+    const chip = document.getElementById('result-' + i);
+    if (chip) {
+      const r = sheetRows[i].result;
+      chip.textContent = r;
+      chip.className = 'check-sheet-result' + (r === 'OK' ? ' chip-ok' : r === 'NG' ? ' chip-ng' : '');
+    }
+  }
+
+  async function submitCheckSheet() {
     const batchId   = document.getElementById('field-batch').value.trim();
     const inspector = document.getElementById('field-inspector').value.trim();
-    const actual    = document.getElementById('field-actual').value;
-    const remarks   = document.getElementById('field-remarks').value.trim();
     const checkDate = document.getElementById('field-check-date').value;
 
-    const eBatch  = document.getElementById('err-batch');
-    const eActual = document.getElementById('err-actual');
-    if (eBatch)  eBatch.textContent  = '';
-    if (eActual) eActual.textContent = '';
-    let valid = true;
-    if (!batchId)    { if (eBatch)  eBatch.textContent  = 'Select a batch'; valid = false; }
-    if (actual === '') { if (eActual) eActual.textContent = 'Enter actual value'; valid = false; }
-    if (!valid) return;
+    const eBatch = document.getElementById('err-batch');
+    if (eBatch) eBatch.textContent = '';
+    if (!batchId) { if (eBatch) eBatch.textContent = 'Select a batch'; return; }
+    if (!sheetRows.length) { showToast('No parameters loaded — add params in Masters → Quality Params'); return; }
 
-    const parameter = selectedParam ? selectedParam.parameter : 'Manual';
-    const specMin   = selectedParam ? (selectedParam.spec_min ?? null) : (document.getElementById('field-spec-min').value !== '' ? Number(document.getElementById('field-spec-min').value) : null);
-    const specMax   = selectedParam ? (selectedParam.spec_max ?? null) : (document.getElementById('field-spec-max').value !== '' ? Number(document.getElementById('field-spec-max').value) : null);
+    const filledRows = sheetRows.filter(r => r.actual_value !== '' && r.actual_value !== null);
+    if (!filledRows.length) { showToast('Enter at least one actual value'); return; }
 
-    if (editingCheckId) {
-      const fields = { check_date: checkDate, inspector_id: inspector, actual_value: Number(actual), remarks };
-      if (selectedParam) {
-        fields.parameter = selectedParam.parameter;
-        fields.spec_min  = selectedParam.spec_min;
-        fields.spec_max  = selectedParam.spec_max;
-        const a = Number(actual);
-        const sMin = selectedParam.spec_min;
-        const sMax = selectedParam.spec_max;
-        fields.result = (sMin === null && sMax === null) ? 'OK'
-                      : (a >= (sMin ?? -Infinity) && a <= (sMax ?? Infinity)) ? 'OK' : 'NG';
-      }
-      showSpinner(true);
-      try {
-        const res = await Api.post('updateRecord', {
-          sheet: 'QualityChecks', idCol: 'check_id', idVal: editingCheckId,
-          userId: Auth.getUserId(), fields
-        });
-        if (res.success) {
-          editingCheckId = null;
-          slideFormOut();
-          await loadSummary();
-          const tabKey = (activeStage || 'IPC').toLowerCase();
-          await loadChecks(document.getElementById('filter-batch-' + tabKey).value, activeStage || 'IPC');
-        } else {
-          showToast('Update failed: ' + res.error);
-        }
-      } finally { showSpinner(false); }
-      return;
-    }
-
+    const batch = batchCache.find(b => String(b.batch_id) === String(batchId));
     showSpinner(true);
     try {
-      const res = await Api.post('saveQualityCheck', {
-        batch_id:     batchId,
-        check_date:   checkDate,
+      const res = await Api.post('saveQualityCheckSheet', {
+        batch_id:    batchId,
+        product_id:  batch ? batch.product_id : '',
+        stage:       activeStage || 'IPC',
+        check_date:  checkDate,
         inspector_id: inspector,
-        parameter,
-        spec_min:     specMin,
-        spec_max:     specMax,
-        actual_value: Number(actual),
-        remarks,
-        stage:        activeStage || 'IPC',
-        userId:       Auth.getUserId()
+        rows:        filledRows.map(r => ({
+          parameter:   r.parameter,
+          spec_min:    r.spec_min,
+          spec_max:    r.spec_max,
+          actual_value: r.actual_value,
+          result:      r.result,
+          remarks:     r.remarks
+        })),
+        userId: Auth.getUserId()
       });
       if (res.success) {
         slideFormOut();
-        const tabKey = (activeStage || 'IPC').toLowerCase();
         await loadSummary();
-        await loadChecks(document.getElementById('filter-batch-' + tabKey).value, activeStage || 'IPC');
-        if (res.result === 'NG') {
+        const tabKey = (activeStage || 'IPC').toLowerCase();
+        await loadChecks(document.getElementById('filter-batch-' + tabKey)?.value || '', activeStage || 'IPC');
+        if (res.overall_result === 'NG') {
           const batchParam = encodeURIComponent(batchId);
-          showToastWithLink(
-            'Check saved — NG.',
-            'Log NCR →',
-            'ncr.html?batch=' + batchParam + '&stage=' + (activeStage || 'IPC')
-          );
+          showToastWithLink('Check sheet saved — NG result.', 'Log NCR →',
+            'ncr.html?batch=' + batchParam + '&stage=' + (activeStage || 'IPC'));
         } else {
-          showToast('Check saved — ' + (res.check_id || ''));
+          showToast('Check sheet saved — All OK');
         }
       } else {
         showToast('Error: ' + (res.error || 'save failed'));
@@ -367,73 +396,38 @@ const Quality = (() => {
     }
   }
 
-  // ── Detail Panel ──────────────────────────────────────────────────────────
+  // ── Session Detail Panel ──────────────────────────────────────────────────
 
-  function openCheckDetail(checkId, stage) {
-    const cache = checkCache[stage] || [];
-    const r = cache.find(c => String(c.check_id) === String(checkId));
-    if (!r) return;
-    const fv = (v) => (v === undefined || v === null || v === '') ? '—' : String(v).slice(0, 30);
-    const dateStr = (v) => v ? String(v).slice(0, 10) : '—';
-    const result = r.result || '—';
+  function openSessionDetail(s, stage) {
+    const result = s.ng > 0 ? 'NG' : 'OK';
     const isOK = result === 'OK';
     document.getElementById('detail-body').innerHTML = `
-      <div class="detail-row"><span>Check ID</span><strong>${fv(r.check_id)}</strong></div>
-      <div class="detail-row"><span>Batch</span><strong>${fv(r.batch_id)}</strong></div>
-      <div class="detail-row"><span>Stage</span><strong>${fv(r.stage || stage)}</strong></div>
-      <div class="detail-row"><span>Date</span><strong>${dateStr(r.check_date)}</strong></div>
-      <div class="detail-row"><span>Inspector</span><strong>${fv(r.inspector_id)}</strong></div>
-      <div class="detail-row"><span>Parameter</span><strong>${fv(r.parameter)}</strong></div>
-      <div class="detail-row"><span>Spec Min</span><strong>${fv(r.spec_min)}</strong></div>
-      <div class="detail-row"><span>Spec Max</span><strong>${fv(r.spec_max)}</strong></div>
-      <div class="detail-row"><span>Actual Value</span><strong>${fv(r.actual_value)}</strong></div>
-      <div class="detail-row"><span>Result</span><span class="result-chip ${isOK ? 'chip-ok' : 'chip-ng'}">${result}</span></div>
-      <div class="detail-row"><span>Remarks</span><strong>${fv(r.remarks)}</strong></div>
+      <div class="detail-row"><span>Date</span><strong>${s.date}</strong></div>
+      <div class="detail-row"><span>Batch</span><strong>${s.batch}</strong></div>
+      <div class="detail-row"><span>Stage</span><strong>${stage}</strong></div>
+      <div class="detail-row"><span>Inspector</span><strong>${s.inspector || '—'}</strong></div>
+      <div class="detail-row"><span>Overall Result</span><span class="result-chip ${isOK ? 'chip-ok' : 'chip-ng'}">${result}</span></div>
+      <div style="margin-top:var(--space-4);">
+        <table class="checks-table" style="font-size:0.85rem;">
+          <thead><tr><th>Parameter</th><th>Min</th><th>Max</th><th>Actual</th><th>Result</th><th>Remarks</th></tr></thead>
+          <tbody>
+            ${s.rows.map(r => `
+              <tr>
+                <td>${r.parameter || ''}</td>
+                <td>${r.spec_min ?? '—'}</td>
+                <td>${r.spec_max ?? '—'}</td>
+                <td><strong>${r.actual_value ?? '—'}</strong></td>
+                <td><span class="result-chip ${r.result === 'OK' ? 'chip-ok' : 'chip-ng'}">${r.result || '—'}</span></td>
+                <td>${r.remarks || ''}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
     `;
-    const canEdit = ['director', 'qmr', 'supervisor'].includes(session.role);
-    document.getElementById('detail-actions').innerHTML = canEdit
-      ? `<button class="btn-primary" onclick="Quality.editCheck('${checkId}','${stage}')">Edit</button>
-         <button class="btn-deactivate" onclick="Quality.deleteCheck('${checkId}','${stage}')">Delete</button>`
+    document.getElementById('detail-actions').innerHTML = s.ng > 0
+      ? `<a class="btn btn-primary" href="ncr.html?batch=${encodeURIComponent(s.batch)}&stage=${stage}">Log NCR for NG →</a>`
       : '';
     slideDetailIn();
-  }
-
-  function editCheck(checkId, stage) {
-    const cache = checkCache[stage] || [];
-    const r = cache.find(c => String(c.check_id) === String(checkId));
-    if (!r) return;
-    editingCheckId = checkId;
-    activeStage = stage;
-    slideDetailOut();
-    document.getElementById('field-check-date').value = r.check_date || '';
-    document.getElementById('field-batch').value = r.batch_id || '';
-    document.getElementById('field-inspector').value = r.inspector_id || '';
-    document.getElementById('field-actual').value = r.actual_value ?? '';
-    document.getElementById('field-remarks').value = r.remarks || '';
-    document.getElementById('field-spec-min').value = r.spec_min ?? '';
-    document.getElementById('field-spec-max').value = r.spec_max ?? '';
-    const batch = batchCache.find(b => String(b.batch_id) === String(r.batch_id));
-    loadInspectionParams(stage, batch ? batch.product_id : null).then(() => {
-      document.querySelectorAll('.param-btn').forEach(btn => {
-        if (btn.textContent.startsWith(r.parameter)) btn.click();
-      });
-    });
-    document.getElementById('form-title').textContent = 'Edit ' + stage + ' Check';
-    slideFormIn();
-  }
-
-  async function deleteCheck(checkId, stage) {
-    if (!confirm('Delete check ' + checkId + '?')) return;
-    const res = await Api.post('deleteRecord', {
-      sheet: 'QualityChecks', idCol: 'check_id', idVal: checkId, userId: Auth.getUserId()
-    });
-    if (res.success) {
-      slideDetailOut();
-      const tabKey = stage.toLowerCase();
-      await loadChecks(document.getElementById('filter-batch-' + tabKey).value, stage);
-    } else {
-      showToast('Delete failed: ' + res.error);
-    }
   }
 
   // ── Slide Transitions ─────────────────────────────────────────────────────
@@ -442,18 +436,14 @@ const Quality = (() => {
     document.getElementById('main-content').classList.add('slide-out');
     document.getElementById('form-panel').classList.add('slide-in');
   }
-
   function slideFormOut() {
     document.getElementById('main-content').classList.remove('slide-out');
     document.getElementById('form-panel').classList.remove('slide-in');
-    editingCheckId = null;
   }
-
   function slideDetailIn() {
     document.getElementById('main-content').classList.add('slide-out');
     document.getElementById('detail-panel').classList.add('slide-in');
   }
-
   function slideDetailOut() {
     document.getElementById('main-content').classList.remove('slide-out');
     document.getElementById('detail-panel').classList.remove('slide-in');
@@ -464,14 +454,12 @@ const Quality = (() => {
   function showSpinner(show) {
     document.getElementById('spinner').classList.toggle('hidden', !show);
   }
-
   function showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2500);
   }
-
   function showToastWithLink(msg, linkText, href) {
     const t = document.getElementById('toast');
     t.innerHTML = msg + ' <a href="' + href + '" style="color:#fff;text-decoration:underline;">' + linkText + '</a>';
@@ -479,5 +467,5 @@ const Quality = (() => {
     setTimeout(() => t.classList.remove('show'), 4000);
   }
 
-  return { init, submitCheck, loadChecks, loadSummary, editCheck, deleteCheck };
+  return { init, submitCheckSheet };
 })();

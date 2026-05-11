@@ -184,6 +184,7 @@ function doGet(e) {
       if (action === 'closeBatch')       return respond(closeBatch(data));
       if (action === 'saveQualityCheck') return respond(saveQualityCheck(data));
       if (action === 'saveNCR') return respond(saveNCR(data));
+      if (action === 'saveQualityCheckSheet') return respond(saveQualityCheckSheet(data));
       if (action === 'saveSO')           return respond(saveSO(data));
       if (action === 'saveDispatch')     return respond(saveDispatch(data));
       if (action === 'updateRecord') {
@@ -462,13 +463,21 @@ function getQualityParams(params) {
   const rows = sheet.getDataRange().getValues();
   if (rows.length < 2) return { success: true, data: [] };
   const headers = rows[0];
-  let data = rows.slice(1).map(row => {
-    return rowToObj(headers, row);
-  }).filter(r => r.Active !== false && r.Active !== 'FALSE');
+  let data = rows.slice(1).map(row => rowToObj(headers, row))
+    .filter(r => r.Active !== false && r.Active !== 'FALSE');
   if (params && params.product_id) {
-    data = data.filter(r => String(r.ProductID) === String(params.product_id));
+    data = data.filter(r => String(r.ProductID) === String(params.product_id) || String(r.ProductID) === 'ALL');
   }
-  return { success: true, data };
+  if (params && params.stage) {
+    data = data.filter(r => !r.Stage || r.Stage === params.stage);
+  }
+  // Normalise field names to match what the frontend expects
+  return { success: true, data: data.map(r => ({
+    id: r.ParamID, parameter: r.Parameter, unit: r.Unit,
+    spec_min: r.SpecMin !== '' && r.SpecMin !== null ? Number(r.SpecMin) : null,
+    spec_max: r.SpecMax !== '' && r.SpecMax !== null ? Number(r.SpecMax) : null,
+    stage: r.Stage, product_id: r.ProductID, active: r.Active
+  })) };
 }
 
 function saveQualityParam(data) {
@@ -1131,6 +1140,38 @@ function saveQualityCheck(data) {
     result:          result
   });
   return { success: true, check_id: checkId, result };
+}
+
+function saveQualityCheckSheet(data) {
+  var authError = requireRole(data, ['director','qmr','supervisor','operator']);
+  if (authError) return { success: false, error: authError };
+  if (!data.batch_id || !data.stage || !Array.isArray(data.rows) || data.rows.length === 0) {
+    return { success: false, error: 'missing_fields' };
+  }
+  const sheet = getSheet('QualityChecks');
+  const existingRows = sheet.getDataRange().getValues();
+  let rowCount = existingRows.length;
+  const today = data.check_date || new Date().toISOString().slice(0, 10);
+  const stage = data.stage;
+  const savedIds = [];
+  let overallResult = 'OK';
+  data.rows.forEach(row => {
+    const specMin = (row.spec_min !== null && row.spec_min !== '' && row.spec_min !== undefined) ? Number(row.spec_min) : null;
+    const specMax = (row.spec_max !== null && row.spec_max !== '' && row.spec_max !== undefined) ? Number(row.spec_max) : null;
+    const actual  = row.actual_value !== '' && row.actual_value !== null ? Number(row.actual_value) : null;
+    let result = row.result || 'OK';
+    if (actual !== null) {
+      result = (specMin === null && specMax === null) ? 'OK'
+             : (actual >= (specMin ?? -Infinity) && actual <= (specMax ?? Infinity)) ? 'OK' : 'NG';
+    }
+    if (result === 'NG') overallResult = 'NG';
+    rowCount++;
+    const checkId = 'QC' + String(rowCount).padStart(3, '0');
+    sheet.appendRow([checkId, data.batch_id, today, data.inspector_id || '', row.parameter, specMin, specMax, actual, result, row.remarks || '', stage]);
+    savedIds.push(checkId);
+  });
+  upsertBatchTraceability({ batch_no: data.batch_id, product_id: data.product_id || '', production_date: today, stage, result: overallResult });
+  return { success: true, check_ids: savedIds, overall_result: overallResult };
 }
 
 function upsertBatchTraceability(data) {
