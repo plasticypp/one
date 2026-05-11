@@ -111,11 +111,14 @@ const GRN = (() => {
     const date       = document.getElementById('field-date').value;
     const errEl      = document.getElementById('form-error');
 
-    if (!supplierId || !material || !qtyKg) {
-      errEl.textContent = 'Supplier, Material and Qty are required';
-      return;
-    }
+    let valid = true;
+    const eQty = document.getElementById('err-qty-kg');
+    if (eQty) eQty.textContent = '';
     errEl.textContent = '';
+    if (!supplierId) { errEl.textContent = 'Select a supplier'; valid = false; }
+    if (!material)   { errEl.textContent = 'Material is required'; valid = false; }
+    if (!qtyKg || Number(qtyKg) <= 0) { if (eQty) eQty.textContent = 'Enter a valid quantity'; valid = false; }
+    if (!valid) return;
 
     const btn = document.getElementById('btn-save-grn');
     btn.disabled = true;
@@ -155,10 +158,11 @@ const GRN = (() => {
       <div class="detail-row"><span>Qty Received</span><strong>${r.qty_kg ?? '—'} kg</strong></div>
     `;
     const canEdit = ['director','store','qmr'].includes(session.role);
-    document.getElementById('detail-actions').innerHTML = canEdit
+    const iqcLink = `<a class="btn btn-secondary" href="quality.html?tab=iqc&lot=${encodeURIComponent(r.lot_no||'')}">Log IQC Check →</a>`;
+    document.getElementById('detail-actions').innerHTML = iqcLink + (canEdit
       ? `<button class="btn btn-primary" onclick="GRN.editGRN('${grnId}')">Edit</button>
          <button class="btn-deactivate" onclick="GRN.deleteGRN('${grnId}')">Delete</button>`
-      : '';
+      : '');
     slideDetailIn();
   }
 

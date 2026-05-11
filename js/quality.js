@@ -20,9 +20,16 @@ const Quality = (() => {
     if (!session) { Auth.requireLogin(); return; }
     await Lang.init(session.lang);
     setupHeader();
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (tabParam && STAGE_TABS[tabParam]) {
+      activeTab = tabParam;
+      activeStage = STAGE_TABS[tabParam];
+    }
     renderTabs();
     await loadBatches();
-    await loadSummary();
+    if (activeTab === 'summary') await loadSummary();
+    else await loadChecks('', activeStage);
   }
 
   // ── Header ────────────────────────────────────────────────────────────────
@@ -213,8 +220,6 @@ const Quality = (() => {
     document.getElementById('field-remarks').value = '';
     document.getElementById('field-spec-min').value = '';
     document.getElementById('field-spec-max').value = '';
-    document.getElementById('field-spec-min').readOnly = false;
-    document.getElementById('field-spec-max').readOnly = false;
     renderParamButtons([]);
 
     const tabKey = stage.toLowerCase();
@@ -265,8 +270,10 @@ const Quality = (() => {
         selectedParam = p;
         document.getElementById('field-spec-min').value = p.spec_min ?? '';
         document.getElementById('field-spec-max').value = p.spec_max ?? '';
-        document.getElementById('field-spec-min').readOnly = p.spec_min !== null;
-        document.getElementById('field-spec-max').readOnly = p.spec_max !== null;
+        document.getElementById('field-spec-min').readOnly = false;
+        document.getElementById('field-spec-max').readOnly = false;
+        const hint = document.getElementById('param-hint');
+        if (hint) hint.textContent = p.sample_size ? 'Sample: ' + p.sample_size : '';
       });
       container.appendChild(btn);
     });
@@ -279,10 +286,14 @@ const Quality = (() => {
     const remarks   = document.getElementById('field-remarks').value.trim();
     const checkDate = document.getElementById('field-check-date').value;
 
-    if (!batchId || actual === '') {
-      showToast('Batch ID and Actual Value are required');
-      return;
-    }
+    const eBatch  = document.getElementById('err-batch');
+    const eActual = document.getElementById('err-actual');
+    if (eBatch)  eBatch.textContent  = '';
+    if (eActual) eActual.textContent = '';
+    let valid = true;
+    if (!batchId)    { if (eBatch)  eBatch.textContent  = 'Select a batch'; valid = false; }
+    if (actual === '') { if (eActual) eActual.textContent = 'Enter actual value'; valid = false; }
+    if (!valid) return;
 
     const parameter = selectedParam ? selectedParam.parameter : 'Manual';
     const specMin   = selectedParam ? (selectedParam.spec_min ?? null) : (document.getElementById('field-spec-min').value !== '' ? Number(document.getElementById('field-spec-min').value) : null);

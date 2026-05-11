@@ -120,8 +120,9 @@
         <input type="date" id="field-check-date">
       </div>
       <div class="field-group">
-        <label>Batch ID</label>
+        <label>Batch ID *</label>
         <select id="field-batch"><option value="">— select —</option></select>
+        <div class="field-error" id="err-batch"></div>
       </div>
       <div class="field-group">
         <label>Inspector</label>
@@ -132,18 +133,20 @@
         <div id="param-btn-group" class="param-btn-group">
           <span style="font-size:0.85rem;color:var(--neutral-500);">Select a batch first</span>
         </div>
+        <div id="param-hint" style="font-size:0.78rem;color:var(--color-text-muted);margin-top:4px;"></div>
       </div>
       <div class="field-group">
-        <label>Spec Min (auto-filled)</label>
-        <input type="number" id="field-spec-min" step="any" readonly>
+        <label>Spec Min</label>
+        <input type="number" id="field-spec-min" step="any" placeholder="Enter or auto-filled">
       </div>
       <div class="field-group">
-        <label>Spec Max (auto-filled)</label>
-        <input type="number" id="field-spec-max" step="any" readonly>
+        <label>Spec Max</label>
+        <input type="number" id="field-spec-max" step="any" placeholder="Enter or auto-filled">
       </div>
       <div class="field-group">
-        <label>Actual Value</label>
-        <input type="number" id="field-actual" step="any">
+        <label>Actual Value *</label>
+        <input type="number" id="field-actual" step="any" placeholder="Measured value">
+        <div class="field-error" id="err-actual"></div>
       </div>
       <div class="field-group">
         <label>Remarks</label>

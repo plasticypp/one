@@ -150,72 +150,78 @@
 
   <!-- Dispatch Action Panel -->
   <div id="dispatch-action-panel" class="form-panel">
-    <div class="form-panel-header">
+    <div class="form-header">
       <button class="back-btn" id="dispatch-action-back-btn" aria-label="Back">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="15 18 9 12 15 6"/>
-        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
-      <h2 class="form-panel-title">Dispatch Sales Order</h2>
+      <span class="form-title">Dispatch Sales Order</span>
     </div>
-    <div class="form-panel-body">
+    <div class="form-body">
       <input type="hidden" id="dispatch-so-id">
-      <div class="form-group">
-        <label class="form-label">SO #</label>
-        <input type="text" id="dispatch-so-display" class="form-input" readonly>
+      <div class="field-group">
+        <label>SO #</label>
+        <input type="text" id="dispatch-so-display" disabled>
       </div>
-      <div class="form-group">
-        <label class="form-label">Customer</label>
-        <input type="text" id="dispatch-customer-display" class="form-input" readonly>
+      <div class="field-group">
+        <label>Customer</label>
+        <input type="text" id="dispatch-customer-display" disabled>
       </div>
-      <div class="form-group">
-        <label class="form-label">Product</label>
-        <input type="text" id="dispatch-product-display" class="form-input" readonly>
+      <div class="field-group">
+        <label>Product</label>
+        <input type="text" id="dispatch-product-display" disabled>
       </div>
-      <div class="form-group">
-        <label class="form-label">SO Qty (ordered)</label>
-        <input type="number" id="dispatch-so-qty-display" class="form-input" readonly>
+      <div class="field-group">
+        <label>SO Qty Ordered</label>
+        <input type="number" id="dispatch-so-qty-display" disabled>
       </div>
-      <div class="form-group">
-        <label class="form-label">Dispatch Qty *</label>
-        <input type="number" id="dispatch-qty" class="form-input" placeholder="Enter quantity to dispatch" required min="1">
+      <div class="field-group">
+        <label>Dispatch Qty *</label>
+        <input type="number" id="dispatch-qty" placeholder="Qty to dispatch" min="1">
+        <div class="field-error" id="err-dispatch-qty"></div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Invoice No *</label>
-        <input type="text" id="dispatch-invoice" class="form-input" placeholder="e.g. INV-2024-001" required>
+      <div class="field-group">
+        <label>Invoice No</label>
+        <input type="text" id="dispatch-invoice" placeholder="e.g. INV-2024-001">
       </div>
-      <div class="form-group">
-        <label class="form-label">Dispatch Date *</label>
-        <input type="date" id="dispatch-date" class="form-input" required>
+      <div class="field-group">
+        <label>Dispatch Date *</label>
+        <input type="date" id="dispatch-date">
+        <div class="field-error" id="err-dispatch-date"></div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Vehicle / LR No</label>
-        <input type="text" id="dispatch-vehicle" class="form-input" placeholder="Optional">
+      <div class="field-group">
+        <label>Vehicle / LR No</label>
+        <input type="text" id="dispatch-vehicle" placeholder="Optional">
       </div>
-      <div class="form-group">
-        <label class="form-label">Batch *</label>
+      <div class="field-group">
+        <label>Driver Name</label>
+        <input type="text" id="dispatch-driver-name" placeholder="Optional">
+      </div>
+      <div class="field-group">
+        <label>Batch No</label>
         <div style="display:flex;gap:8px;align-items:center;">
-          <input type="text" id="dispatch-batch-no" class="form-input" placeholder="Select batch" readonly style="flex:1;">
-          <button class="btn btn-secondary btn-sm" onclick="Dispatch.openBatchSelectPanel()" type="button">Select</button>
+          <input type="text" id="dispatch-batch-no" placeholder="Select or type batch" style="flex:1;">
+          <button class="btn btn-secondary btn-sm" onclick="Dispatch.openBatchSelectPanel()" type="button">Browse</button>
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Polybag Qty</label>
-        <input type="number" id="dispatch-polybag-qty" class="form-input" placeholder="e.g. 6" min="0">
+      <div class="field-group">
+        <label>Polybag Qty</label>
+        <input type="number" id="dispatch-polybag-qty" placeholder="e.g. 6" min="0">
       </div>
+    </div>
+    <div class="form-actions">
       <button class="btn btn-primary btn-full" onclick="submitDispatchAction()">Confirm Dispatch</button>
     </div>
   </div>
 
   <!-- Batch Select Panel -->
   <div id="batch-select-panel" class="form-panel" style="z-index:300;">
-    <div class="form-panel-header">
+    <div class="form-header">
       <button class="back-btn" onclick="document.getElementById('batch-select-panel').classList.remove('slide-in')" type="button">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
-      <h2 class="form-panel-title">Select OQC-Cleared Batch</h2>
+      <span class="form-title">Select Batch</span>
     </div>
-    <div class="form-panel-body" style="padding:var(--space-4);">
+    <div class="form-body">
       <div class="table-wrap">
         <table class="data-table">
           <thead><tr><th>Batch No</th><th>Product</th><th>Date</th><th></th></tr></thead>

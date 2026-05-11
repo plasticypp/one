@@ -181,6 +181,7 @@ const Masters = (() => {
       fields: [
         { key: 'ParamID',   label: 'Param ID',  type: 'text', readonly: true },
         { key: 'ProductID', label: 'Product',   type: 'dropdown', entity: 'Products' },
+        { key: 'Stage',     label: 'Stage',     type: 'select', options: ['IQC','IPC','OQC'] },
         { key: 'Parameter', label: 'Parameter', type: 'text' },
         { key: 'Unit',      label: 'Unit',      type: 'text' },
         { key: 'SpecMin',   label: 'Spec Min',  type: 'number' },

@@ -302,15 +302,23 @@ const Dispatch = (() => {
   }
 
   async function submitDispatchAction() {
-    const qty       = Number(document.getElementById('dispatch-qty').value);
-    const invoice   = document.getElementById('dispatch-invoice').value.trim();
-    const date      = document.getElementById('dispatch-date').value;
-    const vehicle   = document.getElementById('dispatch-vehicle').value.trim();
-    const batchNo   = document.getElementById('dispatch-batch-no')?.value?.trim() || '';
+    const qty        = Number(document.getElementById('dispatch-qty').value);
+    const invoice    = document.getElementById('dispatch-invoice').value.trim();
+    const date       = document.getElementById('dispatch-date').value;
+    const vehicle    = document.getElementById('dispatch-vehicle').value.trim();
+    const driverName = document.getElementById('dispatch-driver-name')?.value?.trim() || '';
+    const batchNo    = document.getElementById('dispatch-batch-no')?.value?.trim() || '';
     const polybagQty = Number(document.getElementById('dispatch-polybag-qty')?.value) || 0;
 
-    if (!qty || qty <= 0)  { showToast('Enter a valid dispatch quantity'); return; }
-    if (!date)             { showToast('Dispatch date is required'); return; }
+    const eQty  = document.getElementById('err-dispatch-qty');
+    const eDate = document.getElementById('err-dispatch-date');
+    if (eQty)  eQty.textContent  = '';
+    if (eDate) eDate.textContent = '';
+
+    let valid = true;
+    if (!qty || qty <= 0)  { if (eQty)  eQty.textContent  = 'Enter a valid quantity'; valid = false; }
+    if (!date)             { if (eDate) eDate.textContent = 'Date is required'; valid = false; }
+    if (!valid) return;
 
     const so = soCache.find(s => String(s.so_id) === String(dispatchingSOId));
     showSpinner(true);
@@ -322,7 +330,7 @@ const Dispatch = (() => {
         dispatch_date: date,
         invoice_no:    invoice,
         vehicle_no:    vehicle,
-        driver_name:   '',
+        driver_name:   driverName,
         batch_no:      batchNo,
         polybag_qty:   polybagQty,
         dispatched_by: session.username || session.name || '',

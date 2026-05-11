@@ -434,7 +434,7 @@ select.form-control {
   padding-right: 36px;
 }
 .form-hint  { font-size: 12px; color: var(--color-text-muted); margin-top: var(--space-1); }
-.form-error { font-size: 12px; color: var(--color-error); margin-top: var(--space-1); min-height: 18px; }
+.form-error, .field-error { font-size: 12px; color: var(--color-error); margin-top: var(--space-1); min-height: 18px; }
 
 /* ── Table ── */
 .table-wrap {

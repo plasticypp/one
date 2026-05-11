@@ -945,28 +945,28 @@ function seedProductionData() {
 // ── KB Constants ─────────────────────────────────────────────────────────────
 
 const INSPECTION_PLANS = [
-  { id:'IP001', stage:'IQC', product_id:'ALL', parameter:'MFI (Melt Flow Index)',            unit:'g/10 min', spec_min:null, spec_max:null, aql_level:null, sample_size:'Per lot — COA document' },
-  { id:'IP002', stage:'IQC', product_id:'ALL', parameter:'Density',                          unit:'g/cm³',    spec_min:null, spec_max:null, aql_level:null, sample_size:'Per lot — COA document' },
-  { id:'IP003', stage:'IQC', product_id:'ALL', parameter:'Colour and Appearance of Resin Pellets', unit:'Visual', spec_min:null, spec_max:null, aql_level:null, sample_size:'Per lot — COA document' },
-  { id:'IP004', stage:'IQC', product_id:'ALL', parameter:'Moisture Content',                 unit:'%',        spec_min:null, spec_max:null, aql_level:null, sample_size:'Per lot — COA document' },
-  { id:'IP005', stage:'IQC', product_id:'ALL', parameter:'Contamination / Foreign Material', unit:'Visual',   spec_min:null, spec_max:null, aql_level:null, sample_size:'Per lot — COA document' },
-  { id:'IP006', stage:'IPC', product_id:'ALL', parameter:'Parison Weight',                   unit:'g',        spec_min:null, spec_max:null, aql_level:'AQL 1.5', sample_size:'5 per hour' },
-  { id:'IP007', stage:'IPC', product_id:'ALL', parameter:'Wall Thickness',                   unit:'mm',       spec_min:null, spec_max:null, aql_level:'AQL 1.5', sample_size:'5 per hour' },
-  { id:'IP008', stage:'IPC', product_id:'ALL', parameter:'Container Weight',                 unit:'g',        spec_min:null, spec_max:null, aql_level:'AQL 1.5', sample_size:'5 per hour' },
-  { id:'IP009', stage:'IPC', product_id:'ALL', parameter:'Neck/Thread Dimensions',           unit:'mm',       spec_min:null, spec_max:null, aql_level:'AQL 1.5', sample_size:'5 per hour' },
-  { id:'IP010', stage:'IPC', product_id:'ALL', parameter:'Visual Defects',                   unit:'Visual',   spec_min:null, spec_max:null, aql_level:'AQL 2.5', sample_size:'10 per hour' },
-  { id:'IP011', stage:'IPC', product_id:'ALL', parameter:'Leak Test',                        unit:'Pass/Fail',spec_min:null, spec_max:null, aql_level:'AQL 0.65',sample_size:'5 per hour' },
-  { id:'IP012', stage:'IPC', product_id:'ALL', parameter:'Flash Trimming Check',             unit:'Visual',   spec_min:null, spec_max:null, aql_level:'AQL 2.5', sample_size:'5 per hour' },
-  { id:'IP013', stage:'IPC', product_id:'ALL', parameter:'Label Application',                unit:'Visual',   spec_min:null, spec_max:null, aql_level:'AQL 2.5', sample_size:'5 per hour' },
-  { id:'IP014', stage:'OQC', product_id:'ALL', parameter:'Final Visual Inspection',          unit:'Visual',   spec_min:null, spec_max:null, aql_level:'AQL 2.5', sample_size:'Per batch AQL table' },
-  { id:'IP015', stage:'OQC', product_id:'ALL', parameter:'Dimensional Check (Critical)',     unit:'mm',       spec_min:null, spec_max:null, aql_level:'AQL 1.5', sample_size:'Per batch AQL table' },
-  { id:'IP016', stage:'OQC', product_id:'ALL', parameter:'Weight Check',                     unit:'g',        spec_min:null, spec_max:null, aql_level:'AQL 1.5', sample_size:'Per batch AQL table' },
-  { id:'IP017', stage:'OQC', product_id:'ALL', parameter:'Leak / Pressure Test',             unit:'Pass/Fail',spec_min:null, spec_max:null, aql_level:'AQL 0.65',sample_size:'Per batch AQL table' },
-  { id:'IP018', stage:'OQC', product_id:'ALL', parameter:'Label / Print Quality',            unit:'Visual',   spec_min:null, spec_max:null, aql_level:'AQL 2.5', sample_size:'Per batch AQL table' },
-  { id:'IP019', stage:'OQC', product_id:'ALL', parameter:'Packaging Integrity',              unit:'Visual',   spec_min:null, spec_max:null, aql_level:'AQL 2.5', sample_size:'Per batch AQL table' },
-  { id:'IP020', stage:'OQC', product_id:'ALL', parameter:'Batch / Label Traceability',       unit:'Visual',   spec_min:null, spec_max:null, aql_level:'AQL 4.0', sample_size:'Per batch AQL table' },
-  { id:'IP021', stage:'IPC', product_id:'ALL', parameter:'Mould Temperature',                unit:'°C',       spec_min:null, spec_max:null, aql_level:null,      sample_size:'Per shift' },
-  { id:'IP022', stage:'IPC', product_id:'ALL', parameter:'Cycle Time',                       unit:'sec',      spec_min:null, spec_max:null, aql_level:null,      sample_size:'Per hour' }
+  { id:'IP001', stage:'IQC', product_id:'ALL', parameter:'MFI (Melt Flow Index)',            unit:'g/10 min', spec_min:0.2,  spec_max:1.2,  aql_level:null,       sample_size:'Per lot — COA document' },
+  { id:'IP002', stage:'IQC', product_id:'ALL', parameter:'Density',                          unit:'g/cm³',    spec_min:0.940,spec_max:0.965,aql_level:null,       sample_size:'Per lot — COA document' },
+  { id:'IP003', stage:'IQC', product_id:'ALL', parameter:'Colour / Appearance',              unit:'Visual',   spec_min:null, spec_max:null,  aql_level:null,       sample_size:'Per lot — COA document' },
+  { id:'IP004', stage:'IQC', product_id:'ALL', parameter:'Moisture Content',                 unit:'%',        spec_min:null, spec_max:0.05,  aql_level:null,       sample_size:'Per lot — COA document' },
+  { id:'IP005', stage:'IQC', product_id:'ALL', parameter:'Contamination / Foreign Material', unit:'Visual',   spec_min:null, spec_max:null,  aql_level:null,       sample_size:'Per lot — COA document' },
+  { id:'IP006', stage:'IPC', product_id:'ALL', parameter:'Parison Weight',                   unit:'g',        spec_min:null, spec_max:null,  aql_level:'AQL 1.5',  sample_size:'5 per hour' },
+  { id:'IP007', stage:'IPC', product_id:'ALL', parameter:'Wall Thickness',                   unit:'mm',       spec_min:0.8,  spec_max:2.0,  aql_level:'AQL 1.5',  sample_size:'5 per hour' },
+  { id:'IP008', stage:'IPC', product_id:'ALL', parameter:'Container Weight',                 unit:'g',        spec_min:null, spec_max:null,  aql_level:'AQL 1.5',  sample_size:'5 per hour' },
+  { id:'IP009', stage:'IPC', product_id:'ALL', parameter:'Neck/Thread Dimensions',           unit:'mm',       spec_min:null, spec_max:null,  aql_level:'AQL 1.5',  sample_size:'5 per hour' },
+  { id:'IP010', stage:'IPC', product_id:'ALL', parameter:'Visual Defects',                   unit:'Visual',   spec_min:null, spec_max:null,  aql_level:'AQL 2.5',  sample_size:'10 per hour' },
+  { id:'IP011', stage:'IPC', product_id:'ALL', parameter:'Leak Test',                        unit:'Pass/Fail',spec_min:null, spec_max:null,  aql_level:'AQL 0.65', sample_size:'5 per hour' },
+  { id:'IP012', stage:'IPC', product_id:'ALL', parameter:'Flash Trimming Check',             unit:'Visual',   spec_min:null, spec_max:null,  aql_level:'AQL 2.5',  sample_size:'5 per hour' },
+  { id:'IP013', stage:'IPC', product_id:'ALL', parameter:'Label Application',                unit:'Visual',   spec_min:null, spec_max:null,  aql_level:'AQL 2.5',  sample_size:'5 per hour' },
+  { id:'IP014', stage:'OQC', product_id:'ALL', parameter:'Final Visual Inspection',          unit:'Visual',   spec_min:null, spec_max:null,  aql_level:'AQL 2.5',  sample_size:'Per batch AQL table' },
+  { id:'IP015', stage:'OQC', product_id:'ALL', parameter:'Dimensional Check (Critical)',     unit:'mm',       spec_min:null, spec_max:null,  aql_level:'AQL 1.5',  sample_size:'Per batch AQL table' },
+  { id:'IP016', stage:'OQC', product_id:'ALL', parameter:'Weight Check',                     unit:'g',        spec_min:null, spec_max:null,  aql_level:'AQL 1.5',  sample_size:'Per batch AQL table' },
+  { id:'IP017', stage:'OQC', product_id:'ALL', parameter:'Leak / Pressure Test',             unit:'Pass/Fail',spec_min:null, spec_max:null,  aql_level:'AQL 0.65', sample_size:'Per batch AQL table' },
+  { id:'IP018', stage:'OQC', product_id:'ALL', parameter:'Label / Print Quality',            unit:'Visual',   spec_min:null, spec_max:null,  aql_level:'AQL 2.5',  sample_size:'Per batch AQL table' },
+  { id:'IP019', stage:'OQC', product_id:'ALL', parameter:'Packaging Integrity',              unit:'Visual',   spec_min:null, spec_max:null,  aql_level:'AQL 2.5',  sample_size:'Per batch AQL table' },
+  { id:'IP020', stage:'OQC', product_id:'ALL', parameter:'Batch / Label Traceability',       unit:'Visual',   spec_min:null, spec_max:null,  aql_level:'AQL 4.0',  sample_size:'Per batch AQL table' },
+  { id:'IP021', stage:'IPC', product_id:'ALL', parameter:'Mould Temperature',                unit:'°C',       spec_min:160,  spec_max:220,  aql_level:null,       sample_size:'Per shift' },
+  { id:'IP022', stage:'IPC', product_id:'ALL', parameter:'Cycle Time',                       unit:'sec',      spec_min:null, spec_max:null,  aql_level:null,       sample_size:'Per hour' }
 ];
 
 const DEFECT_CATALOGUE = [
@@ -1531,7 +1531,7 @@ function createWorkbookSkeleton() {
     'KPI_Log':          ['LogID','LogDate','KPICode','KPIName','Value','Unit','Target','Period','RecordedBy'],
     'Customer_Complaints': ['ComplaintNo','DateReceived','CustomerID','ContactPerson','BatchNoRef','ProductID','ComplaintType','Description','Severity','Status','RootCause','CorrectiveAction','ClosedDate','ClosedBy','Remarks'],
     '_Meta':            ['Key','Value'],
-    'QualityParams':    ['ParamID','ProductID','Parameter','Unit','SpecMin','SpecMax','Active']
+    'QualityParams':    ['ParamID','ProductID','Stage','Parameter','Unit','SpecMin','SpecMax','Active']
   };
 
   Object.entries(SHEETS).forEach(([name, headers]) => {
