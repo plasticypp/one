@@ -398,9 +398,21 @@ function saveMaster(data) {
   const sheet = getSheet(entity);
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
-  const idVal = row[headers[0]];
+  const idCol = headers[0];
+  const idVal = row[idCol];
 
   const values = headers.map(h => row[h] !== undefined ? row[h] : '');
+
+  // Check for duplicate by ID (new records only)
+  const isNew = !rows.slice(1).some(r => String(r[0]) === String(idVal));
+  if (isNew && idVal) {
+    const nameCol = headers.find(h => h === 'Name' || h === 'name');
+    if (nameCol && row[nameCol]) {
+      if (checkDuplicate(entity, nameCol, row[nameCol], idCol, idVal)) {
+        return { success: false, error: 'duplicate_name' };
+      }
+    }
+  }
 
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][0]) === String(idVal)) {

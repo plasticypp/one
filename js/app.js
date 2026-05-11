@@ -128,7 +128,7 @@ const App = (() => {
     logparams:   'production.html?view=params',
     quality:     'quality.html',
     ncr:         'ncr.html',
-    defect:      'quality.html?view=defect',
+    defect:      'ncr.html',
     dispatch:    'dispatch.html',
     machines:    'maintenance.html',
     capa:        'compliance.html',

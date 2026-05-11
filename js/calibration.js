@@ -157,7 +157,7 @@ const Calibration = (() => {
     showSpinner(true);
     try {
       const res = await Api.post('saveCalibrationLog', {
-        userId: session.userId, inst_id: instId, inst_name: instName,
+        userId: Auth.getUserId(), inst_id: instId, inst_name: instName,
         calibration_date: date, result, certificate_no: certNo, done_by: doneBy, remarks
       });
       if (!res || !res.success) { showToast(res?.error || 'Save failed', 'error'); return; }

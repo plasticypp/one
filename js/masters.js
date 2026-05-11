@@ -387,6 +387,8 @@ const Masters = (() => {
         records = res2.success ? res2.data : records;
         renderList();
         slideFormOut();
+      } else if (res.error === 'duplicate_name') {
+        showToast('A record with that name already exists');
       } else {
         showToast(Lang.t('masters.error.save'));
       }

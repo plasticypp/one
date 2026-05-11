@@ -19,9 +19,34 @@ const Production = (() => {
     await Lang.init(session.lang);
 
     setupHeader();
-    renderTabs();
     await loadDropdowns();
     await loadBatches();
+
+    const view = new URLSearchParams(window.location.search).get('view');
+    if (view === 'new') {
+      renderTabs();
+      openBatchForm();
+    } else if (view === 'params') {
+      activeTab = 'params';
+      renderTabs();
+      await loadParamsLog();
+      openParamsForm();
+    } else if (view === 'mine') {
+      renderTabs();
+      // filter batches table to current operator's batches
+      const myBatches = batchCache.filter(b => String(b.operator_id) === String(session.id));
+      renderBatchTable(myBatches);
+    } else if (view === 'plan') {
+      renderTabs();
+      // scroll to first Open/Planned batch
+    } else if (view === 'today') {
+      renderTabs();
+      const today = new Date().toISOString().slice(0, 10);
+      const todayBatches = batchCache.filter(b => b.start_date && String(b.start_date).slice(0, 10) === today);
+      renderBatchTable(todayBatches);
+    } else {
+      renderTabs();
+    }
   }
 
   // ── Header ────────────────────────────────────────────────────────────────
