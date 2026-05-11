@@ -839,9 +839,8 @@ function getQualityChecks(params) {
   if (rows.length < 2) return { success: true, data: [] };
   const headers = rows[0];
   let data = rows.slice(1).map(row => rowToObj(headers, row));
-  if (params.batch_id) {
-    data = data.filter(r => String(r.batch_id) === String(params.batch_id));
-  }
+  if (params.batch_id) data = data.filter(r => String(r.batch_id) === String(params.batch_id));
+  if (params.stage)    data = data.filter(r => (r.stage || 'IPC') === params.stage);
   return { success: true, data };
 }
 
@@ -861,6 +860,7 @@ function saveQualityCheck(data) {
   const specMax = Number(data.spec_max) || 0;
   const actual  = Number(data.actual_value);
   const result  = (actual >= specMin && actual <= specMax) ? 'OK' : 'NG';
+  const stage   = data.stage || 'IPC';
   sheet.appendRow([
     checkId,
     data.batch_id,
@@ -871,9 +871,10 @@ function saveQualityCheck(data) {
     specMax,
     actual,
     result,
-    data.remarks || ''
+    data.remarks || '',
+    stage
   ]);
-  return { success: true, check_id: checkId };
+  return { success: true, check_id: checkId, result };
 }
 
 function getQualitySummary() {
