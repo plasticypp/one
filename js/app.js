@@ -65,7 +65,7 @@ const App = (() => {
     startbatch:  'activeBatches',
     capa:        'openCapas',
     ncr:         'openCapas',
-    complaints:  'openCapas',
+    complaints:  'openComplaints',
     machines:    'openBreakdowns',
     kpi:         'overdueCompliance',
     calibration: 'overdueCompliance',

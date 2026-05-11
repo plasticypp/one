@@ -47,7 +47,8 @@ const KPI = (() => {
       { label: 'Open CAPAs',         value: d.openCapas,         color: d.openCapas       > 0 ? '#d97706' : '#16a34a' },
       { label: 'Overdue Compliance', value: d.overdueCompliance, color: d.overdueCompliance > 0 ? '#dc2626' : '#16a34a' },
       { label: 'Low Stock Items',    value: d.lowStockCount,     color: d.lowStockCount   > 0 ? '#d97706' : '#16a34a' },
-      { label: 'Overdue PMs',        value: d.overduePMs,        color: d.overduePMs      > 0 ? '#d97706' : '#16a34a' }
+      { label: 'Overdue PMs',        value: d.overduePMs,        color: d.overduePMs      > 0 ? '#d97706' : '#16a34a' },
+      { label: 'Open Complaints',    value: d.openComplaints,    color: d.openComplaints  > 0 ? '#dc2626' : '#16a34a' }
     ];
     document.getElementById('stat-grid').innerHTML = items.map(i => `
       <div style="background:var(--color-surface);border-radius:var(--radius-md);padding:var(--space-4);border-left:4px solid ${i.color};">

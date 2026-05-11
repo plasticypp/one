@@ -1356,7 +1356,12 @@ function getDashboardStats() {
     return d && d < today;
   }).length;
 
-  const data = { openGRNs, activeBatches, openBreakdowns, openCapas, overdueCompliance, lowStockCount, overduePMs };
+  const ccRows = sheetRows('Customer_Complaints');
+  const ccHdrs = ccRows[0] || [];
+  const ccStatusIdx = ccHdrs.indexOf('Status') >= 0 ? ccHdrs.indexOf('Status') : 9;
+  const openComplaints = ccRows.slice(1).filter(r => r[ccStatusIdx] === 'Open').length;
+
+  const data = { openGRNs, activeBatches, openBreakdowns, openCapas, overdueCompliance, lowStockCount, overduePMs, openComplaints };
   _cachePut('dashboard_stats', data, 30);
   return { success: true, data };
 }
@@ -1867,6 +1872,62 @@ function seedDispatchData() {
   );
 
   Logger.log('seedDispatchData complete.');
+}
+
+// ── Wave 5+6 Seed Data ────────────────────────────────────────────────────────
+
+function seedPeopleData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  function safeWrite(sheetName, headers, rows) {
+    let sheet = ss.getSheetByName(sheetName);
+    if (!sheet) {
+      sheet = ss.insertSheet(sheetName);
+      sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+      sheet.setFrozenRows(1);
+      sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
+    }
+    const existing = sheet.getDataRange().getValues();
+    if (existing.length > 1) { Logger.log(sheetName + ': already has data, skipping.'); return; }
+    rows.forEach(row => sheet.appendRow(row));
+    Logger.log(sheetName + ': seeded ' + rows.length + ' rows.');
+  }
+
+  const today = new Date();
+  const fmt = d => d.toISOString().slice(0, 10);
+  const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
+
+  safeWrite('Training_Log',
+    ['TrainingID','Date','Topic','TrainerID','Participants','Method','EvalScore','Status','Remarks'],
+    [
+      ['TR0001', fmt(addDays(today,-60)), 'ISO 9001:2015 Awareness',            'PL Pradhan',    'All staff (8)', 'Classroom', 82, 'Completed', 'Annual refresher'],
+      ['TR0002', fmt(addDays(today,-30)), 'Machine Operation & Safety',          'Tarun Mishra',  'Operators (4)', 'On-the-Job', 90, 'Completed', 'New operator batch'],
+      ['TR0003', fmt(addDays(today,-7)),  'Fire Safety & Emergency Evacuation',  'External-HSE',  'All staff (8)', 'Classroom', 78, 'Completed', 'Annual drill']
+    ]
+  );
+
+  safeWrite('KPI_Log',
+    ['LogID','LogDate','KPICode','KPIName','Value','Unit','Target','Period','RecordedBy'],
+    [
+      ['KL0001', fmt(addDays(today,-60)), 'KPI001', 'Rejection Rate',          2.1, '%',     '< 3%',    '2025-03', 'qmr'],
+      ['KL0002', fmt(addDays(today,-60)), 'KPI003', 'On-Time Delivery Rate',   96,  '%',     '≥ 95%',   '2025-03', 'director'],
+      ['KL0003', fmt(addDays(today,-30)), 'KPI001', 'Rejection Rate',          1.8, '%',     '< 3%',    '2025-04', 'qmr'],
+      ['KL0004', fmt(addDays(today,-30)), 'KPI002', 'Customer Complaint Rate', 1,   'count', '0/month', '2025-04', 'qmr'],
+      ['KL0005', fmt(addDays(today,-30)), 'KPI003', 'On-Time Delivery Rate',   98,  '%',     '≥ 95%',   '2025-04', 'director'],
+      ['KL0006', fmt(addDays(today,-5)),  'KPI001', 'Rejection Rate',          2.4, '%',     '< 3%',    '2025-05', 'qmr'],
+      ['KL0007', fmt(addDays(today,-5)),  'KPI006', 'PM Compliance Rate',      88,  '%',     '≥ 90%',   '2025-05', 'supervisor']
+    ]
+  );
+
+  safeWrite('Customer_Complaints',
+    ['ComplaintNo','DateReceived','CustomerID','ContactPerson','BatchNoRef','ProductID','ComplaintType','Description','Severity','Status','RootCause','CorrectiveAction','ClosedDate','ClosedBy','Remarks'],
+    [
+      ['YPP-CC-2503-001', fmt(addDays(today,-45)), 'CUS001', 'Rajesh Kumar',  'YPP-B2503-001', 'PRD002', 'Leakage',     '1L bottles leaking at base seam from batch B2503-001', 'High',   'Closed', 'Insufficient blow pressure causing thin base wall', 'Increased blow pressure to 7.5 bar; 100% inspection of remaining stock', fmt(addDays(today,-40)), 'qmr', 'CAPA raised'],
+      ['YPP-CC-2504-001', fmt(addDays(today,-10)), 'CUS002', 'Priya Sharma',  '',              'PRD001', 'Short Supply', '5L cans delivered short by 20 units against PO', 'Medium', 'Open',   '', '', '', '', 'Under investigation']
+    ]
+  );
+
+  Logger.log('seedPeopleData complete.');
 }
 
 // ── Wave 5: People & Training ─────────────────────────────────────────────────
