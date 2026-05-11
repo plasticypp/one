@@ -1092,6 +1092,106 @@ function upsertBatchTraceability(data) {
   ]);
 }
 
+function getBatchRecord(params) {
+  const batchNo = params.batch_no;
+  if (!batchNo) return { success: false, error: 'batch_no required' };
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const btSheet = ss.getSheetByName('BatchTraceability');
+  if (!btSheet) return { success: false, error: 'not_found' };
+  const btRows = btSheet.getDataRange().getValues();
+  const btHeaders = btRows[0];
+  let batch = null;
+  for (let i = 1; i < btRows.length; i++) {
+    const obj = rowToObj(btHeaders, btRows[i]);
+    if (String(obj.batch_no) === String(batchNo)) { batch = obj; break; }
+  }
+  if (!batch) return { success: false, error: 'not_found' };
+
+  const qcSheet = ss.getSheetByName('QualityChecks');
+  let qcData = [];
+  if (qcSheet) {
+    const qcRows = qcSheet.getDataRange().getValues();
+    const qcHeaders = qcRows[0];
+    qcData = qcRows.slice(1)
+      .map(r => rowToObj(qcHeaders, r))
+      .filter(r => String(r.batch_id) === String(batchNo));
+  }
+
+  const dispSheet = ss.getSheetByName('Dispatch');
+  let dispData = null;
+  if (dispSheet && batch.dispatch_id) {
+    const dispRows = dispSheet.getDataRange().getValues();
+    const dispHeaders = dispRows[0];
+    for (let i = 1; i < dispRows.length; i++) {
+      const obj = rowToObj(dispHeaders, dispRows[i]);
+      if (String(obj.dispatch_id) === String(batch.dispatch_id)) { dispData = obj; break; }
+    }
+  }
+
+  return { success: true, data: { batch, quality_checks: qcData, dispatch: dispData } };
+}
+
+function getOQCBatchList() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('BatchTraceability');
+  if (!sheet) return { success: true, data: [] };
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length < 2) return { success: true, data: [] };
+  const headers = rows[0];
+  const data = rows.slice(1)
+    .map(r => rowToObj(headers, r))
+    .filter(r => r.oqc_status === 'OK' && !r.dispatch_id);
+  return { success: true, data };
+}
+
+function getRMStock() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const rmSheet = ss.getSheetByName('RMStock');
+  const received = {};
+  if (rmSheet) {
+    const rows = rmSheet.getDataRange().getValues();
+    const headers = rows[0];
+    rows.slice(1).forEach(r => {
+      const obj = rowToObj(headers, r);
+      const mat = obj.material || '';
+      received[mat] = (received[mat] || 0) + (Number(obj.qty_kg) || 0);
+    });
+  }
+
+  const btSheet = ss.getSheetByName('BatchTraceability');
+  const consumed = {};
+  if (btSheet) {
+    const btRows = btSheet.getDataRange().getValues();
+    const btHeaders = btRows[0];
+    btRows.slice(1).forEach(r => {
+      const obj = rowToObj(btHeaders, r);
+      const bom = BOM_KB.find(b => b.product_id === obj.product_id);
+      if (!bom) return;
+      bom.rm_items.forEach(item => {
+        consumed[item.material] = (consumed[item.material] || 0) + item.qty_per_unit_kg;
+      });
+    });
+  }
+
+  const allMaterials = new Set([...Object.keys(received), ...Object.keys(consumed)]);
+  const data = Array.from(allMaterials).map(mat => ({
+    material:    mat,
+    received_kg: received[mat] || 0,
+    consumed_kg: consumed[mat] || 0,
+    stock_kg:    (received[mat] || 0) - (consumed[mat] || 0),
+    low_stock:   ((received[mat] || 0) - (consumed[mat] || 0)) < 100
+  }));
+
+  return { success: true, data };
+}
+
+function getSuppliers() {
+  return { success: true, data: SUPPLIERS_KB };
+}
+
 function getQualitySummary() {
   const sheet = getSheet('QualityChecks');
   const rows = sheet.getDataRange().getValues();
