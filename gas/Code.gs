@@ -215,6 +215,8 @@ function doGet(e) {
     if (action === 'getOQCBatchList')       return respond(getOQCBatchList());
     if (action === 'getRMStock')            return respond(getRMStock());
     if (action === 'getSuppliers')          return respond(getSuppliers());
+    if (action === 'getMachineList')        return respond(getMachineList());
+    if (action === 'getOperatorList')       return respond(getOperatorList());
     if (action === 'getPersonnelList')      return respond(getPersonnelList());
     if (action === 'getTrainingLog')        return respond(getTrainingLog(e.parameter));
     if (action === 'getKPILog')             return respond(getKPILog(e.parameter));
@@ -1302,7 +1304,53 @@ function getRMStock() {
 }
 
 function getSuppliers() {
-  return { success: true, data: SUPPLIERS_KB };
+  const sheet = getSheet('Suppliers');
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length < 2) return { success: true, data: SUPPLIERS_KB }; // fallback to KB if sheet empty
+  const headers = rows[0];
+  const data = rows.slice(1)
+    .filter(r => r[0] && String(r[headers.indexOf('Active')] ?? 'TRUE').toUpperCase() !== 'FALSE')
+    .map(r => {
+      const obj = rowToObj(headers, r);
+      return { id: obj.SupplierID, name: obj.Name, category: obj.Category || '' };
+    });
+  return { success: true, data: data.length ? data : SUPPLIERS_KB };
+}
+
+function getMachineList() {
+  const res = getMasterDropdown('Equipment');
+  if (!res.success) return res;
+  const sheet = getSheet('Equipment');
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length < 2) return { success: true, data: [] };
+  const headers = rows[0];
+  const typeIdx = headers.indexOf('Type');
+  const statusIdx = headers.indexOf('Status');
+  const data = rows.slice(1)
+    .filter(r => r[0] && (typeIdx < 0 || r[typeIdx] === 'Machine') && (statusIdx < 0 || r[statusIdx] !== 'Inactive'))
+    .map(r => ({ id: r[0], name: r[headers.indexOf('Name') >= 0 ? headers.indexOf('Name') : 1] }));
+  return { success: true, data };
+}
+
+function getOperatorList() {
+  const sheet = getSheet('Personnel');
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length < 2) return { success: true, data: [] };
+  const headers = rows[0];
+  const roleIdx = headers.indexOf('Role');
+  const activeIdx = headers.indexOf('Active');
+  const data = rows.slice(1)
+    .filter(r => {
+      if (!r[0]) return false;
+      if (activeIdx >= 0 && String(r[activeIdx]).toUpperCase() === 'FALSE') return false;
+      if (roleIdx >= 0) {
+        const role = String(r[roleIdx]).toLowerCase();
+        return ['operator','supervisor','director','qmr','store'].includes(role);
+      }
+      return true;
+    })
+    .map(r => ({ id: r[0], name: r[headers.indexOf('Name') >= 0 ? headers.indexOf('Name') : 1], role: roleIdx >= 0 ? r[roleIdx] : '' }));
+  return { success: true, data };
 }
 
 function getQualitySummary() {

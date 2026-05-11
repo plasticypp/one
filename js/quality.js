@@ -4,10 +4,12 @@ const Quality = (() => {
 
   let session = null;
   let batchCache = [];
+  let productCache = [];
+  let personnelCache = [];
   let checkCache = {};
   let activeTab = 'summary';
   let activeStage = null;
-  let sheetRows = [];       // current check sheet rows being filled
+  let sheetRows = [];
 
   const STAGE_TABS = { iqc: 'IQC', ipc: 'IPC', oqc: 'OQC' };
 
@@ -25,7 +27,14 @@ const Quality = (() => {
       activeStage = STAGE_TABS[tabParam];
     }
     renderTabs();
-    await loadBatches();
+    const [, pRes, oRes] = await Promise.all([
+      loadBatches(),
+      Api.get('getMasterDropdown', { entity: 'Products' }),
+      Api.get('getOperatorList')
+    ]);
+    productCache = pRes.success ? pRes.data : [];
+    personnelCache = oRes.success ? oRes.data : [];
+    populateInspectorDropdown();
     if (activeTab === 'summary') await loadSummary();
     else await loadChecks('', activeStage);
   }
@@ -70,6 +79,21 @@ const Quality = (() => {
     });
   }
 
+  // ── Personnel Dropdown ────────────────────────────────────────────────────
+
+  function populateInspectorDropdown() {
+    const sel = document.getElementById('field-inspector');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— select inspector —</option>';
+    personnelCache.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p.id;
+      o.textContent = p.name + (p.role ? ' (' + p.role + ')' : '');
+      sel.appendChild(o);
+    });
+    if (session && session.id) sel.value = session.id;
+  }
+
   // ── Batch Dropdowns ───────────────────────────────────────────────────────
 
   async function loadBatches() {
@@ -86,7 +110,7 @@ const Quality = (() => {
       batchCache.forEach(b => {
         const o = document.createElement('option');
         o.value = b.batch_id;
-        o.textContent = b.batch_id + (b.product_id ? ' — ' + b.product_id : '');
+        o.textContent = b.batch_id + (b.product_id ? ' — ' + ((productCache.find(p => String(p.id) === String(b.product_id)) || {}).name || b.product_id) : '');
         sel.appendChild(o);
       });
       sel.addEventListener('change', async () => {
@@ -102,7 +126,7 @@ const Quality = (() => {
       batchCache.forEach(b => {
         const o = document.createElement('option');
         o.value = b.batch_id;
-        o.textContent = b.batch_id + (b.product_id ? ' — ' + b.product_id : '');
+        o.textContent = b.batch_id + (b.product_id ? ' — ' + ((productCache.find(p => String(p.id) === String(b.product_id)) || {}).name || b.product_id) : '');
         formSel.appendChild(o);
       });
     }
@@ -213,7 +237,7 @@ const Quality = (() => {
     sheetRows = [];
     const today = new Date().toISOString().slice(0, 10);
     document.getElementById('field-check-date').value = today;
-    document.getElementById('field-inspector').value = session.name || '';
+    if (session.id) document.getElementById('field-inspector').value = session.id;
     document.getElementById('form-title').textContent = 'New ' + stage + ' Check Sheet';
 
     const tabKey = stage.toLowerCase();

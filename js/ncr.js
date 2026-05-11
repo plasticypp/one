@@ -3,6 +3,8 @@ const NCR = (() => {
   // ── State ──────────────────────────────────────────────────────────────────
   let session = null;
   let batchCache = [];
+  let productCache = [];
+  let personnelCache = [];
   let ncrCache = [];
   let defectCache = [];
   let editingNcrId = null;
@@ -15,7 +17,15 @@ const NCR = (() => {
     await Lang.init(session.lang);
     setupHeader();
     renderTabs();
-    await Promise.all([loadBatches(), loadDefectCatalogue()]);
+    const [, , pRes, oRes] = await Promise.all([
+      loadBatches(),
+      loadDefectCatalogue(),
+      Api.get('getMasterDropdown', { entity: 'Products' }),
+      Api.get('getOperatorList')
+    ]);
+    productCache = pRes.success ? pRes.data : [];
+    personnelCache = oRes.success ? oRes.data : [];
+    populatePersonnelDropdown();
     await loadNCRs();
     readURLParams();
   }
@@ -58,6 +68,20 @@ const NCR = (() => {
     if (batch || stage) openNCRForm(batch, stage);
   }
 
+  // ── Personnel Dropdown ─────────────────────────────────────────────────────
+  function populatePersonnelDropdown() {
+    const sel = document.getElementById('field-ncr-detected-by');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— select —</option>';
+    personnelCache.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p.id;
+      o.textContent = p.name + (p.role ? ' (' + p.role + ')' : '');
+      sel.appendChild(o);
+    });
+    if (session && session.id) sel.value = session.id;
+  }
+
   // ── Batches ────────────────────────────────────────────────────────────────
   async function loadBatches() {
     const res = await Api.get('getBatchList', {});
@@ -67,7 +91,7 @@ const NCR = (() => {
     batchCache.forEach(b => {
       const o = document.createElement('option');
       o.value = b.batch_id;
-      o.textContent = b.batch_id + (b.product_id ? ' — ' + b.product_id : '');
+      o.textContent = b.batch_id + (b.product_id ? ' — ' + ((productCache.find(p => String(p.id) === String(b.product_id)) || {}).name || b.product_id) : '');
       sel.appendChild(o);
     });
   }
@@ -124,7 +148,7 @@ const NCR = (() => {
     document.getElementById('field-ncr-qty').value = '';
     document.getElementById('field-ncr-remarks').value = '';
     document.getElementById('field-ncr-severity').value = '';
-    document.getElementById('field-ncr-detected-by').value = session.name || '';
+    if (session.id) document.getElementById('field-ncr-detected-by').value = session.id;
     document.getElementById('field-ncr-defect').value = '';
 
     if (preBatch) document.getElementById('field-ncr-batch').value = preBatch;

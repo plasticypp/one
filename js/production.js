@@ -5,6 +5,7 @@ const Production = (() => {
   let session = null;
   let productCache = [];
   let machineCache = [];
+  let operatorCache = [];
   let batchCache = [];
   let closingBatchId = null;
   let editingBatchId = null;
@@ -66,12 +67,14 @@ const Production = (() => {
   // ── Dropdowns ─────────────────────────────────────────────────────────────
 
   async function loadDropdowns() {
-    const [pRes, mRes] = await Promise.all([
+    const [pRes, mRes, oRes] = await Promise.all([
       Api.get('getMasterDropdown', { entity: 'Products' }),
-      Api.get('getMasterDropdown', { entity: 'Equipment' })
+      Api.get('getMachineList'),
+      Api.get('getOperatorList')
     ]);
     productCache = pRes.success ? pRes.data : [];
     machineCache = mRes.success ? mRes.data : [];
+    operatorCache = oRes.success ? oRes.data : [];
   }
 
   function populateFormDropdowns() {
@@ -91,6 +94,15 @@ const Production = (() => {
       o.value = m.id;
       o.textContent = m.name;
       mSel.appendChild(o);
+    });
+
+    const oSel = document.getElementById('field-operator');
+    oSel.innerHTML = '<option value="">— select operator —</option>';
+    operatorCache.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p.id;
+      o.textContent = p.name + (p.role ? ' (' + p.role + ')' : '');
+      oSel.appendChild(o);
     });
   }
 
@@ -277,7 +289,7 @@ const Production = (() => {
       <div class="detail-row"><span>Date</span><strong>${String(r.date || '').slice(0, 10) || '—'}</strong></div>
       <div class="detail-row"><span>Product</span><strong>${pName}</strong></div>
       <div class="detail-row"><span>Machine</span><strong>${mName}</strong></div>
-      <div class="detail-row"><span>Operator</span><strong>${r.operator_id || '—'}</strong></div>
+      <div class="detail-row"><span>Operator</span><strong>${(operatorCache.find(o => String(o.id) === String(r.operator_id)) || {}).name || r.operator_id || '—'}</strong></div>
       <div class="detail-row"><span>Planned Qty</span><strong>${r.planned_qty}</strong></div>
       <div class="detail-row"><span>Actual Qty</span><strong>${r.actual_qty || '—'}</strong></div>
       <div class="detail-row"><span>Status</span><strong>${r.status}</strong></div>
