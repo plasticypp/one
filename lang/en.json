@@ -44,6 +44,9 @@
   "error.session": "Session expired. Please login again.",
   "coming.soon": "Coming soon",
   "nav.masters": "Masters",
+  "nav.grn": "Inventory",
+  "nav.maintenance": "Maintenance",
+  "nav.compliance": "Compliance",
   "masters.title": "Master Data",
   "masters.back": "← Back",
   "masters.tab.products": "Products",
@@ -62,5 +65,8 @@
   "masters.status.active": "Active",
   "masters.status.inactive": "Inactive",
   "masters.saved": "Saved successfully.",
-  "masters.error.save": "Save failed. Try again."
+  "masters.error.save": "Save failed. Try again.",
+  "nav.production": "Production",
+  "nav.quality": "Quality",
+  "nav.dispatch": "Dispatch"
 }

@@ -44,6 +44,9 @@
   "error.session": "सेशन खत्म हो गया। फिर से लॉगिन करें।",
   "coming.soon": "जल्द आएगा",
   "nav.masters": "मास्टर",
+  "nav.grn": "इन्वेंट्री",
+  "nav.maintenance": "मेंटेनेंस",
+  "nav.compliance": "कंप्लायंस",
   "masters.title": "मास्टर डेटा",
   "masters.back": "← वापस",
   "masters.tab.products": "प्रोडक्ट",
@@ -62,5 +65,8 @@
   "masters.status.active": "चालू",
   "masters.status.inactive": "बंद",
   "masters.saved": "सेव हो गया।",
-  "masters.error.save": "सेव नहीं हुआ। फिर कोशिश करें।"
+  "masters.error.save": "सेव नहीं हुआ। फिर कोशिश करें।",
+  "nav.production": "प्रोडक्शन",
+  "nav.quality": "क्वालिटी",
+  "nav.dispatch": "डिस्पैच"
 }

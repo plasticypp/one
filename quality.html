@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1565C0">
+  <title>YPP ERP — Quality / IPQC</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/masters.css">
+  <style>
+    .qc-tab-bar {
+      display: flex;
+      gap: 0;
+      background: #fff;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 0 16px;
+    }
+    .qc-tab {
+      padding: 12px 20px;
+      border: none;
+      background: none;
+      font-size: 0.95rem;
+      color: #757575;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      font-family: inherit;
+    }
+    .qc-tab.active {
+      color: #1565C0;
+      border-bottom-color: #1565C0;
+      font-weight: 600;
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px;
+      background: #fafafa;
+      border-bottom: 1px solid #e0e0e0;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .filter-bar select {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-family: inherit;
+      background: #fff;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      padding: 16px;
+    }
+    .qc-card {
+      background: #fff;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      cursor: pointer;
+    }
+    .qc-card:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+    .qc-batch-id {
+      font-weight: 600;
+      color: #212121;
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+    }
+    .qc-pass-rate {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+    .qc-counts {
+      display: flex;
+      gap: 8px;
+      font-size: 0.8rem;
+      flex-wrap: wrap;
+    }
+    .qc-ok { color: #2e7d32; font-weight: 600; }
+    .qc-ng { color: #c62828; font-weight: 600; }
+    .qc-total { color: #757575; }
+
+    .checks-table-wrap {
+      overflow-x: auto;
+      padding: 0 16px 16px;
+    }
+    .checks-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin-top: 8px;
+    }
+    .checks-table th {
+      text-align: left;
+      padding: 10px 12px;
+      background: #f5f5f5;
+      color: #424242;
+      font-weight: 600;
+      border-bottom: 2px solid #e0e0e0;
+      white-space: nowrap;
+    }
+    .checks-table td {
+      padding: 9px 12px;
+      border-bottom: 1px solid #f0f0f0;
+      color: #212121;
+    }
+    .checks-table tr:hover td {
+      background: #f9f9f9;
+    }
+
+    .result-chip {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+    .chip-ok {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+    .chip-ng {
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    .tab-content { flex: 1; overflow-y: auto; }
+    .tab-content.hidden { display: none; }
+
+    .new-check-bar {
+      padding: 12px 16px;
+      display: flex;
+      justify-content: flex-end;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="back-btn" id="back-to-app" style="color:#fff;font-size:1.1rem;">←</button>
+      <span class="header-title">Quality / IPQC</span>
+    </div>
+    <div class="header-actions">
+      <button class="lang-toggle" id="lang-toggle">EN</button>
+    </div>
+  </header>
+
+  <!-- Tab Bar -->
+  <div class="qc-tab-bar">
+    <button class="qc-tab active" data-tab="summary">Summary</button>
+    <button class="qc-tab" data-tab="checks">Check Log</button>
+  </div>
+
+  <!-- Main Content -->
+  <div id="main-content" style="display:flex;flex-direction:column;height:calc(100vh - 112px);overflow:hidden;">
+
+    <!-- Summary Tab -->
+    <div id="tab-summary" class="tab-content">
+      <div id="summary-grid" class="summary-grid">
+        <p style="color:#757575;padding:16px;">Loading…</p>
+      </div>
+    </div>
+
+    <!-- Check Log Tab -->
+    <div id="tab-checks" class="tab-content hidden">
+      <div class="filter-bar">
+        <select id="filter-batch"><option value="">All Batches</option></select>
+      </div>
+      <div class="new-check-bar">
+        <button class="btn-primary" id="btn-new-check">+ New Check</button>
+      </div>
+      <div class="checks-table-wrap">
+        <table class="checks-table">
+          <thead>
+            <tr>
+              <th>Check ID</th>
+              <th>Batch</th>
+              <th>Parameter</th>
+              <th>Spec Min</th>
+              <th>Spec Max</th>
+              <th>Actual</th>
+              <th>Result</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody id="checks-tbody">
+            <tr><td colspan="8" style="text-align:center;color:#757575;padding:24px;">Select a batch to view checks</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Form Panel (slide-in) -->
+  <div class="form-panel" id="form-panel">
+    <div class="form-header">
+      <button class="back-btn" id="form-back">← Back</button>
+      <span class="form-title" id="form-title">New Quality Check</span>
+    </div>
+    <div class="form-body">
+      <div class="field-group">
+        <label>Check Date</label>
+        <input type="date" id="field-check-date">
+      </div>
+      <div class="field-group">
+        <label>Batch ID</label>
+        <select id="field-batch"><option value="">— select —</option></select>
+      </div>
+      <div class="field-group">
+        <label>Inspector</label>
+        <input type="text" id="field-inspector" placeholder="Inspector name">
+      </div>
+      <div class="field-group">
+        <label>Parameter</label>
+        <select id="field-parameter">
+          <option value="Wall Thickness">Wall Thickness</option>
+          <option value="Weight">Weight</option>
+          <option value="Leak Test">Leak Test</option>
+          <option value="MFI">MFI</option>
+          <option value="Dimension">Dimension</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Spec Min</label>
+        <input type="number" id="field-spec-min" step="any" placeholder="0">
+      </div>
+      <div class="field-group">
+        <label>Spec Max</label>
+        <input type="number" id="field-spec-max" step="any" placeholder="0">
+      </div>
+      <div class="field-group">
+        <label>Actual Value</label>
+        <input type="number" id="field-actual" step="any">
+      </div>
+      <div class="field-group">
+        <label>Remarks</label>
+        <input type="text" id="field-remarks" placeholder="Optional">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" onclick="Quality.submitCheck()">Save Check</button>
+    </div>
+  </div>
+
+  <!-- Spinner -->
+  <div class="spinner-overlay hidden" id="spinner">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/lang.js"></script>
+  <script src="js/quality.js"></script>
+  <script>
+    (async () => {
+      await Api.init();
+      await Quality.init();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1565C0">
+  <title>YPP ERP — Maintenance</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/masters.css">
+  <style>
+    .maint-tabs { display:flex; gap:4px; padding:8px 12px; background:#fff; border-bottom:1px solid #e0e0e0; overflow-x:auto; }
+    .maint-tab { flex-shrink:0; padding:8px 18px; border:none; border-radius:20px; background:#f5f5f5; color:#555; font-size:.875rem; cursor:pointer; }
+    .maint-tab.active { background:#1565C0; color:#fff; }
+    .filter-bar { display:flex; align-items:center; gap:10px; padding:10px 12px; background:#fafafa; border-bottom:1px solid #eee; }
+    .filter-bar label { font-size:.8125rem; color:#555; }
+    .filter-bar select { border:1px solid #ccc; border-radius:6px; padding:5px 10px; font-size:.875rem; }
+    .add-btn { margin-left:auto; padding:7px 16px; background:#1565C0; color:#fff; border:none; border-radius:6px; font-size:.875rem; cursor:pointer; }
+    .data-table { width:100%; border-collapse:collapse; font-size:.875rem; }
+    .data-table th { background:#f5f5f5; padding:10px 12px; text-align:left; font-weight:600; border-bottom:2px solid #e0e0e0; white-space:nowrap; }
+    .data-table td { padding:10px 12px; border-bottom:1px solid #f0f0f0; vertical-align:middle; }
+    .data-table tbody tr:hover { background:#fafafa; }
+    .status-chip { display:inline-block; padding:3px 10px; border-radius:12px; font-size:.75rem; font-weight:600; }
+    .chip-open { background:#ffebee; color:#c62828; }
+    .chip-closed { background:#e8f5e9; color:#2e7d32; }
+    .btn-resolve { padding:4px 12px; border:1px solid #1565C0; border-radius:4px; background:#fff; color:#1565C0; font-size:.8125rem; cursor:pointer; }
+    .btn-resolve:hover { background:#e3f2fd; }
+    .row-overdue td { background:#ffebee; }
+    .row-upcoming td { background:#fff8e1; }
+    .table-wrap { overflow-x:auto; }
+    .tab-panel { padding:0; }
+    .tab-panel.hidden { display:none; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="back-btn" id="back-to-app" style="color:#fff;font-size:1.1rem;">←</button>
+      <span class="header-title">Maintenance</span>
+    </div>
+    <div class="header-actions">
+      <button class="lang-toggle" id="lang-toggle">EN</button>
+    </div>
+  </header>
+
+  <!-- Module Tabs -->
+  <div class="maint-tabs">
+    <button class="maint-tab active" data-tab="breakdowns">Breakdowns</button>
+    <button class="maint-tab" data-tab="pm">PM Schedule</button>
+  </div>
+
+  <!-- Content Area -->
+  <div class="masters-content">
+
+    <!-- List Panel -->
+    <div class="list-panel" id="list-panel">
+
+      <!-- Breakdowns Tab -->
+      <div id="tab-breakdowns" class="tab-panel">
+        <div class="filter-bar">
+          <label>Status</label>
+          <select id="status-filter">
+            <option value="all">All</option>
+            <option value="Open">Open</option>
+            <option value="Closed">Closed</option>
+          </select>
+          <button class="add-btn" id="log-btn">+ Log Breakdown</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>BD ID</th>
+                <th>Date</th>
+                <th>Machine</th>
+                <th>Code</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="breakdown-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PM Schedule Tab -->
+      <div id="tab-pm" class="tab-panel hidden">
+        <div class="table-wrap" style="padding:0;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>PM ID</th>
+                <th>Equipment</th>
+                <th>Task</th>
+                <th>Freq (days)</th>
+                <th>Last Done</th>
+                <th>Next Due</th>
+                <th>Assigned To</th>
+              </tr>
+            </thead>
+            <tbody id="pm-tbody"></tbody>
+          </table>
+        </div>
+        <div style="padding:8px 12px;font-size:.75rem;color:#555;">
+          <span style="display:inline-block;width:12px;height:12px;background:#ffebee;border:1px solid #ef9a9a;margin-right:4px;vertical-align:middle;"></span>Overdue
+          <span style="display:inline-block;width:12px;height:12px;background:#fff8e1;border:1px solid #ffe082;margin:0 4px 0 12px;vertical-align:middle;"></span>Due within 7 days
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Form Panel -->
+    <div class="form-panel" id="form-panel">
+      <div class="form-header">
+        <button class="back-btn" id="form-back">← Back</button>
+        <span class="form-title" id="form-title"></span>
+      </div>
+      <div class="form-body" id="form-body"></div>
+      <div class="form-actions" id="form-actions"></div>
+    </div>
+
+  </div>
+
+  <!-- FAB -->
+  <button class="fab" id="fab">+</button>
+
+  <!-- Spinner -->
+  <div class="spinner-overlay hidden" id="spinner">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/lang.js"></script>
+  <script src="js/maintenance.js"></script>
+  <script>
+    (async () => {
+      await Api.init();
+      await Maintenance.init();
+
+      document.getElementById('status-filter').addEventListener('change', async e => {
+        await Maintenance._loadBreakdowns(e.target.value);
+      });
+      document.getElementById('log-btn').addEventListener('click', () => {
+        document.getElementById('fab').click();
+      });
+    })();
+  </script>
+</body>
+</html>

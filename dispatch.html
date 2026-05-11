@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1565C0">
+  <title>YPP ERP — Dispatch</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/masters.css">
+  <style>
+    .dispatch-tab-bar {
+      display: flex;
+      gap: 0;
+      background: #fff;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 0 16px;
+    }
+    .dispatch-tab {
+      padding: 12px 20px;
+      border: none;
+      background: none;
+      font-size: 0.95rem;
+      color: #757575;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      font-family: inherit;
+    }
+    .dispatch-tab.active {
+      color: #1565C0;
+      border-bottom-color: #1565C0;
+      font-weight: 600;
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px;
+      background: #fafafa;
+      border-bottom: 1px solid #e0e0e0;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .filter-bar select {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-family: inherit;
+      background: #fff;
+    }
+    .filter-bar .btn-apply {
+      padding: 6px 14px;
+      background: #1565C0;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .so-table-wrap {
+      overflow-x: auto;
+      padding: 0 16px 16px;
+    }
+    .so-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin-top: 8px;
+    }
+    .so-table th {
+      text-align: left;
+      padding: 10px 12px;
+      background: #f5f5f5;
+      color: #424242;
+      font-weight: 600;
+      border-bottom: 2px solid #e0e0e0;
+      white-space: nowrap;
+    }
+    .so-table td {
+      padding: 9px 12px;
+      border-bottom: 1px solid #f0f0f0;
+      color: #212121;
+    }
+    .so-table tr:hover td {
+      background: #f9f9f9;
+    }
+
+    .btn-dispatch {
+      padding: 5px 12px;
+      background: #1565C0;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-dispatch:hover {
+      background: #0d47a1;
+    }
+
+    .new-so-bar {
+      padding: 12px 16px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .tab-content { flex: 1; overflow-y: auto; }
+    .tab-content.hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="back-btn" id="back-to-app" style="color:#fff;font-size:1.1rem;">←</button>
+      <span class="header-title">Dispatch</span>
+    </div>
+    <div class="header-actions">
+      <button class="lang-toggle" id="lang-toggle">EN</button>
+    </div>
+  </header>
+
+  <!-- Tab Bar -->
+  <div class="dispatch-tab-bar">
+    <button class="dispatch-tab active" data-tab="so">Sales Orders</button>
+    <button class="dispatch-tab" data-tab="log">Dispatch Log</button>
+  </div>
+
+  <!-- Main Content -->
+  <div id="main-content" style="display:flex;flex-direction:column;height:calc(100vh - 112px);overflow:hidden;">
+
+    <!-- Sales Orders Tab -->
+    <div id="tab-so" class="tab-content">
+      <div class="filter-bar">
+        <select id="filter-status" onchange="Dispatch.loadSOList()">
+          <option value="all">All</option>
+          <option value="Pending">Pending</option>
+          <option value="Partial">Partial</option>
+          <option value="Dispatched">Dispatched</option>
+        </select>
+        <button class="btn-apply" onclick="Dispatch.loadSOList()">Apply</button>
+      </div>
+      <div class="new-so-bar">
+        <button class="btn-primary" id="btn-new-so">+ New SO</button>
+      </div>
+      <div class="so-table-wrap">
+        <table class="so-table">
+          <thead>
+            <tr>
+              <th>SO ID</th>
+              <th>Date</th>
+              <th>Customer</th>
+              <th>Product</th>
+              <th>Qty Ordered</th>
+              <th>Qty Dispatched</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="so-tbody">
+            <tr><td colspan="8" style="text-align:center;color:#757575;padding:24px;">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Dispatch Log Tab -->
+    <div id="tab-log" class="tab-content hidden">
+      <div class="so-table-wrap" style="padding-top:12px;">
+        <table class="so-table">
+          <thead>
+            <tr>
+              <th>Dispatch ID</th>
+              <th>SO ID</th>
+              <th>Date</th>
+              <th>Qty</th>
+              <th>Vehicle No</th>
+              <th>Driver</th>
+            </tr>
+          </thead>
+          <tbody id="dispatch-tbody">
+            <tr><td colspan="6" style="text-align:center;color:#757575;padding:24px;">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Form Panel (slide-in) -->
+  <div class="form-panel" id="form-panel">
+    <div class="form-header">
+      <button class="back-btn" id="form-back">← Back</button>
+      <span class="form-title" id="form-title">New Sales Order</span>
+    </div>
+    <div class="form-body">
+      <div class="field-group">
+        <label>Date</label>
+        <input type="date" id="field-date">
+      </div>
+      <div class="field-group">
+        <label>Customer</label>
+        <select id="field-customer"><option value="">— select —</option></select>
+      </div>
+      <div class="field-group">
+        <label>Product</label>
+        <select id="field-product"><option value="">— select —</option></select>
+      </div>
+      <div class="field-group">
+        <label>Qty Ordered</label>
+        <input type="number" id="field-qty-ordered" min="1" step="1">
+      </div>
+      <div class="field-group">
+        <label>Invoice No</label>
+        <input type="text" id="field-invoice">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" onclick="Dispatch.submitSO()">Save SO</button>
+    </div>
+  </div>
+
+  <!-- Spinner -->
+  <div class="spinner-overlay hidden" id="spinner">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/lang.js"></script>
+  <script src="js/dispatch.js"></script>
+  <script>
+    (async () => {
+      await Api.init();
+      await Dispatch.init();
+    })();
+  </script>
+</body>
+</html>

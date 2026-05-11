@@ -29,6 +29,16 @@ const App = (() => {
     personnel:   { icon: '👥', labelKey: 'home.tile.personnel' }
   };
 
+  // Maps tile id → stat key returned by getDashboardStats
+  const TILE_STAT = {
+    grn:        'openGRNs',
+    production: 'activeBatches',
+    mybatches:  'activeBatches',
+    capa:       'openCapas',
+    machines:   'openBreakdowns',
+    kpi:        'overdueCompliance'
+  };
+
   function renderHome(role) {
     const grid = document.getElementById('home-tiles');
     if (!grid) return;
@@ -39,10 +49,36 @@ const App = (() => {
       if (!cfg) return;
       const btn = document.createElement('button');
       btn.className = 'tile';
+      btn.dataset.tileId = id;
       btn.innerHTML = `<span class="tile-icon">${cfg.icon}</span><span class="tile-label" data-i18n="${cfg.labelKey}">${Lang.t(cfg.labelKey)}</span>`;
       btn.addEventListener('click', () => handleTile(id));
       grid.appendChild(btn);
     });
+    loadDashboardStats();
+  }
+
+  async function loadDashboardStats() {
+    try {
+      const res = await Api.get('getDashboardStats');
+      if (!res || !res.success) return;
+      const stats = res.data;
+      document.querySelectorAll('#home-tiles .tile').forEach(btn => {
+        const id = btn.dataset.tileId;
+        const statKey = TILE_STAT[id];
+        if (!statKey) return;
+        const count = stats[statKey];
+        if (count == null) return;
+        // remove existing badge if re-rendered
+        const existing = btn.querySelector('.tile-badge');
+        if (existing) existing.remove();
+        if (count > 0) {
+          const badge = document.createElement('span');
+          badge.className = 'tile-badge';
+          badge.textContent = count;
+          btn.appendChild(badge);
+        }
+      });
+    } catch (_) {}
   }
 
   function handleTile(tileId) {

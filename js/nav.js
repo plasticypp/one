@@ -4,7 +4,13 @@ const Nav = (() => {
     { id: 'work',    icon: '⚙️', labelKey: 'nav.work',    roles: ['director','qmr','supervisor','operator'] },
     { id: 'stock',   icon: '📦', labelKey: 'nav.stock',   roles: ['director','qmr','supervisor','store'] },
     { id: 'profile', icon: '👤', labelKey: 'nav.profile', roles: ['director','qmr','supervisor','operator','store','hr'] },
-    { id: 'masters', icon: '🗂️', labelKey: 'nav.masters', roles: ['director','qmr'] }
+    { id: 'masters',     icon: '🗂️', labelKey: 'nav.masters',     roles: ['director','qmr'] },
+    { id: 'grn',         icon: '📥', labelKey: 'nav.grn',         roles: ['director','qmr','store'] },
+    { id: 'maintenance', icon: '🔧', labelKey: 'nav.maintenance', roles: ['director','qmr','supervisor'] },
+    { id: 'compliance',  icon: '📋', labelKey: 'nav.compliance',  roles: ['director','qmr'] },
+    { id: 'production',  icon: '🏭', labelKey: 'nav.production',  roles: ['director','qmr','supervisor','operator'] },
+    { id: 'quality',     icon: '✅', labelKey: 'nav.quality',     roles: ['director','qmr','supervisor'] },
+    { id: 'dispatch',    icon: '🚚', labelKey: 'nav.dispatch',    roles: ['director','qmr','supervisor','store'] }
   ];
 
   let activeTab = 'home';
@@ -25,10 +31,13 @@ const Nav = (() => {
   }
 
   function switchTab(tabId, role) {
-    if (tabId === 'masters') {
-      window.location.href = 'masters.html';
-      return;
-    }
+    if (tabId === 'masters')     { window.location.href = 'masters.html';     return; }
+    if (tabId === 'grn')         { window.location.href = 'grn.html';         return; }
+    if (tabId === 'maintenance') { window.location.href = 'maintenance.html'; return; }
+    if (tabId === 'compliance')  { window.location.href = 'compliance.html';  return; }
+    if (tabId === 'production')  { window.location.href = 'production.html';  return; }
+    if (tabId === 'quality')     { window.location.href = 'quality.html';     return; }
+    if (tabId === 'dispatch')    { window.location.href = 'dispatch.html';    return; }
     activeTab = tabId;
     document.querySelectorAll('.tab-item').forEach(b => {
       b.classList.toggle('active', b.getAttribute('data-tab') === tabId);
