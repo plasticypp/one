@@ -856,10 +856,11 @@ function saveQualityCheck(data) {
   const rowCount = rows.length;
   const checkId = 'QC' + String(rowCount).padStart(3, '0');
   const today = new Date().toISOString().slice(0, 10);
-  const specMin = Number(data.spec_min) || 0;
-  const specMax = Number(data.spec_max) || 0;
+  const specMin = (data.spec_min !== null && data.spec_min !== '' && data.spec_min !== undefined) ? Number(data.spec_min) : null;
+  const specMax = (data.spec_max !== null && data.spec_max !== '' && data.spec_max !== undefined) ? Number(data.spec_max) : null;
   const actual  = Number(data.actual_value);
-  const result  = (actual >= specMin && actual <= specMax) ? 'OK' : 'NG';
+  const result  = (specMin === null && specMax === null) ? 'OK'
+                : (actual >= (specMin ?? -Infinity) && actual <= (specMax ?? Infinity)) ? 'OK' : 'NG';
   const stage   = data.stage || 'IPC';
   sheet.appendRow([
     checkId,
@@ -901,7 +902,7 @@ function getQualitySummary() {
 function seedQualityData() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheetName = 'QualityChecks';
-  const headers = ['check_id','batch_id','check_date','inspector_id','parameter','spec_min','spec_max','actual_value','result','remarks'];
+  const headers = ['check_id','batch_id','check_date','inspector_id','parameter','spec_min','spec_max','actual_value','result','remarks','stage'];
 
   let sheet = ss.getSheetByName(sheetName);
   if (!sheet) {
