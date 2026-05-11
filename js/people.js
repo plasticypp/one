@@ -215,17 +215,23 @@ const People = (() => {
         });
       });
 
+      const escStr = v => (v == null ? '' : String(v)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
       let html = '<table class="data-table" style="white-space:nowrap;"><thead><tr><th>Name</th>';
-      topics.forEach(t => { html += `<th style="writing-mode:vertical-rl;padding:8px 4px;max-width:40px;" title="${t}">${t.length > 18 ? t.slice(0, 16) + '…' : t}</th>`; });
+      topics.forEach(t => {
+        const te = escStr(t);
+        const label = t.length > 18 ? escStr(t.slice(0, 16)) + '…' : te;
+        html += `<th style="writing-mode:vertical-rl;padding:8px 4px;max-width:40px;" title="${te}">${label}</th>`;
+      });
       html += '</tr></thead><tbody>';
 
       personnel.forEach(p => {
         const name = (p.name || '').toLowerCase();
         const id = (p.id || '').toLowerCase();
-        html += `<tr><td style="white-space:nowrap;">${p.name || p.id}</td>`;
+        html += `<tr><td style="white-space:nowrap;">${escStr(p.name || p.id)}</td>`;
         topics.forEach(t => {
           const participants = topicParticipants[t] || [];
-          const trained = participants.some(tok => tok.includes(name) || (id && tok.includes(id)) || name.includes(tok));
+          // Match: participant token contains person's name OR id (not reversed)
+          const trained = participants.some(tok => tok.includes(name) || (id && tok.includes(id)));
           html += trained
             ? '<td style="text-align:center;color:var(--color-success)">✓</td>'
             : '<td style="text-align:center;color:var(--color-muted)">—</td>';

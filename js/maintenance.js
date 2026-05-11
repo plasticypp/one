@@ -260,18 +260,20 @@ const Maintenance = (() => {
 
     showSpinner(true);
     try {
+      const sparesEl   = document.getElementById('resolve-spares');
+      const downtimeEl = document.getElementById('resolve-downtime');
+      const rootEl     = document.getElementById('resolve-root-cause');
       const res = await Api.post('resolveBreakdown', {
-        breakdown_id:     resolvingBdId,
-        resolution:       notes,
-        root_cause:       (document.getElementById('resolve-root-cause') || {}).value || '',
-        spare_used:       (document.getElementById('resolve-spares') || {}).value || '',
-        resolved_by:      resolvedBy,
-        fixed_date:       resolvedDate,
-        downtime_min:     Number(document.getElementById('resolve-downtime').value) || 0,
-        spare_used:       document.getElementById('resolve-spares').value.trim(),
-        spares_used:      document.getElementById('resolve-spares').value.trim(),
-        downtime_hrs:     document.getElementById('resolve-downtime').value || '0',
-        userId:           Auth.getUserId()
+        breakdown_id: resolvingBdId,
+        resolution:   notes,
+        root_cause:   rootEl ? rootEl.value.trim() : '',
+        spare_used:   sparesEl ? sparesEl.value.trim() : '',
+        spares_used:  sparesEl ? sparesEl.value.trim() : '',
+        resolved_by:  resolvedBy,
+        fixed_date:   resolvedDate,
+        downtime_min: Number(downtimeEl ? downtimeEl.value : 0) || 0,
+        downtime_hrs: downtimeEl ? downtimeEl.value || '0' : '0',
+        userId:       Auth.getUserId()
       });
       if (res.success) {
         showToast('Breakdown resolved');

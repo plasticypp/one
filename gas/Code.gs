@@ -2534,6 +2534,7 @@ function getProductionLog(params) {
 // ── Batch Traceability Search ─────────────────────────────────────────────────
 
 function getBatchTraceabilitySearch(params) {
+  requireRole(params, ['director','qmr','supervisor','operator','store']);
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const q = (params.q || '').toLowerCase().trim();
 
@@ -2649,7 +2650,7 @@ function getBatchTraceabilitySearch(params) {
 
   if (!batchOrder && !traceability) return { success: false, error: 'not_found' };
 
-  return { success: true, data: { batch_no: batchNo, batch_order: batchOrder, traceability, rm_lots: rmLots, quality_checks: qualityChecks, ncrs, prod_log: prodLog, dispatch } };
+  return { success: true, data: { batch_no: batchNo, batch_order: batchOrder, traceability, rm_lots: rmLots, quality_checks: qualityChecks, ncrs, prod_log: prodLog, dispatch: dispatch ? [dispatch] : [] } };
 }
 
 // ── IQC Hold / Release ────────────────────────────────────────────────────────
@@ -2680,7 +2681,7 @@ function saveIQCResult(data) {
       set('coa_ok', data.coa_ok || '');
       set('decision', data.decision);
       set('remarks', data.remarks || '');
-      set('inspector_id', data.userId || '');
+      set('inspector_id', data.inspector_id || data.userId || '');
       set('insp_date', today);
       // Update RMStock lot status
       _updateRMStockIQCStatus(data.lot_no, data.decision);
@@ -2690,7 +2691,7 @@ function saveIQCResult(data) {
 
   sheet.appendRow([
     iqcId, data.grn_id, data.lot_no, data.material || '', data.supplier_id || '',
-    today, data.userId || '', data.mfi_result || '', data.density_result || '',
+    today, data.inspector_id || data.userId || '', data.mfi_result || '', data.density_result || '',
     data.visual_result || '', data.coa_ok || '', data.decision, data.remarks || '', '', ''
   ]);
   _updateRMStockIQCStatus(data.lot_no, data.decision);

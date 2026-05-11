@@ -26,6 +26,10 @@ const GRN = (() => {
     document.getElementById('btn-save-grn').addEventListener('click', submitGRN);
     document.getElementById('iqc-form-back').addEventListener('click', () => document.getElementById('iqc-form-panel').classList.remove('slide-in'));
     document.getElementById('btn-save-iqc').addEventListener('click', submitIQCResult);
+    document.getElementById('iqc-tbody').addEventListener('click', e => {
+      const btn = e.target.closest('.iqc-log-btn');
+      if (btn) openIQCForm(btn.dataset.grn, btn.dataset.lot);
+    });
     const langBtn = document.getElementById('lang-toggle');
     langBtn.textContent = Lang.getCurrent().toUpperCase();
     langBtn.addEventListener('click', async () => {
@@ -368,7 +372,7 @@ const GRN = (() => {
           <td>${esc(r.supplier_name || r.supplier_id)}</td>
           <td>${esc(r.qty_kg)}</td>
           <td><span class="status-chip ${cls}">${esc(status)}</span></td>
-          <td><button class="btn btn-sm" onclick="GRN.openIQCForm('${esc(r.grn_id)}','${esc(r.lot_no)}')">Log IQC</button></td>
+          <td><button class="btn btn-sm iqc-log-btn" data-grn="${esc(r.grn_id)}" data-lot="${esc(r.lot_no)}">Log IQC</button></td>
         </tr>`;
       }).join('');
     } catch (e) {

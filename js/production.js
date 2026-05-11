@@ -29,7 +29,7 @@ const Production = (() => {
     } else if (view === 'params') {
       activeTab = 'params';
       renderTabs();
-      await loadParamsLog();
+      try { await loadParamsLog(); } catch (_) {}
       openParamsForm();
     } else if (view === 'mine') {
       renderTabs();
