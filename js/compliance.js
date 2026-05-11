@@ -2,6 +2,8 @@ const Compliance = (() => {
 
   let session = null;
   let capaStatusFilter = 'all';
+  let capaCache = [];
+  let editingLegalId = null;
 
   // ── Init ──────────────────────────────────────────────────────────────────
 
@@ -21,6 +23,8 @@ const Compliance = (() => {
     document.getElementById('back-to-app').addEventListener('click', () => {
       window.location.href = 'app.html';
     });
+    document.getElementById('legal-form-back').addEventListener('click', closeLegalForm);
+    document.getElementById('capa-detail-back').addEventListener('click', closeCapaDetail);
     const langBtn = document.getElementById('lang-toggle');
     langBtn.textContent = Lang.getCurrent().toUpperCase();
     langBtn.addEventListener('click', async () => {
@@ -28,6 +32,12 @@ const Compliance = (() => {
       await Lang.toggle(next, null);
       langBtn.textContent = next.toUpperCase();
     });
+
+    // Show/hide New Regulation button based on role
+    const newLegalBtn = document.getElementById('btn-new-legal');
+    if (newLegalBtn) {
+      newLegalBtn.classList.toggle('hidden', !['director','qmr'].includes(session.role));
+    }
   }
 
   // ── Tabs ──────────────────────────────────────────────────────────────────
@@ -69,26 +79,81 @@ const Compliance = (() => {
       return;
     }
     const rows = data.map(r => {
-      const chipClass = r.overdue ? 'chip-red' : (r.status === 'Due Soon' ? 'chip-yellow' : 'chip-green');
-      const due = r.due_date ? String(r.due_date).slice(0, 10) : '—';
-      const reviewed = r.last_reviewed ? String(r.last_reviewed).slice(0, 10) : '—';
-      return `<tr>
-        <td>${r.reg_id || '—'}</td>
-        <td>${r.regulation || '—'}</td>
-        <td>${r.applicability || '—'}</td>
+      const chipClass = r.overdue ? 'chip-red' : (r.status === 'Due Soon' || r.ComplianceStatus === 'Due Soon' ? 'chip-yellow' : 'chip-green');
+      const statusText = r.overdue ? 'Overdue' : (r.status || r.ComplianceStatus || '—');
+      const act = r.Act || r.regulation || '—';
+      const applicability = r.Applicability || r.applicability || '—';
+      const due = (r.due_date || r.NextReview) ? String(r.due_date || r.NextReview).slice(0, 10) : '—';
+      const reviewed = (r.LastReview || r.last_reviewed) ? String(r.LastReview || r.last_reviewed).slice(0, 10) : '—';
+      const id = r.LegalID || r.reg_id || '—';
+      return `<tr style="cursor:pointer" data-id="${id}">
+        <td>${id}</td>
+        <td>${act}</td>
+        <td>${applicability}</td>
         <td>${due}</td>
-        <td><span class="chip ${chipClass}">${r.overdue ? 'Overdue' : (r.status || '—')}</span></td>
+        <td><span class="chip ${chipClass}">${statusText}</span></td>
         <td>${reviewed}</td>
       </tr>`;
     }).join('');
     container.innerHTML = `
       <table class="comp-table">
         <thead><tr>
-          <th>Reg ID</th><th>Regulation</th><th>Applicability</th>
-          <th>Due Date</th><th>Status</th><th>Last Reviewed</th>
+          <th>ID</th><th>Act / Regulation</th><th>Applicability</th>
+          <th>Next Review</th><th>Status</th><th>Last Reviewed</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
+  }
+
+  // ── Legal Register Form ───────────────────────────────────────────────────
+
+  function openLegalForm(legalId) {
+    editingLegalId = legalId || null;
+    document.getElementById('lf-act').value = '';
+    document.getElementById('lf-req').value = '';
+    document.getElementById('lf-applicability').value = '';
+    document.getElementById('lf-status').value = 'Pending';
+    document.getElementById('lf-last-review').value = '';
+    document.getElementById('lf-next-review').value = '';
+    document.getElementById('lf-remarks').value = '';
+    document.getElementById('legal-form-title').textContent = legalId ? 'Edit Legal Entry' : 'New Legal Entry';
+    document.getElementById('legal-form-panel').classList.add('slide-in');
+    document.getElementById('panel-legal').classList.add('slide-out');
+  }
+
+  function closeLegalForm() {
+    document.getElementById('legal-form-panel').classList.remove('slide-in');
+    document.getElementById('panel-legal').classList.remove('slide-out');
+    editingLegalId = null;
+  }
+
+  async function submitLegalEntry() {
+    const act = document.getElementById('lf-act').value.trim();
+    const nextReview = document.getElementById('lf-next-review').value;
+    if (!act) { showToast('Act / Regulation is required'); return; }
+    if (!nextReview) { showToast('Next Review Date is required'); return; }
+    const data = {
+      LegalID:          editingLegalId || undefined,
+      Act:              act,
+      Requirement:      document.getElementById('lf-req').value.trim(),
+      Applicability:    document.getElementById('lf-applicability').value.trim(),
+      ComplianceStatus: document.getElementById('lf-status').value,
+      LastReview:       document.getElementById('lf-last-review').value,
+      NextReview:       nextReview,
+      Remarks:          document.getElementById('lf-remarks').value.trim()
+    };
+    if (!data.LegalID) delete data.LegalID;
+    showSpinner(true);
+    try {
+      const res = await Api.post('saveLegalEntry', data);
+      if (res.success) {
+        showToast('Saved');
+        closeLegalForm();
+        await loadLegalRegister();
+      } else {
+        showToast('Save failed: ' + res.error);
+      }
+    } finally { showSpinner(false); }
   }
 
   // ── CAPA Log ──────────────────────────────────────────────────────────────
@@ -103,6 +168,7 @@ const Compliance = (() => {
       const params = status && status !== 'all' ? { status } : {};
       const res = await Api.get('getCapaList', params);
       const data = res.success ? res.data : [];
+      capaCache = data;
       renderCapaTable(data);
     } finally {
       showSpinner(false);
@@ -117,19 +183,24 @@ const Compliance = (() => {
     }
     const canClose = ['director', 'qmr'].includes(session.role);
     const rows = data.map(r => {
-      const sourceClass = r.source === 'Customer Complaint' ? 'chip-red'
-        : r.source === 'Internal Audit' ? 'chip-yellow' : 'chip-blue';
-      const statusClass = r.status === 'Open' ? 'chip-yellow' : 'chip-green';
-      const target = r.target_date ? String(r.target_date).slice(0, 10) : '—';
-      const closeBtn = (canClose && r.status === 'Open')
-        ? `<button class="btn-close-capa" data-id="${r.capa_id}">Close</button>` : '';
-      return `<tr>
-        <td>${r.capa_id || '—'}</td>
-        <td>${r.date ? String(r.date).slice(0, 10) : '—'}</td>
-        <td><span class="chip ${sourceClass}">${r.source || '—'}</span></td>
-        <td class="desc-cell">${r.description || '—'}</td>
-        <td>${target}</td>
-        <td><span class="chip ${statusClass}">${r.status || '—'}</span></td>
+      const source = r.Source || r.source || '—';
+      const status = r.Status || r.status || '—';
+      const id     = r.CAPAID || r.capa_id || '—';
+      const date   = r.CAPADate || r.date || '—';
+      const desc   = r.ProblemDesc || r.description || '—';
+      const target = r.TargetDate || r.target_date || '—';
+      const sourceClass = source === 'Customer Complaint' ? 'chip-red'
+        : source === 'Internal Audit' ? 'chip-yellow' : 'chip-blue';
+      const statusClass = status === 'Open' ? 'chip-yellow' : 'chip-green';
+      const closeBtn = (canClose && status === 'Open')
+        ? `<button class="btn-close-capa" data-id="${id}">Close</button>` : '';
+      return `<tr style="cursor:pointer" data-id="${id}">
+        <td>${id}</td>
+        <td>${String(date).slice(0, 10)}</td>
+        <td><span class="chip ${sourceClass}">${source}</span></td>
+        <td class="desc-cell">${desc}</td>
+        <td>${String(target).slice(0, 10)}</td>
+        <td><span class="chip ${statusClass}">${status}</span></td>
         <td>${closeBtn}</td>
       </tr>`;
     }).join('');
@@ -143,8 +214,66 @@ const Compliance = (() => {
       </table>`;
 
     container.querySelectorAll('.btn-close-capa').forEach(btn => {
-      btn.addEventListener('click', () => closeCapaItem(btn.dataset.id));
+      btn.addEventListener('click', (e) => { e.stopPropagation(); closeCapaItem(btn.dataset.id); });
     });
+
+    container.querySelectorAll('tr[data-id]').forEach(tr => {
+      tr.addEventListener('click', (e) => {
+        if (e.target.closest('button')) return;
+        openCapaDetail(tr.dataset.id);
+      });
+    });
+  }
+
+  // ── CAPA Detail ───────────────────────────────────────────────────────────
+
+  function openCapaDetail(capaId) {
+    const r = capaCache.find(c => String(c.CAPAID || c.capa_id) === String(capaId));
+    if (!r) return;
+    const id     = r.CAPAID || r.capa_id;
+    const status = r.Status || r.status || '—';
+    document.getElementById('capa-detail-body').innerHTML = `
+      <div class="detail-row"><span>CAPA ID</span><strong>${id}</strong></div>
+      <div class="detail-row"><span>Date</span><strong>${(r.CAPADate || r.date || '—').toString().slice(0,10)}</strong></div>
+      <div class="detail-row"><span>Source</span><strong>${r.Source || r.source || '—'}</strong></div>
+      <div class="detail-row"><span>NCR Ref</span><strong>${r.NCRRef || '—'}</strong></div>
+      <div class="detail-row"><span>Description</span><strong>${r.ProblemDesc || r.description || '—'}</strong></div>
+      <div class="detail-row"><span>Root Cause</span><strong>${r.RootCause || r.root_cause || '—'}</strong></div>
+      <div class="detail-row"><span>Corrective Action</span><strong>${r.CorrectiveAction || r.action || '—'}</strong></div>
+      <div class="detail-row"><span>Preventive Action</span><strong>${r.PreventiveAction || '—'}</strong></div>
+      <div class="detail-row"><span>Responsible</span><strong>${r.ResponsibleID || '—'}</strong></div>
+      <div class="detail-row"><span>Target Date</span><strong>${(r.TargetDate || r.target_date || '—').toString().slice(0,10)}</strong></div>
+      <div class="detail-row"><span>Status</span><strong>${status}</strong></div>
+      <div class="detail-row"><span>Closed Date</span><strong>${(r.ClosedDate || '—').toString().slice(0,10)}</strong></div>
+      <div class="detail-row"><span>Effectiveness</span><strong>${r.Effectiveness || '—'}</strong></div>
+    `;
+    const canClose = ['director','qmr'].includes(session.role) && status === 'Open';
+    document.getElementById('capa-detail-actions').innerHTML = canClose
+      ? `<button class="btn-primary" onclick="Compliance.closeCapaItemFromDetail('${id}')">Close CAPA</button>`
+      : '';
+    document.getElementById('capa-detail-panel').classList.add('slide-in');
+    document.getElementById('panel-capa').classList.add('slide-out');
+  }
+
+  function closeCapaDetail() {
+    document.getElementById('capa-detail-panel').classList.remove('slide-in');
+    document.getElementById('panel-capa').classList.remove('slide-out');
+  }
+
+  async function closeCapaItemFromDetail(id) {
+    const effectiveness = prompt('Effectiveness notes (optional):') ?? '';
+    if (effectiveness === null) return;
+    showSpinner(true);
+    try {
+      const res = await Api.post('updateCapaStatus', { capa_id: id, status: 'Closed', effectiveness });
+      if (res.success) {
+        showToast('CAPA closed');
+        closeCapaDetail();
+        await loadCapaList(capaStatusFilter);
+      } else {
+        showToast('Update failed');
+      }
+    } finally { showSpinner(false); }
   }
 
   // ── CAPA Form ─────────────────────────────────────────────────────────────
@@ -154,6 +283,10 @@ const Compliance = (() => {
     document.getElementById('capa-form-description').value = '';
     document.getElementById('capa-form-root-cause').value = '';
     document.getElementById('capa-form-action').value = '';
+    document.getElementById('capa-form-corrective-action') && (document.getElementById('capa-form-corrective-action').value = '');
+    document.getElementById('capa-form-preventive-action') && (document.getElementById('capa-form-preventive-action').value = '');
+    document.getElementById('capa-form-ncr-ref') && (document.getElementById('capa-form-ncr-ref').value = '');
+    document.getElementById('capa-form-responsible') && (document.getElementById('capa-form-responsible').value = '');
     document.getElementById('capa-form-target-date').value = '';
     document.getElementById('capa-form-panel').classList.add('slide-in');
     document.getElementById('panel-capa').classList.add('slide-out');
@@ -165,17 +298,22 @@ const Compliance = (() => {
   }
 
   async function submitCapa() {
-    const data = {
-      source:      document.getElementById('capa-form-source').value,
-      description: document.getElementById('capa-form-description').value,
-      root_cause:  document.getElementById('capa-form-root-cause').value,
-      action:      document.getElementById('capa-form-action').value,
-      target_date: document.getElementById('capa-form-target-date').value
-    };
-    if (!data.source || !data.description) {
+    const source = document.getElementById('capa-form-source').value;
+    const description = document.getElementById('capa-form-description').value;
+    if (!source || !description) {
       showToast('Source and Description are required');
       return;
     }
+    const data = {
+      source,
+      description,
+      root_cause:           document.getElementById('capa-form-root-cause').value,
+      corrective_action:    (document.getElementById('capa-form-corrective-action') || {}).value || document.getElementById('capa-form-action').value,
+      preventive_action:    (document.getElementById('capa-form-preventive-action') || {}).value || '',
+      ncr_ref:              (document.getElementById('capa-form-ncr-ref') || {}).value || '',
+      responsible_id:       (document.getElementById('capa-form-responsible') || {}).value || '',
+      target_date:          document.getElementById('capa-form-target-date').value
+    };
     showSpinner(true);
     try {
       const res = await Api.post('saveCapa', data);
@@ -220,5 +358,5 @@ const Compliance = (() => {
     setTimeout(() => t.classList.remove('show'), 2500);
   }
 
-  return { init, openCapaForm, closeCapaForm, submitCapa, loadCapa: loadCapaList };
+  return { init, openCapaForm, closeCapaForm, submitCapa, loadCapa: loadCapaList, openLegalForm, closeLegalForm, submitLegalEntry, closeCapaItemFromDetail };
 })();

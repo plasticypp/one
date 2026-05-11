@@ -169,6 +169,24 @@ const Masters = (() => {
         { key: 'Unit',         label: 'Unit',         type: 'text' },
         { key: 'RemarkS',      label: 'Remarks',      type: 'text' }
       ]
+    },
+    {
+      id: 'QualityParams',
+      labelKey: 'masters.tab.qualityparams',
+      idField: 'ParamID',
+      nameField: 'Parameter',
+      detailField: 'ProductID',
+      statusField: null,
+      canEdit: ['director','qmr'],
+      fields: [
+        { key: 'ParamID',   label: 'Param ID',  type: 'text', readonly: true },
+        { key: 'ProductID', label: 'Product',   type: 'dropdown', entity: 'Products' },
+        { key: 'Parameter', label: 'Parameter', type: 'text' },
+        { key: 'Unit',      label: 'Unit',      type: 'text' },
+        { key: 'SpecMin',   label: 'Spec Min',  type: 'number' },
+        { key: 'SpecMax',   label: 'Spec Max',  type: 'number' },
+        { key: 'Active',    label: 'Active',    type: 'select', options: ['TRUE','FALSE'] }
+      ]
     }
   ];
 

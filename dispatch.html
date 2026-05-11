@@ -58,12 +58,13 @@
               <th>Product</th>
               <th>Qty Ordered</th>
               <th>Qty Dispatched</th>
+              <th>Remaining</th>
               <th>Status</th>
               <th>Action</th>
             </tr>
           </thead>
           <tbody id="so-tbody">
-            <tr><td colspan="8" class="td-loading">Loading…</td></tr>
+            <tr><td colspan="9" class="td-loading">Loading…</td></tr>
           </tbody>
         </table>
       </div>
@@ -123,6 +124,38 @@
     <div class="form-actions">
       <button class="btn-primary" onclick="Dispatch.submitSO()">Save SO</button>
     </div>
+  </div>
+
+  <!-- Dispatch Action Panel (slide-in) -->
+  <div class="form-panel" id="dispatch-panel">
+    <div class="form-header">
+      <button class="back-btn" id="dispatch-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span class="form-title">Dispatch Sales Order</span>
+    </div>
+    <div class="form-body">
+      <div class="field-group"><label>SO ID</label><input type="text" id="dp-so-id" disabled></div>
+      <div class="field-group"><label>Customer</label><input type="text" id="dp-customer" disabled></div>
+      <div class="field-group"><label>Product</label><input type="text" id="dp-product" disabled></div>
+      <div class="field-group"><label>Ordered Qty</label><input type="number" id="dp-ordered" disabled></div>
+      <div class="field-group"><label>Already Dispatched</label><input type="number" id="dp-already" disabled></div>
+      <div class="field-group"><label>Qty to Dispatch *</label><input type="number" id="dp-qty" min="1" required></div>
+      <div class="field-group"><label>Dispatch Date *</label><input type="date" id="dp-date" required></div>
+      <div class="field-group"><label>Vehicle No</label><input type="text" id="dp-vehicle" placeholder="e.g. MH04-AB-1234"></div>
+      <div class="field-group"><label>Driver Name</label><input type="text" id="dp-driver"></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" onclick="Dispatch.submitDispatch()">Confirm Dispatch</button>
+    </div>
+  </div>
+
+  <!-- Detail Panel (slide-in) -->
+  <div class="form-panel" id="detail-panel">
+    <div class="form-header">
+      <button class="back-btn" id="detail-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span class="form-title" id="detail-title">SO Detail</span>
+    </div>
+    <div class="form-body" id="detail-body"></div>
+    <div class="form-actions" id="detail-actions"></div>
   </div>
 
   <!-- Spinner -->

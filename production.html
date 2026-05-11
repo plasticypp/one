@@ -124,6 +124,35 @@
     </div>
   </div>
 
+  <!-- Close Batch Panel (slide-in) -->
+  <div class="form-panel" id="close-panel">
+    <div class="form-header">
+      <button class="back-btn" id="close-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span class="form-title">Close Batch</span>
+    </div>
+    <div class="form-body">
+      <div class="field-group"><label>Batch ID</label><input type="text" id="close-batch-id-display" disabled></div>
+      <div class="field-group"><label>Planned Qty</label><input type="number" id="close-planned-qty" disabled></div>
+      <div class="field-group"><label>Actual Qty Produced *</label><input type="number" id="close-actual-qty" min="1" required></div>
+      <div class="field-group"><label>End Time</label><input type="datetime-local" id="close-end-time"></div>
+      <div class="field-group"><label>Notes</label><input type="text" id="close-notes" placeholder="Optional"></div>
+      <div id="close-qc-warning" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:10px;margin:8px 0;font-size:0.875rem;"></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" onclick="Production.submitClose()">Confirm Close</button>
+    </div>
+  </div>
+
+  <!-- Detail Panel (slide-in) -->
+  <div class="form-panel" id="detail-panel">
+    <div class="form-header">
+      <button class="back-btn" id="detail-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span class="form-title">Batch Detail</span>
+    </div>
+    <div class="form-body" id="detail-body"></div>
+    <div class="form-actions" id="detail-actions"></div>
+  </div>
+
   <!-- Spinner -->
   <div class="spinner-overlay hidden" id="spinner">
     <div class="spinner"></div>

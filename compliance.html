@@ -36,6 +36,9 @@
 
     <!-- Legal Register Panel -->
     <div class="comp-panel" id="panel-legal">
+      <div class="filter-bar" style="justify-content:flex-end;">
+        <button class="add-capa-btn" id="btn-new-legal" onclick="Compliance.openLegalForm()">+ New Regulation</button>
+      </div>
       <div id="legal-table-wrap"><div class="empty-msg">Loading…</div></div>
     </div>
 
@@ -80,6 +83,22 @@
           <textarea id="capa-form-action" placeholder="Corrective / preventive actions…"></textarea>
         </div>
         <div class="field-group">
+          <label>Corrective Action</label>
+          <textarea id="capa-form-corrective-action" placeholder="Corrective actions…"></textarea>
+        </div>
+        <div class="field-group">
+          <label>Preventive Action</label>
+          <textarea id="capa-form-preventive-action" placeholder="Preventive actions…"></textarea>
+        </div>
+        <div class="field-group">
+          <label>NCR Ref</label>
+          <input type="text" id="capa-form-ncr-ref" placeholder="Optional NCR reference">
+        </div>
+        <div class="field-group">
+          <label>Responsible</label>
+          <input type="text" id="capa-form-responsible" placeholder="Person responsible">
+        </div>
+        <div class="field-group">
           <label>Target Date</label>
           <input type="date" id="capa-form-target-date">
         </div>
@@ -88,6 +107,39 @@
         <button class="btn-secondary" onclick="Compliance.closeCapaForm()">Cancel</button>
         <button class="btn-primary" onclick="Compliance.submitCapa()">Save CAPA</button>
       </div>
+    </div>
+
+    <!-- Legal Register Form Panel -->
+    <div class="capa-form-panel" id="legal-form-panel">
+      <div class="form-header">
+        <button class="back-btn" id="legal-form-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <span class="form-title" id="legal-form-title">New Legal Entry</span>
+      </div>
+      <div class="form-body">
+        <div class="field-group"><label>Act / Regulation *</label><input type="text" id="lf-act" required></div>
+        <div class="field-group"><label>Requirement</label><input type="text" id="lf-req"></div>
+        <div class="field-group"><label>Applicability</label><input type="text" id="lf-applicability"></div>
+        <div class="field-group">
+          <label>Compliance Status</label>
+          <select id="lf-status"><option>Compliant</option><option>Due Soon</option><option>Non-Compliant</option><option>Pending</option></select>
+        </div>
+        <div class="field-group"><label>Last Review Date</label><input type="date" id="lf-last-review"></div>
+        <div class="field-group"><label>Next Review Date *</label><input type="date" id="lf-next-review" required></div>
+        <div class="field-group"><label>Remarks</label><textarea id="lf-remarks" rows="2"></textarea></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary" onclick="Compliance.submitLegalEntry()">Save</button>
+      </div>
+    </div>
+
+    <!-- CAPA Detail Panel -->
+    <div class="capa-form-panel" id="capa-detail-panel">
+      <div class="form-header">
+        <button class="back-btn" id="capa-detail-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <span class="form-title">CAPA Detail</span>
+      </div>
+      <div class="form-body" id="capa-detail-body"></div>
+      <div class="form-actions" id="capa-detail-actions"></div>
     </div>
 
   </div>

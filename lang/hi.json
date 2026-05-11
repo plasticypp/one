@@ -57,6 +57,7 @@
   "masters.tab.spares": "स्पेयर",
   "masters.tab.personnel": "स्टाफ",
   "masters.tab.bom": "BOM",
+  "masters.tab.qualityparams": "गुणवत्ता विशिष्टताएं",
   "masters.add": "+ नया जोड़ें",
   "masters.save": "सेव करें",
   "masters.deactivate": "बंद करें",

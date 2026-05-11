@@ -93,21 +93,17 @@
       </div>
       <div class="field-group">
         <label>Parameter</label>
-        <select id="field-parameter">
-          <option value="Wall Thickness">Wall Thickness</option>
-          <option value="Weight">Weight</option>
-          <option value="Leak Test">Leak Test</option>
-          <option value="MFI">MFI</option>
-          <option value="Dimension">Dimension</option>
-        </select>
+        <div id="param-btn-group" class="param-btn-group">
+          <span style="font-size:0.85rem;color:var(--neutral-500);">Select a batch first</span>
+        </div>
       </div>
       <div class="field-group">
-        <label>Spec Min</label>
-        <input type="number" id="field-spec-min" step="any" placeholder="0">
+        <label>Spec Min (auto-filled)</label>
+        <input type="number" id="field-spec-min" step="any" readonly>
       </div>
       <div class="field-group">
-        <label>Spec Max</label>
-        <input type="number" id="field-spec-max" step="any" placeholder="0">
+        <label>Spec Max (auto-filled)</label>
+        <input type="number" id="field-spec-max" step="any" readonly>
       </div>
       <div class="field-group">
         <label>Actual Value</label>
@@ -121,6 +117,16 @@
     <div class="form-actions">
       <button class="btn-primary" onclick="Quality.submitCheck()">Save Check</button>
     </div>
+  </div>
+
+  <!-- Detail Panel (slide-in) -->
+  <div class="form-panel" id="detail-panel">
+    <div class="form-header">
+      <button class="back-btn" id="detail-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span class="form-title">Check Detail</span>
+    </div>
+    <div class="form-body" id="detail-body"></div>
+    <div class="form-actions" id="detail-actions"></div>
   </div>
 
   <!-- Spinner -->

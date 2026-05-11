@@ -87,6 +87,10 @@
         <select id="field-supplier"><option value="">— select supplier —</option></select>
       </div>
       <div class="field-group">
+        <label for="field-material-select">Select Material</label>
+        <select id="field-material-select"><option value="">— select existing —</option></select>
+      </div>
+      <div class="field-group">
         <label for="field-material-id">Material ID</label>
         <input type="text" id="field-material-id" placeholder="e.g. MAT001">
       </div>
@@ -124,6 +128,18 @@
       <div class="form-error" id="form-error"></div>
       <button class="btn btn-primary btn-full btn-lg" id="btn-save-grn">Save GRN</button>
     </div>
+  </div>
+
+  <!-- Detail Panel -->
+  <div class="form-panel" id="detail-panel">
+    <div class="form-header">
+      <button class="back-btn" id="detail-back" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="form-title">GRN Detail</span>
+    </div>
+    <div class="form-body" id="detail-body"></div>
+    <div class="form-actions" id="detail-actions"></div>
   </div>
 
   <!-- Toast -->

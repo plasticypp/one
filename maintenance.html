@@ -79,6 +79,7 @@
                 <th>Last Done</th>
                 <th>Next Due</th>
                 <th>Assigned To</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody id="pm-tbody"></tbody>
@@ -102,6 +103,36 @@
       <div class="form-actions" id="form-actions"></div>
     </div>
 
+  </div>
+
+  <!-- Resolve Panel -->
+  <div class="form-panel" id="resolve-panel">
+    <div class="form-header">
+      <button class="back-btn" id="resolve-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span class="form-title">Resolve Breakdown</span>
+    </div>
+    <div class="form-body">
+      <div class="field-group"><label>Breakdown ID</label><input type="text" id="rv-id" disabled></div>
+      <div class="field-group"><label>Equipment</label><input type="text" id="rv-equip" disabled></div>
+      <div class="field-group"><label>Action Taken *</label><textarea id="rv-action" rows="3" required></textarea></div>
+      <div class="field-group"><label>Root Cause</label><textarea id="rv-root-cause" rows="2"></textarea></div>
+      <div class="field-group"><label>Fixed Date *</label><input type="date" id="rv-fixed-date" required></div>
+      <div class="field-group"><label>Downtime (minutes)</label><input type="number" id="rv-downtime" min="0"></div>
+      <div class="field-group"><label>Spare Used</label><input type="text" id="rv-spare" placeholder="Spare part name/code"></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" onclick="Maintenance.submitResolve()">Mark Resolved</button>
+    </div>
+  </div>
+
+  <!-- Detail Panel -->
+  <div class="form-panel" id="detail-panel">
+    <div class="form-header">
+      <button class="back-btn" id="detail-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span class="form-title">Breakdown Detail</span>
+    </div>
+    <div class="form-body" id="detail-body"></div>
+    <div class="form-actions" id="detail-actions"></div>
   </div>
 
   <!-- FAB -->

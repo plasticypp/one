@@ -57,6 +57,7 @@
   "masters.tab.spares": "Spares",
   "masters.tab.personnel": "Personnel",
   "masters.tab.bom": "BOM",
+  "masters.tab.qualityparams": "Quality Specs",
   "masters.add": "+ Add New",
   "masters.save": "Save",
   "masters.deactivate": "Deactivate",

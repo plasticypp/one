@@ -3,6 +3,8 @@ const Maintenance = (() => {
   let session = null;
   let activeTab = 'breakdowns';
   let equipDropdown = [];
+  let bdCache = [];
+  let resolvingBdId = null;
 
   async function init() {
     session = Auth.get();
@@ -21,6 +23,8 @@ const Maintenance = (() => {
       window.location.href = 'app.html';
     });
     document.getElementById('form-back').addEventListener('click', slideFormOut);
+    document.getElementById('resolve-back').addEventListener('click', slideResolvePanelOut);
+    document.getElementById('detail-back').addEventListener('click', slideDetailOut);
     document.getElementById('fab').addEventListener('click', openBreakdownForm);
     const langBtn = document.getElementById('lang-toggle');
     langBtn.textContent = Lang.getCurrent().toUpperCase();
@@ -57,6 +61,7 @@ const Maintenance = (() => {
       const params = { status: status || 'all' };
       const res = await Api.get('getBreakdownList', params);
       const records = res.success ? res.data : [];
+      bdCache = records;
       renderBreakdowns(records);
     } finally {
       showSpinner(false);
@@ -73,6 +78,7 @@ const Maintenance = (() => {
     records.forEach(r => {
       const isOpen = r.Status === 'Open';
       const tr = document.createElement('tr');
+      tr.style.cursor = 'pointer';
       tr.innerHTML = `
         <td>${r.BreakdownID || ''}</td>
         <td>${r.ReportedAt || ''}</td>
@@ -80,8 +86,12 @@ const Maintenance = (() => {
         <td>${r.BreakdownCode || ''}</td>
         <td>${r.Symptom || ''}</td>
         <td><span class="status-chip ${isOpen ? 'chip-open' : 'chip-closed'}">${r.Status}</span></td>
-        <td>${isOpen ? `<button class="btn-resolve" onclick="Maintenance.resolveBreakdown('${r.BreakdownID}')">Resolve</button>` : ''}</td>
+        <td>${isOpen ? `<button class="btn-resolve" onclick="event.stopPropagation();Maintenance.resolveBreakdown('${r.BreakdownID}')">Resolve</button>` : ''}</td>
       `;
+      tr.addEventListener('click', (e) => {
+        if (e.target.closest('button')) return;
+        openBdDetail(r.BreakdownID);
+      });
       tbody.appendChild(tr);
     });
   }
@@ -143,15 +153,38 @@ const Maintenance = (() => {
     }
   }
 
-  async function resolveBreakdown(id) {
-    const resolution = prompt('Enter resolution details:');
-    if (resolution === null) return;
-    if (!resolution.trim()) { showToast('Resolution text required'); return; }
+  function resolveBreakdown(id) {
+    const bd = bdCache.find(b => String(b.BreakdownID) === String(id));
+    resolvingBdId = id;
+    document.getElementById('rv-id').value = id;
+    document.getElementById('rv-equip').value = bd ? (bd.EquipID || '') : '';
+    document.getElementById('rv-action').value = '';
+    document.getElementById('rv-root-cause').value = bd ? (bd.RootCause || '') : '';
+    document.getElementById('rv-fixed-date').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('rv-downtime').value = '';
+    document.getElementById('rv-spare').value = '';
+    slideResolvePanelIn();
+  }
+
+  async function submitResolve() {
+    const action = document.getElementById('rv-action').value.trim();
+    const fixedDate = document.getElementById('rv-fixed-date').value;
+    if (!action) { showToast('Action taken is required'); return; }
+    if (!fixedDate) { showToast('Fixed date is required'); return; }
     showSpinner(true);
     try {
-      const res = await Api.post('resolveBreakdown', { breakdown_id: id, resolution: resolution.trim() });
+      const res = await Api.post('resolveBreakdown', {
+        breakdown_id: resolvingBdId,
+        resolution:   action,
+        root_cause:   document.getElementById('rv-root-cause').value.trim(),
+        fixed_date:   fixedDate,
+        downtime_min: Number(document.getElementById('rv-downtime').value) || 0,
+        spare_used:   document.getElementById('rv-spare').value.trim()
+      });
       if (res.success) {
         showToast('Breakdown resolved');
+        resolvingBdId = null;
+        slideResolvePanelOut();
         const filter = document.getElementById('status-filter').value;
         await loadBreakdowns(filter);
       } else {
@@ -160,6 +193,29 @@ const Maintenance = (() => {
     } finally {
       showSpinner(false);
     }
+  }
+
+  // ── Detail Panel ──────────────────────────────────────────────────────────
+
+  function openBdDetail(bdId) {
+    const r = bdCache.find(b => String(b.BreakdownID) === String(bdId));
+    if (!r) return;
+    document.getElementById('detail-body').innerHTML = `
+      <div class="detail-row"><span>BD ID</span><strong>${r.BreakdownID}</strong></div>
+      <div class="detail-row"><span>Equipment</span><strong>${r.EquipID || '—'}</strong></div>
+      <div class="detail-row"><span>Reported At</span><strong>${r.ReportedAt || '—'}</strong></div>
+      <div class="detail-row"><span>Reported By</span><strong>${r.ReportedBy || '—'}</strong></div>
+      <div class="detail-row"><span>Symptom</span><strong>${r.Symptom || '—'}</strong></div>
+      <div class="detail-row"><span>Code</span><strong>${r.BreakdownCode || '—'}</strong></div>
+      <div class="detail-row"><span>Root Cause</span><strong>${r.RootCause || '—'}</strong></div>
+      <div class="detail-row"><span>Action Taken</span><strong>${r.ActionTaken || '—'}</strong></div>
+      <div class="detail-row"><span>Fixed At</span><strong>${r.FixedAt || '—'}</strong></div>
+      <div class="detail-row"><span>Downtime (min)</span><strong>${r.Downtime_min || '—'}</strong></div>
+      <div class="detail-row"><span>Spare Used</span><strong>${r.SpareUsed || '—'}</strong></div>
+      <div class="detail-row"><span>Status</span><strong>${r.Status}</strong></div>
+    `;
+    document.getElementById('detail-actions').innerHTML = '';
+    slideDetailIn();
   }
 
   // ── PM Schedule ───────────────────────────────────────────────────────────
@@ -179,7 +235,7 @@ const Maintenance = (() => {
     const tbody = document.getElementById('pm-tbody');
     tbody.innerHTML = '';
     if (records.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="td-loading">No records</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="td-loading">No records</td></tr>';
       return;
     }
     const today = new Date();
@@ -188,6 +244,7 @@ const Maintenance = (() => {
       const nextDue = r.NextDue ? new Date(r.NextDue) : null;
       const isOverdue = r.overdue || (nextDue && nextDue < today);
       const isUpcoming = !isOverdue && nextDue && nextDue <= in7;
+      const isDone = r.Status === 'Completed';
       const tr = document.createElement('tr');
       if (isOverdue) tr.classList.add('row-overdue');
       else if (isUpcoming) tr.classList.add('row-upcoming');
@@ -199,9 +256,21 @@ const Maintenance = (() => {
         <td>${r.LastDone || ''}</td>
         <td>${r.NextDue || ''}</td>
         <td>${r.AssignedTo || ''}</td>
+        <td>${!isDone ? `<button class="btn-sm" onclick="Maintenance.completePM('${r.PMID}')">Done</button>` : ''}</td>
       `;
       tbody.appendChild(tr);
     });
+  }
+
+  async function completePM(pmId) {
+    const remarks = prompt('Remarks for PM completion (optional):');
+    if (remarks === null) return;
+    showSpinner(true);
+    try {
+      const res = await Api.post('completePM', { pm_id: pmId, remarks: remarks || '' });
+      if (res.success) { showToast('PM marked complete'); await loadPMSchedule(); }
+      else showToast('Error: ' + res.error);
+    } finally { showSpinner(false); }
   }
 
   // ── Slide Transitions ─────────────────────────────────────────────────────
@@ -214,6 +283,27 @@ const Maintenance = (() => {
   function slideFormOut() {
     document.getElementById('list-panel').classList.remove('slide-out');
     document.getElementById('form-panel').classList.remove('slide-in');
+  }
+
+  function slideResolvePanelIn() {
+    document.getElementById('list-panel').classList.add('slide-out');
+    document.getElementById('resolve-panel').classList.add('slide-in');
+  }
+
+  function slideResolvePanelOut() {
+    document.getElementById('list-panel').classList.remove('slide-out');
+    document.getElementById('resolve-panel').classList.remove('slide-in');
+    resolvingBdId = null;
+  }
+
+  function slideDetailIn() {
+    document.getElementById('list-panel').classList.add('slide-out');
+    document.getElementById('detail-panel').classList.add('slide-in');
+  }
+
+  function slideDetailOut() {
+    document.getElementById('list-panel').classList.remove('slide-out');
+    document.getElementById('detail-panel').classList.remove('slide-in');
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
@@ -229,5 +319,5 @@ const Maintenance = (() => {
     setTimeout(() => t.classList.remove('show'), 2500);
   }
 
-  return { init, resolveBreakdown, _loadBreakdowns: loadBreakdowns };
+  return { init, resolveBreakdown, submitResolve, completePM, _loadBreakdowns: loadBreakdowns };
 })();

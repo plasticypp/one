@@ -38,7 +38,14 @@ function doGet(e) {
       if (action === 'saveQualityCheck') return respond(saveQualityCheck(data));
       if (action === 'saveSO')           return respond(saveSO(data));
       if (action === 'saveDispatch')     return respond(saveDispatch(data));
+      if (action === 'updateRecord')    return respond(updateRecord(data));
+      if (action === 'deleteRecord')    return respond(deleteRecord(data));
+      if (action === 'completePM')      return respond(completePM(data));
+      if (action === 'saveLegalEntry')  return respond(saveLegalEntry(data));
+      if (action === 'saveQualityParam')return respond(saveQualityParam(data));
     }
+
+    if (action === 'getQualityParams') return respond(getQualityParams(e.parameter));
 
     return respond({ success: false, error: 'unknown_action' });
   } catch (err) {
@@ -124,7 +131,7 @@ function updateLanguage(data) {
 
 // ── Master Data CRUD ─────────────────────────────────────────────────────────
 
-const MASTER_ENTITIES = ['Products','Customers','Suppliers','Equipment','Tooling','Spares','Personnel','BOM'];
+const MASTER_ENTITIES = ['Products','Customers','Suppliers','Equipment','Tooling','Spares','Personnel','BOM','QualityParams'];
 
 function assertValidEntity(entity) {
   if (!MASTER_ENTITIES.includes(entity)) throw new Error('invalid_entity');
@@ -194,6 +201,158 @@ function deactivateMaster(data) {
     }
   }
   return { success: false, error: 'not_found' };
+}
+
+function updateRecord(data) {
+  // data: { sheet, idCol, idVal, fields: { colName: value, ... } }
+  const sheet = getSheet(data.sheet);
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+  const idIdx = headers.indexOf(data.idCol);
+  if (idIdx < 0) return { success: false, error: 'id_col_not_found: ' + data.idCol };
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][idIdx]) === String(data.idVal)) {
+      Object.entries(data.fields).forEach(([col, val]) => {
+        const colIdx = headers.indexOf(col);
+        if (colIdx >= 0) sheet.getRange(i+1, colIdx+1).setValue(val);
+      });
+      return { success: true };
+    }
+  }
+  return { success: false, error: 'not_found' };
+}
+
+function deleteRecord(data) {
+  // data: { sheet, idCol, idVal }
+  // Sets Status → 'Deleted' or Active → false depending on which column exists
+  const sheet = getSheet(data.sheet);
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+  const idIdx     = headers.indexOf(data.idCol);
+  const statusIdx = headers.indexOf('Status');
+  const activeIdx = headers.indexOf('Active');
+  if (idIdx < 0) return { success: false, error: 'id_col_not_found' };
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][idIdx]) === String(data.idVal)) {
+      if (statusIdx >= 0)      sheet.getRange(i+1, statusIdx+1).setValue('Deleted');
+      else if (activeIdx >= 0) sheet.getRange(i+1, activeIdx+1).setValue(false);
+      return { success: true };
+    }
+  }
+  return { success: false, error: 'not_found' };
+}
+
+function getQualityParams(params) {
+  const sheet = getSheet('QualityParams');
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length < 2) return { success: true, data: [] };
+  const headers = rows[0];
+  let data = rows.slice(1).map(row => {
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = row[i]; });
+    return obj;
+  }).filter(r => r.Active !== false && r.Active !== 'FALSE');
+  if (params && params.product_id) {
+    data = data.filter(r => String(r.ProductID) === String(params.product_id));
+  }
+  return { success: true, data };
+}
+
+function saveQualityParam(data) {
+  const sheet = getSheet('QualityParams');
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+  if (data.ParamID) {
+    const idIdx = headers.indexOf('ParamID');
+    for (let i = 1; i < rows.length; i++) {
+      if (String(rows[i][idIdx]) === String(data.ParamID)) {
+        const values = headers.map(h => data[h] !== undefined ? data[h] : rows[i][headers.indexOf(h)]);
+        sheet.getRange(i+1, 1, 1, values.length).setValues([values]);
+        return { success: true, param_id: data.ParamID };
+      }
+    }
+  }
+  const param_id = 'QP' + String(rows.length).padStart(3, '0');
+  sheet.appendRow([
+    param_id,
+    data.ProductID || '',
+    data.Parameter || '',
+    data.Unit || '',
+    Number(data.SpecMin) || 0,
+    Number(data.SpecMax) || 0,
+    true
+  ]);
+  return { success: true, param_id };
+}
+
+function completePM(data) {
+  const sheet = getSheet('PM_Schedule');
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+  const idIdx       = headers.indexOf('PMID');
+  const lastDoneIdx = headers.indexOf('LastDone');
+  const nextDueIdx  = headers.indexOf('NextDue');
+  const statusIdx   = headers.indexOf('Status');
+  const remarksIdx  = headers.indexOf('Remarks');
+  const freqIdx     = headers.indexOf('Frequency');
+  const today = new Date().toISOString().slice(0, 10);
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][idIdx]) === String(data.pm_id)) {
+      const freq = Number(rows[i][freqIdx]) || 7;
+      const nextDue = new Date();
+      nextDue.setDate(nextDue.getDate() + freq);
+      if (lastDoneIdx >= 0) sheet.getRange(i+1, lastDoneIdx+1).setValue(today);
+      if (nextDueIdx  >= 0) sheet.getRange(i+1, nextDueIdx+1).setValue(nextDue.toISOString().slice(0,10));
+      if (statusIdx   >= 0) sheet.getRange(i+1, statusIdx+1).setValue('Scheduled');
+      if (remarksIdx  >= 0) sheet.getRange(i+1, remarksIdx+1).setValue(data.remarks || '');
+      return { success: true };
+    }
+  }
+  return { success: false, error: 'not_found' };
+}
+
+function saveLegalEntry(data) {
+  const sheet = getSheet('Legal_Register');
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+  if (data.LegalID) {
+    const idIdx = headers.indexOf('LegalID');
+    if (idIdx >= 0) {
+      for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][idIdx]) === String(data.LegalID)) {
+          const values = headers.map(h => data[h] !== undefined ? data[h] : rows[i][headers.indexOf(h)]);
+          sheet.getRange(i+1, 1, 1, values.length).setValues([values]);
+          return { success: true };
+        }
+      }
+    }
+  }
+  // Use skeleton headers: LegalID, Act, Requirement, Applicability, ComplianceStatus, LastReview, NextReview, Remarks
+  const legal_id = 'LR' + String(rows.length).padStart(3, '0');
+  const isNewSchema = headers.indexOf('LegalID') >= 0;
+  if (isNewSchema) {
+    sheet.appendRow([
+      legal_id,
+      data.Act || '',
+      data.Requirement || '',
+      data.Applicability || '',
+      data.ComplianceStatus || 'Pending',
+      data.LastReview || '',
+      data.NextReview || '',
+      data.Remarks || ''
+    ]);
+  } else {
+    // Legacy 6-col schema: reg_id, regulation, applicability, due_date, status, last_reviewed
+    sheet.appendRow([
+      legal_id,
+      data.Act || data.regulation || '',
+      data.Applicability || data.applicability || '',
+      data.NextReview || data.due_date || '',
+      data.ComplianceStatus || data.status || 'Pending',
+      data.LastReview || data.last_reviewed || ''
+    ]);
+  }
+  return { success: true, legal_id };
 }
 
 // ── Inventory ────────────────────────────────────────────────────────────────
@@ -314,12 +473,21 @@ function saveBreakdown(data) {
 function resolveBreakdown(data) {
   const sheet = getSheet('Breakdown_Log');
   const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+  const idIdx        = headers.indexOf('BreakdownID');
+  const actionIdx    = headers.indexOf('ActionTaken');
+  const fixedIdx     = headers.indexOf('FixedAt');
+  const downtimeIdx  = headers.indexOf('Downtime_min');
+  const spareIdx     = headers.indexOf('SpareUsed');
+  const statusIdx    = headers.indexOf('Status');
   const today = new Date().toISOString().slice(0, 10);
   for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][0]) === String(data.breakdown_id)) {
-      sheet.getRange(i + 1, 12).setValue('Closed');
-      sheet.getRange(i + 1, 9).setValue(today);
-      sheet.getRange(i + 1, 8).setValue(data.resolution);
+    if (String(rows[i][idIdx]) === String(data.breakdown_id)) {
+      if (actionIdx  >= 0) sheet.getRange(i+1, actionIdx+1).setValue(data.resolution || '');
+      if (fixedIdx   >= 0) sheet.getRange(i+1, fixedIdx+1).setValue(data.fixed_date || today);
+      if (downtimeIdx>= 0) sheet.getRange(i+1, downtimeIdx+1).setValue(Number(data.downtime_min) || 0);
+      if (spareIdx   >= 0) sheet.getRange(i+1, spareIdx+1).setValue(data.spare_used || '');
+      if (statusIdx  >= 0) sheet.getRange(i+1, statusIdx+1).setValue('Closed');
       return { success: true };
     }
   }
@@ -421,6 +589,22 @@ function closeBatch(data) {
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][0]) === String(data.batch_id)) {
       if (rows[i][7] === 'Closed') return { success: false, error: 'already_closed' };
+      // Quality gate: block if NG rate > 20%
+      const qcSheet = getSheet('QualityChecks');
+      const qcRows = qcSheet.getDataRange().getValues();
+      if (qcRows.length > 1) {
+        const qcHeaders = qcRows[0];
+        const batchIdx = qcHeaders.indexOf('batch_id');
+        const resultIdx = qcHeaders.indexOf('result');
+        const batchChecks = qcRows.slice(1).filter(r => String(r[batchIdx]) === String(data.batch_id));
+        if (batchChecks.length > 0) {
+          const ngCount = batchChecks.filter(r => r[resultIdx] === 'NG').length;
+          const ngRate = ngCount / batchChecks.length;
+          if (ngRate > 0.20 && data.override !== 'true') {
+            return { success: false, error: 'quality_gate', ng_rate: Math.round(ngRate * 100), ng_count: ngCount, total: batchChecks.length };
+          }
+        }
+      }
       sheet.getRange(i + 1, 5).setValue(actualQty);
       sheet.getRange(i + 1, 8).setValue('Closed');
       sheet.getRange(i + 1, 10).setValue(new Date().toISOString());
@@ -637,11 +821,14 @@ function getDashboardStats() {
   const capaRows = getSheet('CAPA_Register').getDataRange().getValues();
   const openCapas = capaRows.slice(1).filter(r => r[7] === 'Open').length;
 
-  // overdueCompliance: Legal_Register, status (col E, index 4) !== 'Compliant' AND due_date (col D, index 3) < today
+  // overdueCompliance: Legal_Register — use header lookup to handle both schema variants
   const lrRows = getSheet('Legal_Register').getDataRange().getValues();
+  const lrHeaders = lrRows[0] || [];
+  const lrStatusIdx = lrHeaders.indexOf('ComplianceStatus') >= 0 ? lrHeaders.indexOf('ComplianceStatus') : lrHeaders.indexOf('status') >= 0 ? lrHeaders.indexOf('status') : 4;
+  const lrDueIdx    = lrHeaders.indexOf('NextReview') >= 0 ? lrHeaders.indexOf('NextReview') : lrHeaders.indexOf('due_date') >= 0 ? lrHeaders.indexOf('due_date') : 3;
   const overdueCompliance = lrRows.slice(1).filter(r => {
-    const status = r[4];
-    const due = r[3] ? new Date(r[3]) : null;
+    const status = r[lrStatusIdx];
+    const due = r[lrDueIdx] ? new Date(r[lrDueIdx]) : null;
     return status !== 'Compliant' && due && due < today;
   }).length;
 
@@ -729,7 +916,8 @@ function createWorkbookSkeleton() {
     'Training_Log':     ['TrainingID','Date','Topic','TrainerID','Participants','Method','EvalScore','Status','Remarks'],
     'Legal_Register':   ['LegalID','Act','Requirement','Applicability','ComplianceStatus','LastReview','NextReview','Remarks'],
     'KPI_Log':          ['LogID','LogDate','KPICode','KPIName','Value','Unit','Target','Period','RecordedBy'],
-    '_Meta':            ['Key','Value']
+    '_Meta':            ['Key','Value'],
+    'QualityParams':    ['ParamID','ProductID','Parameter','Unit','SpecMin','SpecMax','Active']
   };
 
   Object.entries(SHEETS).forEach(([name, headers]) => {
@@ -808,8 +996,10 @@ function getLegalRegister() {
   const data = rows.slice(1).map(row => {
     const obj = {};
     headers.forEach((h, i) => { obj[h] = row[i]; });
-    const due = obj.due_date ? new Date(obj.due_date) : null;
-    obj.overdue = due && due < today && obj.status !== 'Compliant';
+    const due = obj.NextReview ? new Date(obj.NextReview) : (obj.due_date ? new Date(obj.due_date) : null);
+    obj.overdue = due && due < today && obj.ComplianceStatus !== 'Compliant' && obj.status !== 'Compliant';
+    obj.due_date = obj.NextReview || obj.due_date; // normalise for frontend
+    obj.status = obj.ComplianceStatus || obj.status;
     return obj;
   });
   return { success: true, data };
@@ -834,28 +1024,59 @@ function getCapaList(params) {
 function saveCapa(data) {
   const sheet = getSheet('CAPA_Register');
   const rows = sheet.getDataRange().getValues();
-  const rowCount = rows.length;
-  const capa_id = 'CAPA' + String(rowCount).padStart(4, '0');
+  const headers = rows[0];
+  const capa_id = 'CAPA' + String(rows.length).padStart(4, '0');
   const today = new Date().toISOString().slice(0, 10);
-  sheet.appendRow([
-    capa_id,
-    today,
-    data.source || '',
-    data.description || '',
-    data.root_cause || '',
-    data.action || '',
-    data.target_date || '',
-    'Open'
-  ]);
+  // Support both old 8-col schema and new 13-col skeleton schema
+  const is13col = headers.length >= 13;
+  if (is13col) {
+    sheet.appendRow([
+      capa_id,
+      today,
+      data.source || '',
+      data.ncr_ref || '',
+      data.description || '',
+      data.root_cause || '',
+      data.corrective_action || data.action || '',
+      data.preventive_action || '',
+      data.responsible_id || '',
+      data.target_date || '',
+      'Open',
+      '',
+      ''
+    ]);
+  } else {
+    sheet.appendRow([
+      capa_id,
+      today,
+      data.source || '',
+      data.description || '',
+      data.root_cause || '',
+      data.corrective_action || data.action || '',
+      data.target_date || '',
+      'Open'
+    ]);
+  }
   return { success: true, capa_id };
 }
 
 function updateCapaStatus(data) {
   const sheet = getSheet('CAPA_Register');
   const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+  const idIdx         = headers.indexOf('CAPAID') >= 0 ? headers.indexOf('CAPAID') : headers.indexOf('capa_id');
+  const statusIdx     = headers.indexOf('Status') >= 0 ? headers.indexOf('Status') : headers.indexOf('status');
+  const closedDateIdx = headers.indexOf('ClosedDate');
+  const effectIdx     = headers.indexOf('Effectiveness');
+  const today = new Date().toISOString().slice(0, 10);
   for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][0]) === String(data.capa_id)) {
-      sheet.getRange(i + 1, 8).setValue(data.status);
+    if (String(rows[i][idIdx >= 0 ? idIdx : 0]) === String(data.capa_id)) {
+      if (statusIdx >= 0) sheet.getRange(i+1, statusIdx+1).setValue(data.status);
+      else sheet.getRange(i+1, 8).setValue(data.status);
+      if (data.status === 'Closed') {
+        if (closedDateIdx >= 0) sheet.getRange(i+1, closedDateIdx+1).setValue(today);
+        if (effectIdx >= 0)     sheet.getRange(i+1, effectIdx+1).setValue(data.effectiveness || '');
+      }
       return { success: true };
     }
   }
