@@ -167,7 +167,6 @@ const GRN = (() => {
     if (!r) return;
     editingGrnId = grnId;
     slideDetailOut();
-    // Pre-fill form (supplier + material read-only on edit)
     const sel = document.getElementById('field-supplier');
     sel.innerHTML = '<option value="">— select supplier —</option>';
     supplierCache.forEach(s => {
@@ -177,17 +176,12 @@ const GRN = (() => {
       sel.appendChild(o);
     });
     sel.disabled = true;
-    document.getElementById('field-material-select').value = '';
-    document.getElementById('field-material-select').disabled = true;
-    document.getElementById('field-material-id').value = r.material || '';
-    document.getElementById('field-material-id').readOnly = true;
     document.getElementById('field-material').value = r.material || '';
+    document.getElementById('field-material').readOnly = true;
     document.getElementById('field-date').value = r.date || '';
-    document.getElementById('field-qty').value = r.qty_kg || '';
-    document.getElementById('field-unit').value = 'kg';
-    document.getElementById('field-rate').value = '';
-    document.getElementById('field-invoice').value = r.lot_no || '';
-    document.getElementById('field-received-by').value = '';
+    document.getElementById('field-qty-kg').value = r.qty_kg || '';
+    const lotEl = document.getElementById('field-lot-no');
+    if (lotEl) lotEl.value = r.lot_no || '';
     document.getElementById('form-error').textContent = '';
     slideFormIn();
   }
@@ -231,6 +225,8 @@ const GRN = (() => {
   function slideFormOut() {
     document.getElementById('form-panel').classList.remove('slide-in');
     editingGrnId = null;
+    document.getElementById('field-supplier').disabled = false;
+    document.getElementById('field-material').readOnly = false;
   }
 
   function slideDetailIn()  { document.getElementById('detail-panel').classList.add('slide-in'); }

@@ -311,7 +311,6 @@ const Dispatch = (() => {
 
     if (!qty || qty <= 0)  { showToast('Enter a valid dispatch quantity'); return; }
     if (!date)             { showToast('Dispatch date is required'); return; }
-    if (!batchNo)          { showToast('Select a batch first'); return; }
 
     const so = soCache.find(s => String(s.so_id) === String(dispatchingSOId));
     showSpinner(true);
