@@ -500,13 +500,13 @@ function saveLegalEntry(data) {
 // ── Inventory ────────────────────────────────────────────────────────────────
 
 function getGRNList(params) {
-  const sheet = getSheet('GRN');
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('RMStock');
+  if (!sheet) return { success: true, data: [] };
   const rows = sheet.getDataRange().getValues();
   if (rows.length < 2) return { success: true, data: [] };
   const headers = rows[0];
-  let data = rows.slice(1).map(row => {
-    return rowToObj(headers, row);
-  });
+  let data = rows.slice(1).map(r => rowToObj(headers, r));
   if (params.supplier_id) {
     data = data.filter(r => String(r.supplier_id) === String(params.supplier_id));
   }
@@ -514,33 +514,34 @@ function getGRNList(params) {
 }
 
 function saveGRN(data) {
-  var authError = requireRole(data, ['director','store']);
+  var authError = requireRole(data, ['director','supervisor','store_dispatch','store']);
   if (authError) return { success: false, error: authError };
 
-  var fieldError = validateFields(data, ['supplier_id','qty_received','date']);
+  var fieldError = validateFields(data, ['supplier_id','material','qty_kg','date']);
   if (fieldError) return { success: false, error: fieldError };
 
-  const sheet = getSheet('GRN');
+  const RM_HEADERS = ['date','grn_id','supplier_id','material','lot_no','qty_kg'];
+  const sheet = ensureSheet('RMStock', RM_HEADERS);
   const rows = sheet.getDataRange().getValues();
-  const rowCount = rows.length; // includes header
-  const grnId = 'GRN' + String(rowCount).padStart(3, '0');
+
+  const lotNo = data.lot_no || '';
+  const dupLot = lotNo && rows.slice(1).some(r => String(r[4]) === String(lotNo));
+
+  const rowCount = rows.length;
   const today = new Date().toISOString().slice(0, 10);
+  const mm = today.slice(2, 4) + today.slice(5, 7);
+  const grnId = 'GRN-' + mm + '-' + String(rowCount).padStart(3, '0');
 
   sheet.appendRow([
-    grnId,
     data.date || today,
+    grnId,
     data.supplier_id,
-    data.material_id,
-    data.qty_received,
-    data.unit,
-    data.rate,
-    data.invoice_no,
-    data.received_by,
-    'Received'
+    data.material,
+    lotNo,
+    Number(data.qty_kg)
   ]);
 
-  updateStock(data.material_id, data.material_name, data.unit, Number(data.qty_received));
-  return { success: true, grn_id: grnId };
+  return { success: true, grn_id: grnId, warning: dupLot ? 'duplicate_lot_no' : null };
 }
 
 function updateStock(materialId, materialName, unit, qty) {
