@@ -23,7 +23,10 @@ const Maintenance = (() => {
       window.location.href = 'app.html';
     });
     document.getElementById('form-back').addEventListener('click', slideFormOut);
-    document.getElementById('resolve-back').addEventListener('click', slideResolvePanelOut);
+    const resolveBack = document.getElementById('resolve-back');
+    if (resolveBack) resolveBack.addEventListener('click', slideResolvePanelOut);
+    const resolveBackBtn = document.getElementById('resolve-back-btn');
+    if (resolveBackBtn) resolveBackBtn.addEventListener('click', slideResolvePanelOut);
     document.getElementById('detail-back').addEventListener('click', slideDetailOut);
     document.getElementById('fab').addEventListener('click', openBreakdownForm);
     const langBtn = document.getElementById('lang-toggle');
@@ -155,31 +158,41 @@ const Maintenance = (() => {
 
   function resolveBreakdown(id) {
     const bd = bdCache.find(b => String(b.BreakdownID) === String(id));
+    if (!bd) return;
     resolvingBdId = id;
-    document.getElementById('rv-id').value = id;
-    document.getElementById('rv-equip').value = bd ? (bd.EquipID || '') : '';
-    document.getElementById('rv-action').value = '';
-    document.getElementById('rv-root-cause').value = bd ? (bd.RootCause || '') : '';
-    document.getElementById('rv-fixed-date').value = new Date().toISOString().slice(0, 10);
-    document.getElementById('rv-downtime').value = '';
-    document.getElementById('rv-spare').value = '';
+
+    document.getElementById('resolve-bd-id').value = id;
+    document.getElementById('resolve-bd-display').value = id;
+    document.getElementById('resolve-equipment-display').value = bd.EquipID || '';
+    document.getElementById('resolve-date').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('resolve-notes').value = '';
+    document.getElementById('resolve-by').value = '';
+    document.getElementById('resolve-spares').value = '';
+    document.getElementById('resolve-downtime').value = '';
+
     slideResolvePanelIn();
   }
 
   async function submitResolve() {
-    const action = document.getElementById('rv-action').value.trim();
-    const fixedDate = document.getElementById('rv-fixed-date').value;
-    if (!action) { showToast('Action taken is required'); return; }
-    if (!fixedDate) { showToast('Fixed date is required'); return; }
+    const notes = document.getElementById('resolve-notes').value.trim();
+    const resolvedBy = document.getElementById('resolve-by').value.trim();
+    const resolvedDate = document.getElementById('resolve-date').value;
+
+    if (!notes) { showToast('Resolution notes are required'); return; }
+    if (!resolvedBy) { showToast('Resolved by is required'); return; }
+    if (!resolvedDate) { showToast('Resolved date is required'); return; }
+
     showSpinner(true);
     try {
       const res = await Api.post('resolveBreakdown', {
-        breakdown_id: resolvingBdId,
-        resolution:   action,
-        root_cause:   document.getElementById('rv-root-cause').value.trim(),
-        fixed_date:   fixedDate,
-        downtime_min: Number(document.getElementById('rv-downtime').value) || 0,
-        spare_used:   document.getElementById('rv-spare').value.trim()
+        breakdown_id:     resolvingBdId,
+        resolution:       notes,
+        resolved_by:      resolvedBy,
+        fixed_date:       resolvedDate,
+        downtime_min:     Number(document.getElementById('resolve-downtime').value) || 0,
+        spare_used:       document.getElementById('resolve-spares').value.trim(),
+        spares_used:      document.getElementById('resolve-spares').value.trim(),
+        downtime_hrs:     document.getElementById('resolve-downtime').value || '0'
       });
       if (res.success) {
         showToast('Breakdown resolved');
@@ -263,11 +276,10 @@ const Maintenance = (() => {
   }
 
   async function completePM(pmId) {
-    const remarks = prompt('Remarks for PM completion (optional):');
-    if (remarks === null) return;
+    if (!confirm('Mark PM ' + pmId + ' as complete?')) return;
     showSpinner(true);
     try {
-      const res = await Api.post('completePM', { pm_id: pmId, remarks: remarks || '' });
+      const res = await Api.post('completePM', { pm_id: pmId, remarks: '' });
       if (res.success) { showToast('PM marked complete'); await loadPMSchedule(); }
       else showToast('Error: ' + res.error);
     } finally { showSpinner(false); }
@@ -321,3 +333,6 @@ const Maintenance = (() => {
 
   return { init, resolveBreakdown, submitResolve, completePM, _loadBreakdowns: loadBreakdowns };
 })();
+
+// Global shim so onclick="submitResolve()" in HTML works
+function submitResolve() { Maintenance.submitResolve(); }

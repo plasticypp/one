@@ -520,6 +520,10 @@ function resolveBreakdown(data) {
       if (downtimeIdx>= 0) sheet.getRange(i+1, downtimeIdx+1).setValue(Number(data.downtime_min) || 0);
       if (spareIdx   >= 0) sheet.getRange(i+1, spareIdx+1).setValue(data.spare_used || '');
       if (statusIdx  >= 0) sheet.getRange(i+1, statusIdx+1).setValue('Closed');
+      var sparesIndex = headers.indexOf('spares_used');
+      if (sparesIndex !== -1) sheet.getRange(i+1, sparesIndex+1).setValue(data.spares_used || '');
+      var downtimeIndex = headers.indexOf('downtime_hrs');
+      if (downtimeIndex !== -1) sheet.getRange(i+1, downtimeIndex+1).setValue(Number(data.downtime_hrs) || 0);
       return { success: true };
     }
   }

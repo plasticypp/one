@@ -34,6 +34,8 @@ const Dispatch = (() => {
       slideFormOut();
     });
     document.getElementById('dispatch-back').addEventListener('click', slideDispatchPanelOut);
+    const dispatchActionBackBtn = document.getElementById('dispatch-action-back-btn');
+    if (dispatchActionBackBtn) dispatchActionBackBtn.addEventListener('click', slideDispatchActionPanelOut);
     document.getElementById('detail-back').addEventListener('click', slideDetailOut);
     document.getElementById('btn-new-so').addEventListener('click', () => openSOForm());
     const langBtn = document.getElementById('lang-toggle');
@@ -231,16 +233,77 @@ const Dispatch = (() => {
     dispatchingSOId = soId;
     const customerName = (customerCache.find(c => String(c.id) === String(so.customer_id)) || {}).name || so.customer_id;
     const productName  = (productCache.find(p => String(p.id) === String(so.product_id))   || {}).name || so.product_id;
-    document.getElementById('dp-so-id').value   = soId;
-    document.getElementById('dp-customer').value = customerName;
-    document.getElementById('dp-product').value  = productName;
-    document.getElementById('dp-ordered').value  = so.qty_ordered || 0;
-    document.getElementById('dp-already').value  = so.qty_dispatched || 0;
-    document.getElementById('dp-qty').value      = '';
-    document.getElementById('dp-date').value     = new Date().toISOString().slice(0, 10);
-    document.getElementById('dp-vehicle').value  = '';
-    document.getElementById('dp-driver').value   = '';
-    slideDispatchPanelIn();
+
+    // Populate new dispatch-action-panel fields
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
+    setVal('dispatch-so-id',          soId);
+    setVal('dispatch-so-display',     soId);
+    setVal('dispatch-customer-display', customerName);
+    setVal('dispatch-product-display',  productName);
+    setVal('dispatch-so-qty-display', so.qty_ordered || '');
+    setVal('dispatch-date',           new Date().toISOString().slice(0, 10));
+    setVal('dispatch-qty',            '');
+    setVal('dispatch-invoice',        '');
+    setVal('dispatch-vehicle',        '');
+
+    // Also populate legacy dp-* fields in case old dispatch-panel is still present
+    setVal('dp-so-id',    soId);
+    setVal('dp-customer', customerName);
+    setVal('dp-product',  productName);
+    setVal('dp-ordered',  so.qty_ordered || 0);
+    setVal('dp-already',  so.qty_dispatched || 0);
+    setVal('dp-qty',      '');
+    setVal('dp-date',     new Date().toISOString().slice(0, 10));
+    setVal('dp-vehicle',  '');
+    setVal('dp-driver',   '');
+
+    // Use new dispatch-action-panel if it exists, otherwise fall back to old panel
+    const newPanel = document.getElementById('dispatch-action-panel');
+    if (newPanel) {
+      slideDispatchActionPanelIn();
+    } else {
+      slideDispatchPanelIn();
+    }
+  }
+
+  function closeDispatchActionPanel() {
+    slideDispatchActionPanelOut();
+  }
+
+  async function submitDispatchAction() {
+    const qty     = Number(document.getElementById('dispatch-qty').value);
+    const invoice = document.getElementById('dispatch-invoice').value.trim();
+    const date    = document.getElementById('dispatch-date').value;
+    const vehicle = document.getElementById('dispatch-vehicle').value.trim();
+
+    if (!qty || qty <= 0)  { showToast('Enter a valid dispatch quantity'); return; }
+    if (!invoice)          { showToast('Invoice number is required'); return; }
+    if (!date)             { showToast('Dispatch date is required'); return; }
+
+    const so = soCache.find(s => String(s.so_id) === String(dispatchingSOId));
+    showSpinner(true);
+    try {
+      const res = await Api.post('saveDispatch', {
+        so_id:         dispatchingSOId,
+        product_id:    so ? so.product_id : '',
+        qty,
+        dispatch_date: date,
+        invoice_no:    invoice,
+        vehicle_no:    vehicle,
+        dispatched_by: session.username || session.name || ''
+      });
+      if (res.success) {
+        showToast('Dispatched — ' + (res.dispatch_id || ''));
+        dispatchingSOId = null;
+        slideDispatchActionPanelOut();
+        await loadSOList();
+        if (activeTab === 'log') await loadDispatchLog();
+      } else if (res.error === 'insufficient_stock') {
+        showToast('Insufficient FG stock for this product');
+      } else {
+        showToast('Error: ' + res.error);
+      }
+    } finally { showSpinner(false); }
   }
 
   async function submitDispatch() {
@@ -383,6 +446,17 @@ const Dispatch = (() => {
     dispatchingSOId = null;
   }
 
+  function slideDispatchActionPanelIn() {
+    document.getElementById('main-content').classList.add('slide-out');
+    document.getElementById('dispatch-action-panel').classList.add('slide-in');
+  }
+
+  function slideDispatchActionPanelOut() {
+    document.getElementById('main-content').classList.remove('slide-out');
+    document.getElementById('dispatch-action-panel').classList.remove('slide-in');
+    dispatchingSOId = null;
+  }
+
   function slideDetailIn() {
     document.getElementById('main-content').classList.add('slide-out');
     document.getElementById('detail-panel').classList.add('slide-in');
@@ -406,5 +480,9 @@ const Dispatch = (() => {
     setTimeout(() => t.classList.remove('show'), 2500);
   }
 
-  return { init, loadSOList, submitSO, dispatchAction, submitDispatch, editSO, deleteSO };
+  return { init, loadSOList, submitSO, dispatchAction, submitDispatch, submitDispatchAction, closeDispatchActionPanel, editSO, deleteSO };
 })();
+
+// Global shims for inline onclick handlers
+function submitDispatchAction() { Dispatch.submitDispatchAction(); }
+function closeDispatchActionPanel() { Dispatch.closeDispatchActionPanel(); }
