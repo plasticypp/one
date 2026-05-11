@@ -11,6 +11,18 @@
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/masters.css">
+  <style>
+    .capa-banner {
+      background: #c62828; color: #fff;
+      padding: var(--space-3) var(--space-4);
+      display: flex; align-items: center; gap: var(--space-3);
+      font-size: var(--text-sm); font-weight: var(--weight-semibold);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .capa-banner.hidden { display: none; }
+    .capa-banner-link { color: #fff; text-decoration: underline; margin-left: auto; }
+    .capa-banner-close { background: none; border: none; color: #fff; cursor: pointer; font-size: 1rem; }
+  </style>
 </head>
 <body>
 
@@ -26,17 +38,116 @@
     </div>
   </header>
 
-  <div class="sub-tab-bar">
-    <button class="sub-tab active" data-tab="ncr">Non-Conformance</button>
-    <button class="sub-tab" data-tab="defects">Defect Log</button>
+  <!-- CAPA Banner -->
+  <div id="capa-banner" class="capa-banner hidden">
+    <span id="capa-banner-msg"></span>
+    <a href="compliance.html" class="capa-banner-link">Go to Compliance →</a>
+    <button class="capa-banner-close" onclick="document.getElementById('capa-banner').classList.add('hidden')">✕</button>
   </div>
 
-  <div class="masters-content" style="padding:var(--space-6) var(--space-4);">
-    <div class="empty-msg" style="margin-top:var(--space-8);">
-      <p style="font-size:var(--text-lg);font-weight:var(--weight-bold);margin-bottom:var(--space-2);">NCR &amp; Defect Tracking</p>
-      <p style="color:var(--color-text-muted);font-size:var(--text-sm);">15 defect codes catalogued including 5 Critical: Pinhole/Leak, Short Shot, Neck/Thread Defect, Parison Burst, and Uneven Wall Thickness.</p>
-      <p style="color:var(--color-text-muted);font-size:var(--text-sm);margin-top:var(--space-2);">Full defect log and NCR workflow — coming in Wave 3 (Quality module expansion).</p>
+  <div class="sub-tab-bar">
+    <button class="sub-tab active" data-tab="ncr">Non-Conformance</button>
+    <button class="sub-tab" data-tab="catalogue">Defect Catalogue</button>
+  </div>
+
+  <div id="main-content">
+
+    <!-- NCR Log Tab -->
+    <div id="tab-ncr" class="tab-content">
+      <div class="new-check-bar">
+        <button class="btn-primary" id="btn-new-ncr">+ New NCR</button>
+      </div>
+      <div class="checks-table-wrap">
+        <table class="checks-table">
+          <thead><tr>
+            <th>NCR ID</th><th>Date</th><th>Batch</th><th>Stage</th>
+            <th>Defect</th><th>Severity</th><th>Qty</th><th>Disposition</th><th>Status</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="ncr-tbody">
+            <tr><td colspan="10" class="td-loading">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
+
+    <!-- Defect Catalogue Tab -->
+    <div id="tab-catalogue" class="tab-content hidden">
+      <div id="defect-catalogue-grid" class="summary-grid">
+        <p class="empty-msg">Loading…</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- NCR Form Panel -->
+  <div class="form-panel" id="form-panel">
+    <div class="form-header">
+      <button class="back-btn" id="form-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="form-title" id="form-title">New NCR</span>
+    </div>
+    <div class="form-body">
+      <div class="field-group">
+        <label>Date</label>
+        <input type="date" id="field-ncr-date">
+      </div>
+      <div class="field-group">
+        <label>Batch ID</label>
+        <select id="field-ncr-batch"><option value="">— select —</option></select>
+      </div>
+      <div class="field-group">
+        <label>Stage</label>
+        <select id="field-ncr-stage">
+          <option value="IQC">IQC — Incoming</option>
+          <option value="IPC" selected>IPC — In-Process</option>
+          <option value="OQC">OQC — Outgoing</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Defect Type</label>
+        <select id="field-ncr-defect"><option value="">— select —</option></select>
+      </div>
+      <div class="field-group">
+        <label>Severity (auto-filled)</label>
+        <input type="text" id="field-ncr-severity" readonly>
+      </div>
+      <div class="field-group">
+        <label>Qty Affected</label>
+        <input type="number" id="field-ncr-qty" min="1">
+      </div>
+      <div class="field-group">
+        <label>Disposition</label>
+        <select id="field-ncr-disposition">
+          <option value="Rework">Rework</option>
+          <option value="Reject">Reject</option>
+          <option value="Accept-on-deviation">Accept-on-deviation</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Detected By</label>
+        <input type="text" id="field-ncr-detected-by">
+      </div>
+      <div class="field-group">
+        <label>Remarks</label>
+        <input type="text" id="field-ncr-remarks" placeholder="Optional">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" onclick="NCR.submitNCR()">Save NCR</button>
+    </div>
+  </div>
+
+  <!-- Detail Panel -->
+  <div class="form-panel" id="detail-panel">
+    <div class="form-header">
+      <button class="back-btn" id="detail-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="form-title">NCR Detail</span>
+    </div>
+    <div class="form-body" id="detail-body"></div>
+    <div class="form-actions" id="detail-actions"></div>
   </div>
 
   <div class="spinner-overlay hidden" id="spinner"><div class="spinner"></div></div>
@@ -45,13 +156,13 @@
   <script src="js/api.js" defer></script>
   <script src="js/auth.js" defer></script>
   <script src="js/lang.js" defer></script>
+  <script src="js/ncr.js" defer></script>
   <script>
     window.addEventListener('DOMContentLoaded', () => {
-      const session = Auth.get();
-      if (!session) { Auth.requireLogin(); return; }
-      document.getElementById('back-to-app').addEventListener('click', () => window.location.href = 'app.html');
-      const langBtn = document.getElementById('lang-toggle');
-      langBtn.textContent = (session.lang || 'en').toUpperCase();
+      (async () => {
+        await Api.init();
+        await NCR.init();
+      })();
     });
   </script>
 </body>
