@@ -94,6 +94,7 @@ function doGet(e) {
       if (action === 'saveBatch')        return respond(saveBatch(data));
       if (action === 'closeBatch')       return respond(closeBatch(data));
       if (action === 'saveQualityCheck') return respond(saveQualityCheck(data));
+      if (action === 'saveNCR') return respond(saveNCR(data));
       if (action === 'saveSO')           return respond(saveSO(data));
       if (action === 'saveDispatch')     return respond(saveDispatch(data));
       if (action === 'updateRecord') {
@@ -114,6 +115,7 @@ function doGet(e) {
     if (action === 'getQualityParams') return respond(getQualityParams(e.parameter));
     if (action === 'getInspectionParams') return respond(getInspectionParams(e.parameter));
     if (action === 'getDefectCatalogue')  return respond(getDefectCatalogue());
+    if (action === 'getNCRList') return respond(getNCRList(e.parameter));
 
     return respond({ success: false, error: 'unknown_action' });
   } catch (err) {
@@ -889,6 +891,81 @@ function getInspectionParams(params) {
 
 function getDefectCatalogue() {
   return { success: true, data: DEFECT_CATALOGUE };
+}
+
+function saveNCR(data) {
+  var authError = requireRole(data, ['director','qmr','supervisor','quality_inspector']);
+  if (authError) return { success: false, error: authError };
+
+  var fieldError = validateFields(data, ['batch_id','defect_type','qty_affected','disposition']);
+  if (fieldError) return { success: false, error: fieldError };
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ncrSheet = ss.getSheetByName('NCR_Log');
+  if (!ncrSheet) {
+    ncrSheet = ss.insertSheet('NCR_Log');
+    const hdrs = ['ncr_id','date','batch_id','stage','defect_type','severity','qty_affected','disposition','detected_by','remarks','status','capa_required','capa_trigger_reason','created_by','created_at'];
+    ncrSheet.getRange(1,1,1,hdrs.length).setValues([hdrs]);
+    ncrSheet.setFrozenRows(1);
+  }
+
+  const now = new Date();
+  const yymm = String(now.getFullYear()).slice(2) + String(now.getMonth()+1).padStart(2,'0');
+  const allRows = ncrSheet.getDataRange().getValues();
+  const monthPrefix = 'YPP-NCR-' + yymm + '-';
+  const monthCount = allRows.slice(1).filter(r => String(r[0]).startsWith(monthPrefix)).length;
+  const ncrId = monthPrefix + String(monthCount + 1).padStart(3,'0');
+
+  const today = now.toISOString().slice(0,10);
+  const severity = data.severity || '';
+
+  var capaRequired = false;
+  var capaTriggerReason = '';
+  if (severity === 'Critical') {
+    capaRequired = true;
+    capaTriggerReason = 'Critical defect detected (CT002)';
+  } else if (data.disposition === 'Reject') {
+    const recentRows = allRows.slice(Math.max(1, allRows.length - 30));
+    const rejectCount = recentRows.filter(r => r[7] === 'Reject').length;
+    if (rejectCount >= 5) {
+      capaRequired = true;
+      capaTriggerReason = 'Rejection rate exceeds threshold in recent NCRs (CT003)';
+    }
+  }
+
+  ncrSheet.appendRow([
+    ncrId,
+    data.date || today,
+    data.batch_id,
+    data.stage || '',
+    data.defect_type,
+    severity,
+    Number(data.qty_affected),
+    data.disposition,
+    data.detected_by || '',
+    data.remarks || '',
+    'Open',
+    capaRequired,
+    capaTriggerReason,
+    data.userId || '',
+    today
+  ]);
+
+  return { success: true, ncr_id: ncrId, capa_required: capaRequired, capa_trigger_reason: capaTriggerReason };
+}
+
+function getNCRList(params) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ncrSheet = ss.getSheetByName('NCR_Log');
+  if (!ncrSheet) return { success: true, data: [] };
+  const rows = ncrSheet.getDataRange().getValues();
+  if (rows.length < 2) return { success: true, data: [] };
+  const headers = rows[0];
+  let data = rows.slice(1).map(row => rowToObj(headers, row));
+  if (params.batch_id) data = data.filter(r => String(r.batch_id) === String(params.batch_id));
+  if (params.stage)    data = data.filter(r => r.stage === params.stage);
+  if (params.status)   data = data.filter(r => r.status === params.status);
+  return { success: true, data: data };
 }
 
 // ── Quality / IPQC ───────────────────────────────────────────────────────────
