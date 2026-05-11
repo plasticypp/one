@@ -42,18 +42,18 @@ const KPI = (() => {
 
   function renderStats(d) {
     const items = [
-      { label: 'Active Batches',     value: d.activeBatches,     color: '#EA580C' },
-      { label: 'Open Breakdowns',    value: d.openBreakdowns,    color: d.openBreakdowns  > 0 ? '#dc2626' : '#16a34a' },
-      { label: 'Open CAPAs',         value: d.openCapas,         color: d.openCapas       > 0 ? '#d97706' : '#16a34a' },
-      { label: 'Overdue Compliance', value: d.overdueCompliance, color: d.overdueCompliance > 0 ? '#dc2626' : '#16a34a' },
-      { label: 'Low Stock Items',    value: d.lowStockCount,     color: d.lowStockCount   > 0 ? '#d97706' : '#16a34a' },
-      { label: 'Overdue PMs',        value: d.overduePMs,        color: d.overduePMs      > 0 ? '#d97706' : '#16a34a' },
-      { label: 'Open Complaints',    value: d.openComplaints,    color: d.openComplaints  > 0 ? '#dc2626' : '#16a34a' }
+      { label: 'Active Batches',     value: d.activeBatches,      mod: 'neutral' },
+      { label: 'Open Breakdowns',    value: d.openBreakdowns,     mod: d.openBreakdowns    > 0 ? 'error'  : 'ok' },
+      { label: 'Open CAPAs',         value: d.openCapas,          mod: d.openCapas         > 0 ? 'warn'   : 'ok' },
+      { label: 'Overdue Compliance', value: d.overdueCompliance,  mod: d.overdueCompliance > 0 ? 'error'  : 'ok' },
+      { label: 'Low Stock Items',    value: d.lowStockCount,      mod: d.lowStockCount     > 0 ? 'warn'   : 'ok' },
+      { label: 'Overdue PMs',        value: d.overduePMs,         mod: d.overduePMs        > 0 ? 'warn'   : 'ok' },
+      { label: 'Open Complaints',    value: d.openComplaints,     mod: d.openComplaints    > 0 ? 'error'  : 'ok' }
     ];
     document.getElementById('stat-grid').innerHTML = items.map(i => `
-      <div style="background:var(--color-surface);border-radius:var(--radius-md);padding:var(--space-4);border-left:4px solid ${i.color};">
-        <div style="font-size:2rem;font-weight:700;color:${i.color};line-height:1;">${i.value ?? '—'}</div>
-        <div style="font-size:var(--text-xs);color:var(--color-text-muted);margin-top:var(--space-1);font-weight:500;text-transform:uppercase;letter-spacing:0.05em;">${i.label}</div>
+      <div class="stat-card stat-card--${i.mod}">
+        <div class="stat-card-value">${i.value ?? '—'}</div>
+        <div class="stat-card-label">${i.label}</div>
       </div>`).join('');
   }
 
