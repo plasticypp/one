@@ -31,6 +31,7 @@
   <div class="sub-tab-bar" style="margin-top:56px;">
     <button class="sub-tab active" data-pane="history">GRN History</button>
     <button class="sub-tab" data-pane="stock">Stock Levels</button>
+    <button class="sub-tab" data-pane="reorder">Reorder</button>
   </div>
 
   <!-- GRN History pane -->
@@ -77,6 +78,63 @@
           <tr><td colspan="4" class="text-center text-muted" style="padding:var(--space-8);">Loading…</td></tr>
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- Reorder Requests pane -->
+  <div id="pane-reorder" class="tab-pane" style="padding:var(--space-4);">
+    <div class="filter-bar" style="margin-bottom:var(--space-3);">
+      <select id="filter-rr-status">
+        <option value="all">All</option>
+        <option value="Open">Open</option>
+        <option value="Ordered">Ordered</option>
+      </select>
+      <button class="btn btn-sm" onclick="GRN.loadReorderList()">Apply</button>
+      <span class="filter-spacer"></span>
+      <button class="btn btn-primary btn-sm" onclick="GRN.openReorderForm()">+ New Request</button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>RR ID</th><th>Date</th><th>Material</th><th>Supplier</th><th>Qty (kg)</th><th>Status</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="rr-tbody">
+          <tr><td colspan="7" class="text-center text-muted" style="padding:var(--space-8);">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Reorder Form Panel -->
+  <div class="form-panel" id="rr-form-panel">
+    <div class="form-header">
+      <button class="back-btn" onclick="GRN.closeReorderForm()" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <span class="form-title">New Reorder Request</span>
+    </div>
+    <div class="form-body">
+      <div class="field-group">
+        <label>Material *</label>
+        <input type="text" id="rr-material" placeholder="e.g. HDPE Resin">
+      </div>
+      <div class="field-group">
+        <label>Supplier</label>
+        <select id="rr-supplier"><option value="">— select supplier —</option></select>
+      </div>
+      <div class="field-group">
+        <label>Qty Required (kg) *</label>
+        <input type="number" id="rr-qty" min="1" step="any">
+      </div>
+      <div class="field-group">
+        <label>Notes</label>
+        <input type="text" id="rr-notes" placeholder="Urgency, delivery instructions…">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary btn-full" onclick="GRN.submitReorderRequest()">Submit Request</button>
     </div>
   </div>
 
@@ -156,6 +214,7 @@
           btn.classList.add('active');
           document.getElementById('pane-' + btn.dataset.pane).classList.add('active');
           if (btn.dataset.pane === 'stock') GRN.loadStockLevels();
+          if (btn.dataset.pane === 'reorder') GRN.loadReorderList();
         });
       });
 

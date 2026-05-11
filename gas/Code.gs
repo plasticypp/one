@@ -198,6 +198,11 @@ function doGet(e) {
         return respond(deleteRecord(data));
       }
       if (action === 'completePM')            return respond(completePM(data));
+      if (action === 'savePMTask')            return respond(savePMTask(data));
+      if (action === 'deletePMTask')          return respond(deletePMTask(data));
+      if (action === 'planBatchFromSO')       return respond(planBatchFromSO(data));
+      if (action === 'saveReorderRequest')    return respond(saveReorderRequest(data));
+      if (action === 'closeReorderRequest')   return respond(closeReorderRequest(data));
       if (action === 'saveLegalEntry')        return respond(saveLegalEntry(data));
       if (action === 'saveQualityParam')      return respond(saveQualityParam(data));
       if (action === 'saveTrainingLog')       return respond(saveTrainingLog(data));
@@ -225,6 +230,8 @@ function doGet(e) {
     if (action === 'getTrainingPlanKB')    return respond({ success: true, data: TRAINING_PLAN_KB });
     if (action === 'getCalibrationList')   return respond(getCalibrationList(e.parameter));
     if (action === 'getInstrumentsKB')     return respond({ success: true, data: INSTRUMENTS_KB });
+    if (action === 'getReorderList')       return respond(getReorderList(e.parameter));
+    if (action === 'getSOListForPlanning') return respond(getSOListForPlanning());
 
     return respond({ success: false, error: 'unknown_action' });
   } catch (err) {
@@ -529,6 +536,183 @@ function completePM(data) {
       if (nextDueIdx  >= 0) sheet.getRange(i+1, nextDueIdx+1).setValue(nextDue.toISOString().slice(0,10));
       if (statusIdx   >= 0) sheet.getRange(i+1, statusIdx+1).setValue('Scheduled');
       if (remarksIdx  >= 0) sheet.getRange(i+1, remarksIdx+1).setValue(data.remarks || '');
+      return { success: true };
+    }
+  }
+  return { success: false, error: 'not_found' };
+}
+
+// ── PM Task CRUD ─────────────────────────────────────────────────────────────
+
+function savePMTask(data) {
+  var authError = requireRole(data, ['director','supervisor']);
+  if (authError) return { success: false, error: authError };
+  var fieldError = validateFields(data, ['equip_id','task_type','frequency_days']);
+  if (fieldError) return { success: false, error: fieldError };
+
+  const PM_HEADERS = ['PMID','EquipID','TaskType','Frequency','LastDone','NextDue','AssignedTo','Status','Remarks'];
+  const sheet = ensureSheet('PM_Schedule', PM_HEADERS);
+  const rows = sheet.getDataRange().getValues();
+  const today = new Date().toISOString().slice(0, 10);
+  const freq = Number(data.frequency_days) || 7;
+  const lastDone = data.last_done || '';
+  const nextDue = lastDone
+    ? (() => { const d = new Date(lastDone); d.setDate(d.getDate() + freq); return d.toISOString().slice(0, 10); })()
+    : (() => { const d = new Date(); d.setDate(d.getDate() + freq); return d.toISOString().slice(0, 10); })();
+
+  if (data.pm_id) {
+    // Update existing
+    const headers = rows[0];
+    const idIdx = headers.indexOf('PMID');
+    for (let i = 1; i < rows.length; i++) {
+      if (String(rows[i][idIdx]) === String(data.pm_id)) {
+        const set = (col, val) => { const idx = headers.indexOf(col); if (idx >= 0) sheet.getRange(i+1, idx+1).setValue(val); };
+        set('EquipID', data.equip_id);
+        set('TaskType', data.task_type);
+        set('Frequency', freq);
+        set('LastDone', lastDone);
+        set('NextDue', nextDue);
+        set('AssignedTo', data.assigned_to || '');
+        set('Remarks', data.remarks || '');
+        return { success: true, pm_id: data.pm_id };
+      }
+    }
+    return { success: false, error: 'not_found' };
+  }
+
+  const pmId = 'PM' + String(rows.length).padStart(3, '0');
+  sheet.appendRow([pmId, data.equip_id, data.task_type, freq, lastDone, nextDue, data.assigned_to || '', 'Scheduled', data.remarks || '']);
+  return { success: true, pm_id: pmId };
+}
+
+function deletePMTask(data) {
+  var authError = requireRole(data, ['director','supervisor']);
+  if (authError) return { success: false, error: authError };
+  const sheet = getSheet('PM_Schedule');
+  const rows = sheet.getDataRange().getValues();
+  const idIdx = rows[0].indexOf('PMID');
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][idIdx]) === String(data.pm_id)) {
+      sheet.deleteRow(i + 1);
+      return { success: true };
+    }
+  }
+  return { success: false, error: 'not_found' };
+}
+
+// ── SO → Batch Planning ───────────────────────────────────────────────────────
+
+function getSOListForPlanning() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const soSheet = ss.getSheetByName('SalesOrders');
+  if (!soSheet) return { success: true, data: [] };
+  const rows = soSheet.getDataRange().getValues();
+  if (rows.length < 2) return { success: true, data: [] };
+  const headers = rows[0];
+  const data = rows.slice(1)
+    .map(r => rowToObj(headers, r))
+    .filter(r => r.status !== 'Dispatched');
+  return { success: true, data };
+}
+
+function planBatchFromSO(data) {
+  var authError = requireRole(data, ['director','supervisor']);
+  if (authError) return { success: false, error: authError };
+  var fieldError = validateFields(data, ['so_id','product_id','planned_qty','machine_id']);
+  if (fieldError) return { success: false, error: fieldError };
+
+  const sheet = getSheet('BatchOrders');
+  const rows = sheet.getDataRange().getValues();
+  const rowCount = rows.length;
+  const batchId = 'BO' + String(rowCount).padStart(3, '0');
+  const today = new Date().toISOString().slice(0, 10);
+
+  sheet.appendRow([
+    batchId,
+    data.date || today,
+    data.product_id,
+    Number(data.planned_qty),
+    '',
+    data.machine_id,
+    data.operator_id || '',
+    'Planned',
+    data.start_time || '',
+    data.so_id
+  ]);
+
+  // Link back: write batch_id into SO row
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const soSheet = ss.getSheetByName('SalesOrders');
+  if (soSheet) {
+    const soRows = soSheet.getDataRange().getValues();
+    const soHeaders = soRows[0];
+    const soIdIdx = soHeaders.indexOf('so_id');
+    const batchColIdx = soHeaders.indexOf('batch_id');
+    if (batchColIdx >= 0) {
+      for (let i = 1; i < soRows.length; i++) {
+        if (String(soRows[i][soIdIdx]) === String(data.so_id)) {
+          soSheet.getRange(i + 1, batchColIdx + 1).setValue(batchId);
+          break;
+        }
+      }
+    }
+  }
+
+  return { success: true, batch_id: batchId };
+}
+
+// ── Reorder Requests ──────────────────────────────────────────────────────────
+
+function getReorderList(params) {
+  const RR_HEADERS = ['rr_id','date','material','supplier_id','requested_qty','status','notes','created_by','created_at'];
+  const sheet = ensureSheet('ReorderRequests', RR_HEADERS);
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length < 2) return { success: true, data: [] };
+  const headers = rows[0];
+  let data = rows.slice(1).map(r => rowToObj(headers, r));
+  if (params && params.status && params.status !== 'all') {
+    data = data.filter(r => r.status === params.status);
+  }
+  return { success: true, data };
+}
+
+function saveReorderRequest(data) {
+  var authError = requireRole(data, ['director','supervisor','store_dispatch','store']);
+  if (authError) return { success: false, error: authError };
+  var fieldError = validateFields(data, ['material','requested_qty']);
+  if (fieldError) return { success: false, error: fieldError };
+
+  const RR_HEADERS = ['rr_id','date','material','supplier_id','requested_qty','status','notes','created_by','created_at'];
+  const sheet = ensureSheet('ReorderRequests', RR_HEADERS);
+  const rows = sheet.getDataRange().getValues();
+  const rrId = 'RR' + String(rows.length).padStart(3, '0');
+  const today = new Date().toISOString().slice(0, 10);
+
+  sheet.appendRow([
+    rrId,
+    data.date || today,
+    data.material,
+    data.supplier_id || '',
+    Number(data.requested_qty),
+    'Open',
+    data.notes || '',
+    data.userId || '',
+    new Date().toISOString()
+  ]);
+  return { success: true, rr_id: rrId };
+}
+
+function closeReorderRequest(data) {
+  var authError = requireRole(data, ['director','supervisor','store_dispatch','store']);
+  if (authError) return { success: false, error: authError };
+  const sheet = getSheet('ReorderRequests');
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+  const idIdx = headers.indexOf('rr_id');
+  const statusIdx = headers.indexOf('status');
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][idIdx]) === String(data.rr_id)) {
+      sheet.getRange(i + 1, statusIdx + 1).setValue(data.status || 'Ordered');
       return { success: true };
     }
   }

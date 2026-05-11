@@ -5,9 +5,11 @@ const Dispatch = (() => {
   let session = null;
   let customerCache = [];
   let productCache = [];
+  let machineCache = [];
   let soCache = [];
   let dispatchingSOId = null;
   let editingSOId = null;
+  let planningSOId = null;
   let activeTab = 'so';
 
   // ── Init ──────────────────────────────────────────────────────────────────
@@ -68,12 +70,14 @@ const Dispatch = (() => {
   // ── Dropdowns ─────────────────────────────────────────────────────────────
 
   async function loadDropdowns() {
-    const [cRes, pRes] = await Promise.all([
+    const [cRes, pRes, mRes] = await Promise.all([
       Api.get('getMasterDropdown', { entity: 'Customers' }),
-      Api.get('getMasterDropdown', { entity: 'Products' })
+      Api.get('getMasterDropdown', { entity: 'Products' }),
+      Api.get('getMachineList')
     ]);
     customerCache = cRes.success ? cRes.data : [];
     productCache  = pRes.success ? pRes.data : [];
+    machineCache  = mRes.success ? mRes.data : [];
     populateFormDropdowns();
   }
 
@@ -136,6 +140,7 @@ const Dispatch = (() => {
       const productName  = (productCache.find(p => String(p.id) === String(r.product_id)) || {}).name  || r.product_id;
       const remaining    = (r.qty_ordered || 0) - (r.qty_dispatched || 0);
       const canDispatch  = r.status !== 'Dispatched';
+      const canPlanBatch = r.status === 'Pending' && !r.batch_id;
       const tr = document.createElement('tr');
       tr.style.cursor = 'pointer';
       tr.innerHTML = `
@@ -147,7 +152,10 @@ const Dispatch = (() => {
         <td>${r.qty_dispatched || 0}</td>
         <td>${remaining}</td>
         <td>${statusChip(r.status)}</td>
-        <td>${canDispatch ? `<button class="btn-dispatch" onclick="event.stopPropagation();Dispatch.dispatchAction('${r.so_id}','${r.product_id}')">Dispatch</button>` : '—'}</td>
+        <td style="white-space:nowrap;">
+          ${canPlanBatch ? `<button class="btn-sm" style="background:#0288d1;color:#fff;margin-right:4px;" onclick="event.stopPropagation();Dispatch.openPlanBatchPanel('${r.so_id}')">Plan Batch</button>` : ''}
+          ${canDispatch ? `<button class="btn-dispatch" onclick="event.stopPropagation();Dispatch.dispatchAction('${r.so_id}','${r.product_id}')">Dispatch</button>` : '—'}
+        </td>
       `;
       tr.addEventListener('click', (e) => {
         if (e.target.closest('button')) return;
@@ -225,6 +233,62 @@ const Dispatch = (() => {
     } finally {
       showSpinner(false);
     }
+  }
+
+  // ── Plan Batch Panel ──────────────────────────────────────────────────────
+
+  function openPlanBatchPanel(soId) {
+    planningSOId = soId;
+    const so = soCache.find(s => String(s.so_id) === String(soId));
+    if (!so) return;
+    const productName = (productCache.find(p => String(p.id) === String(so.product_id)) || {}).name || so.product_id;
+    const machineOpts = machineCache.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+    const panel = document.getElementById('plan-batch-panel');
+    if (!panel) return;
+    document.getElementById('plan-so-display').value = soId;
+    document.getElementById('plan-product-display').value = productName;
+    document.getElementById('plan-qty').value = (so.qty_ordered || '') - (so.qty_dispatched || 0);
+    document.getElementById('plan-date').value = new Date().toISOString().slice(0, 10);
+    const machineSel = document.getElementById('plan-machine');
+    machineSel.innerHTML = '<option value="">— select machine —</option>' + machineOpts;
+    slideFormIn();
+    document.getElementById('main-content').classList.remove('slide-out');
+    document.getElementById('form-panel').classList.remove('slide-in');
+    panel.classList.add('slide-in');
+    document.getElementById('main-content').classList.add('slide-out');
+  }
+
+  function slidePlanBatchPanelOut() {
+    document.getElementById('main-content').classList.remove('slide-out');
+    document.getElementById('plan-batch-panel').classList.remove('slide-in');
+    planningSOId = null;
+  }
+
+  async function submitPlanBatch() {
+    const machineId  = document.getElementById('plan-machine').value;
+    const plannedQty = document.getElementById('plan-qty').value;
+    const date       = document.getElementById('plan-date').value;
+    if (!machineId) { showToast('Select a machine'); return; }
+    if (!plannedQty || Number(plannedQty) <= 0) { showToast('Enter planned quantity'); return; }
+    const so = soCache.find(s => String(s.so_id) === String(planningSOId));
+    showSpinner(true);
+    try {
+      const res = await Api.post('planBatchFromSO', {
+        so_id:       planningSOId,
+        product_id:  so ? so.product_id : '',
+        planned_qty: Number(plannedQty),
+        machine_id:  machineId,
+        date,
+        userId:      Auth.getUserId()
+      });
+      if (res.success) {
+        showToast('Batch ' + res.batch_id + ' planned — go to Production');
+        slidePlanBatchPanelOut();
+        await loadSOList();
+      } else {
+        showToast('Error: ' + (res.error || 'plan failed'));
+      }
+    } finally { showSpinner(false); }
   }
 
   // ── Dispatch Action Panel ─────────────────────────────────────────────────
@@ -534,9 +598,10 @@ const Dispatch = (() => {
     setTimeout(() => t.classList.remove('show'), 2500);
   }
 
-  return { init, loadSOList, submitSO, dispatchAction, submitDispatch, submitDispatchAction, closeDispatchActionPanel, editSO, deleteSO, openBatchSelectPanel, selectBatch };
+  return { init, loadSOList, submitSO, dispatchAction, submitDispatch, submitDispatchAction, closeDispatchActionPanel, editSO, deleteSO, openBatchSelectPanel, selectBatch, openPlanBatchPanel, slidePlanBatchPanelOut, submitPlanBatch };
 })();
 
 // Global shims for inline onclick handlers
 function submitDispatchAction() { Dispatch.submitDispatchAction(); }
 function closeDispatchActionPanel() { Dispatch.closeDispatchActionPanel(); }
+function submitPlanBatch() { Dispatch.submitPlanBatch(); }

@@ -4,6 +4,7 @@ const GRN = (() => {
   let supplierCache = [];
   let materialCache = [];
   let grnCache = [];
+  let rrCache = [];
   let editingGrnId = null;
 
   async function init() {
@@ -226,6 +227,101 @@ const GRN = (() => {
       </tr>`).join('');
   }
 
+  // ── Reorder Requests ──────────────────────────────────────────────────────
+
+  async function loadReorderList() {
+    showSpinner(true);
+    try {
+      const statusEl = document.getElementById('filter-rr-status');
+      const status = statusEl ? statusEl.value : 'all';
+      const res = await Api.get('getReorderList', { status });
+      rrCache = res.success ? res.data : [];
+      renderReorderTable(rrCache);
+    } finally {
+      showSpinner(false);
+    }
+  }
+
+  function renderReorderTable(rows) {
+    const tbody = document.getElementById('rr-tbody');
+    if (!tbody) return;
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted" style="padding:var(--space-8);">No reorder requests</td></tr>';
+      return;
+    }
+    tbody.innerHTML = '';
+    const canAct = ['director','supervisor','store','store_dispatch'].includes(session.role);
+    rows.forEach(r => {
+      const supplierName = (supplierCache.find(s => String(s.id) === String(r.supplier_id)) || {}).name || (r.supplier_id || '—');
+      const statusClass = r.status === 'Open' ? 'chip-ng' : r.status === 'Ordered' ? 'chip-ok' : '';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-weight:600">${r.rr_id || ''}</td>
+        <td>${String(r.date || '').slice(0,10)}</td>
+        <td>${r.material || ''}</td>
+        <td>${supplierName}</td>
+        <td><strong>${r.requested_qty || ''}</strong> kg</td>
+        <td><span class="result-chip ${statusClass}">${r.status || ''}</span></td>
+        <td>${canAct && r.status === 'Open'
+          ? `<button class="btn-sm" onclick="GRN.markOrdered('${r.rr_id}')">Mark Ordered</button>`
+          : ''}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function openReorderForm() {
+    const supplierOpts = supplierCache.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+    const panel = document.getElementById('rr-form-panel');
+    if (!panel) return;
+    document.getElementById('rr-material').value = '';
+    document.getElementById('rr-qty').value = '';
+    document.getElementById('rr-notes').value = '';
+    const sel = document.getElementById('rr-supplier');
+    sel.innerHTML = '<option value="">— select supplier —</option>' + supplierOpts;
+    panel.classList.add('slide-in');
+    document.getElementById('form-panel').classList.remove('slide-in');
+  }
+
+  function closeReorderForm() {
+    document.getElementById('rr-form-panel').classList.remove('slide-in');
+  }
+
+  async function submitReorderRequest() {
+    const material     = document.getElementById('rr-material').value.trim();
+    const supplier_id  = document.getElementById('rr-supplier').value;
+    const requested_qty = document.getElementById('rr-qty').value;
+    const notes        = document.getElementById('rr-notes').value.trim();
+    if (!material || !requested_qty || Number(requested_qty) <= 0) {
+      showToast('Material and qty required');
+      return;
+    }
+    showSpinner(true);
+    try {
+      const res = await Api.post('saveReorderRequest', {
+        material, supplier_id, requested_qty: Number(requested_qty), notes,
+        userId: Auth.getUserId()
+      });
+      if (res.success) {
+        showToast('Reorder request saved — ' + res.rr_id);
+        closeReorderForm();
+        await loadReorderList();
+      } else {
+        showToast('Error: ' + (res.error || 'save failed'));
+      }
+    } finally { showSpinner(false); }
+  }
+
+  async function markOrdered(rrId) {
+    if (!confirm('Mark RR ' + rrId + ' as Ordered?')) return;
+    showSpinner(true);
+    try {
+      const res = await Api.post('closeReorderRequest', { rr_id: rrId, status: 'Ordered', userId: Auth.getUserId() });
+      if (res.success) { showToast('Marked as Ordered'); await loadReorderList(); }
+      else showToast('Error: ' + res.error);
+    } finally { showSpinner(false); }
+  }
+
   function slideFormIn()  { document.getElementById('form-panel').classList.add('slide-in'); }
   function slideFormOut() {
     document.getElementById('form-panel').classList.remove('slide-in');
@@ -249,5 +345,5 @@ const GRN = (() => {
     t._timer = setTimeout(() => { t.className = 'toast'; }, 2500);
   }
 
-  return { init, loadGRNList, loadStockLevels, editGRN, deleteGRN };
+  return { init, loadGRNList, loadStockLevels, editGRN, deleteGRN, loadReorderList, openReorderForm, closeReorderForm, submitReorderRequest, markOrdered };
 })();

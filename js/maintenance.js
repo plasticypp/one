@@ -4,8 +4,10 @@ const Maintenance = (() => {
   let activeTab = 'breakdowns';
   let equipDropdown = [];
   let bdCache = [];
+  let pmCache = [];
   let resolvingBdId = null;
   let editingBreakdownId = null;
+  let editingPMId = null;
 
   async function init() {
     session = Auth.get();
@@ -29,7 +31,9 @@ const Maintenance = (() => {
     const resolveBackBtn = document.getElementById('resolve-back-btn');
     if (resolveBackBtn) resolveBackBtn.addEventListener('click', slideResolvePanelOut);
     document.getElementById('detail-back').addEventListener('click', slideDetailOut);
-    document.getElementById('fab').addEventListener('click', openBreakdownForm);
+    document.getElementById('fab').addEventListener('click', () => {
+      if (activeTab === 'pm') openPMForm(); else openBreakdownForm();
+    });
     const langBtn = document.getElementById('lang-toggle');
     langBtn.textContent = Lang.getCurrent().toUpperCase();
     langBtn.addEventListener('click', async () => {
@@ -52,6 +56,10 @@ const Maintenance = (() => {
         document.getElementById('fab').classList.toggle('hidden', activeTab !== 'breakdowns');
         if (activeTab === 'pm') {
           await loadPMSchedule();
+          document.getElementById('fab').classList.remove('hidden');
+          document.getElementById('fab').onclick = openPMForm;
+        } else {
+          document.getElementById('fab').onclick = openBreakdownForm;
         }
       });
     });
@@ -306,8 +314,8 @@ const Maintenance = (() => {
     showSpinner(true);
     try {
       const res = await Api.get('getPMSchedule');
-      const records = res.success ? res.data : [];
-      renderPMSchedule(records);
+      pmCache = res.success ? res.data : [];
+      renderPMSchedule(pmCache);
     } finally {
       showSpinner(false);
     }
@@ -330,6 +338,7 @@ const Maintenance = (() => {
       const tr = document.createElement('tr');
       if (isOverdue) tr.classList.add('row-overdue');
       else if (isUpcoming) tr.classList.add('row-upcoming');
+      const canEdit = ['director','supervisor'].includes(session.role);
       tr.innerHTML = `
         <td>${r.PMID || ''}</td>
         <td>${r.EquipID || ''}</td>
@@ -338,10 +347,91 @@ const Maintenance = (() => {
         <td>${r.LastDone || ''}</td>
         <td>${r.NextDue || ''}</td>
         <td>${r.AssignedTo || ''}</td>
-        <td>${!isDone ? `<button class="btn-sm" onclick="Maintenance.completePM('${r.PMID}')">Done</button>` : ''}</td>
+        <td>
+          ${!isDone ? `<button class="btn-sm" onclick="Maintenance.completePM('${r.PMID}')">Done</button>` : ''}
+          ${canEdit ? `<button class="btn-sm" onclick="event.stopPropagation();Maintenance.editPM('${r.PMID}')" style="margin-left:4px;">✏</button>` : ''}
+          ${canEdit ? `<button class="btn-sm btn-danger" onclick="event.stopPropagation();Maintenance.deletePM('${r.PMID}')" style="margin-left:2px;">✕</button>` : ''}
+        </td>
       `;
       tbody.appendChild(tr);
     });
+  }
+
+  async function openPMForm(pmId) {
+    editingPMId = pmId || null;
+    if (equipDropdown.length === 0) {
+      const res = await Api.get('getMachineList');
+      equipDropdown = res.success ? res.data : [];
+    }
+    const existing = pmId ? pmCache.find(p => String(p.PMID) === String(pmId)) : null;
+    const machineOpts = equipDropdown.map(e => `<option value="${e.id}" ${existing && existing.EquipID === e.id ? 'selected' : ''}>${e.name}</option>`).join('');
+    document.getElementById('form-title').textContent = pmId ? 'Edit PM Task' : 'Add PM Task';
+    document.getElementById('form-body').innerHTML = `
+      <div class="field-group">
+        <label>Machine / Equipment</label>
+        <select data-key="equip_id"><option value="">— select —</option>${machineOpts}</select>
+      </div>
+      <div class="field-group">
+        <label>Task Description</label>
+        <input type="text" data-key="task_type" value="${existing ? existing.TaskType || '' : ''}" placeholder="e.g. Hydraulic oil check">
+      </div>
+      <div class="field-group">
+        <label>Frequency (days)</label>
+        <input type="number" data-key="frequency_days" value="${existing ? existing.Frequency || 7 : 7}" min="1">
+      </div>
+      <div class="field-group">
+        <label>Last Done</label>
+        <input type="date" data-key="last_done" value="${existing ? existing.LastDone || '' : ''}">
+      </div>
+      <div class="field-group">
+        <label>Assigned To</label>
+        <input type="text" data-key="assigned_to" value="${existing ? existing.AssignedTo || '' : ''}" placeholder="Technician name">
+      </div>
+      <div class="field-group">
+        <label>Remarks</label>
+        <input type="text" data-key="remarks" value="${existing ? existing.Remarks || '' : ''}" placeholder="Optional">
+      </div>
+    `;
+    document.getElementById('form-actions').innerHTML = `
+      <button class="btn-primary" id="submit-pm-btn">Save</button>
+    `;
+    document.getElementById('submit-pm-btn').addEventListener('click', submitPMTask);
+    slideFormIn();
+  }
+
+  async function submitPMTask() {
+    const data = {};
+    document.querySelectorAll('#form-body [data-key]').forEach(el => { data[el.dataset.key] = el.value; });
+    if (!data.equip_id) { showToast('Select a machine'); return; }
+    if (!data.task_type) { showToast('Task description required'); return; }
+    showSpinner(true);
+    try {
+      const payload = { ...data, userId: Auth.getUserId() };
+      if (editingPMId) payload.pm_id = editingPMId;
+      const res = await Api.post('savePMTask', payload);
+      if (res.success) {
+        showToast(editingPMId ? 'PM task updated' : 'PM task added');
+        editingPMId = null;
+        slideFormOut();
+        await loadPMSchedule();
+      } else {
+        showToast('Error: ' + (res.error || 'save failed'));
+      }
+    } finally { showSpinner(false); }
+  }
+
+  function editPM(pmId) {
+    openPMForm(pmId);
+  }
+
+  async function deletePM(pmId) {
+    if (!confirm('Delete PM task ' + pmId + '?')) return;
+    showSpinner(true);
+    try {
+      const res = await Api.post('deletePMTask', { pm_id: pmId, userId: Auth.getUserId() });
+      if (res.success) { showToast('PM task deleted'); await loadPMSchedule(); }
+      else showToast('Delete failed: ' + res.error);
+    } finally { showSpinner(false); }
   }
 
   async function completePM(pmId) {
@@ -363,6 +453,7 @@ const Maintenance = (() => {
 
   function slideFormOut() {
     editingBreakdownId = null;
+    editingPMId = null;
     const titleEl = document.getElementById('form-title');
     if (titleEl) titleEl.textContent = 'Log Breakdown';
     document.getElementById('list-panel').classList.remove('slide-out');
@@ -403,7 +494,7 @@ const Maintenance = (() => {
     setTimeout(() => t.classList.remove('show'), 2500);
   }
 
-  return { init, resolveBreakdown, submitResolve, completePM, editBreakdown, deleteBreakdown, _loadBreakdowns: loadBreakdowns };
+  return { init, resolveBreakdown, submitResolve, completePM, editBreakdown, deleteBreakdown, editPM, deletePM, _loadBreakdowns: loadBreakdowns };
 })();
 
 // Global shim so onclick="submitResolve()" in HTML works
