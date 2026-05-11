@@ -1047,7 +1047,49 @@ function saveQualityCheck(data) {
     data.remarks || '',
     stage
   ]);
+  upsertBatchTraceability({
+    batch_no:        data.batch_id,
+    product_id:      data.product_id || '',
+    production_date: data.check_date || today,
+    shift:           data.shift || '',
+    machine_id:      data.machine_id || '',
+    mould_id:        data.mould_id || '',
+    rm_lot_no:       data.rm_lot_no || '',
+    stage:           stage,
+    result:          result
+  });
   return { success: true, check_id: checkId, result };
+}
+
+function upsertBatchTraceability(data) {
+  const BT_HEADERS = ['batch_no','product_id','production_date','shift','machine_id','mould_id','rm_lot_no','oqc_status','dispatch_id','created_at'];
+  const sheet = ensureSheet('BatchTraceability', BT_HEADERS);
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+  const batchNoIdx = headers.indexOf('batch_no');
+  const oqcIdx     = headers.indexOf('oqc_status');
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][batchNoIdx]) === String(data.batch_no)) {
+      if (data.stage === 'OQC' && data.result) {
+        sheet.getRange(i + 1, oqcIdx + 1).setValue(data.result);
+      }
+      return;
+    }
+  }
+
+  sheet.appendRow([
+    data.batch_no,
+    data.product_id || '',
+    data.production_date || new Date().toISOString().slice(0, 10),
+    data.shift || '',
+    data.machine_id || '',
+    data.mould_id || '',
+    data.rm_lot_no || '',
+    data.stage === 'OQC' ? (data.result || '') : '',
+    '',
+    new Date().toISOString()
+  ]);
 }
 
 function getQualitySummary() {
