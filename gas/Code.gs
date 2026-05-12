@@ -1225,7 +1225,7 @@ function saveNCR(data) {
   var ncrSheet = ss.getSheetByName('NCR_Log');
   if (!ncrSheet) {
     ncrSheet = ss.insertSheet('NCR_Log');
-    const hdrs = ['ncr_id','date','batch_id','stage','defect_type','severity','qty_affected','disposition','detected_by','remarks','status','capa_required','capa_trigger_reason','created_by','created_at'];
+    const hdrs = ['ncr_id','date','batch_id','stage','defect_type','severity','qty_affected','disposition','detected_by','remarks','status','capa_required','capa_trigger_reason','capa_id','created_by','created_at'];
     ncrSheet.getRange(1,1,1,hdrs.length).setValues([hdrs]);
     ncrSheet.setFrozenRows(1);
   }
@@ -1312,6 +1312,17 @@ function saveNCR(data) {
   }
 
   return { success: true, ncr_id: ncrId, capa_required: capaRequired, capa_trigger_reason: capaTriggerReason, capa_id: capaId };
+}
+
+function setupNCRLog() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('NCR_Log');
+  if (sheet) { Logger.log('NCR_Log already exists'); return; }
+  sheet = ss.insertSheet('NCR_Log');
+  const hdrs = ['ncr_id','date','batch_id','stage','defect_type','severity','qty_affected','disposition','detected_by','remarks','status','capa_required','capa_trigger_reason','capa_id','created_by','created_at'];
+  sheet.getRange(1,1,1,hdrs.length).setValues([hdrs]);
+  sheet.setFrozenRows(1);
+  Logger.log('NCR_Log sheet created');
 }
 
 function getNCRList(params) {
