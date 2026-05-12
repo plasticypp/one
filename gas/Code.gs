@@ -97,11 +97,12 @@ function validateSession(params) {
   var sheet = ss.getSheetByName('Users');
   if (!sheet) return { valid: false, error: 'Users sheet not found' };
   var data = sheet.getDataRange().getValues();
-  var headers = data[0];
-  var idIdx = headers.indexOf('user_id');
+  var headers = data[0].map(function(h) { return String(h).toLowerCase(); });
+  var idIdx     = headers.indexOf('userid') !== -1 ? headers.indexOf('userid') : headers.indexOf('user_id');
   var activeIdx = headers.indexOf('active');
-  var roleIdx = headers.indexOf('role');
-  var nameIdx = headers.indexOf('name');
+  var roleIdx   = headers.indexOf('role');
+  var nameIdx   = headers.indexOf('name');
+  if (idIdx === -1) return { valid: false, error: 'Users sheet missing ID column' };
   for (var i = 1; i < data.length; i++) {
     if (String(data[i][idIdx]) === String(params.userId)) {
       var isActive = activeIdx !== -1 ? data[i][activeIdx] : true;
@@ -3480,6 +3481,25 @@ function seedMasters() {
     rows.forEach(r => sheet.appendRow(r));
     log.push(sheetName + ': seeded ' + rows.length + ' rows');
   }
+
+  // Users sheet — seed with hashed PINs (default PIN: 1234 for all)
+  (function() {
+    const usersSheet = ss.getSheetByName('Users');
+    if (!usersSheet) return;
+    const existing = usersSheet.getDataRange().getValues();
+    if (existing.length > 1) { log.push('Users: skipped (' + (existing.length-1) + ' rows exist)'); return; }
+    const pin1234 = hashPin('1234');
+    const usersData = [
+      ['P001','Tushar Patil',  'director',  pin1234, 'director',   'en', true, 0, ''],
+      ['P002','PL Pradhan',    'qmr',       pin1234, 'qmr',        'en', true, 0, ''],
+      ['P003','Mahesh Sawant', 'supervisor',pin1234, 'supervisor', 'en', true, 0, ''],
+      ['P004','Suresh Kamble', 'operator',  pin1234, 'operator',   'en', true, 0, ''],
+      ['P005','Anjali Desai',  'store',     pin1234, 'store',      'en', true, 0, ''],
+      ['P006','Ramesh More',   'operator2', pin1234, 'operator',   'en', true, 0, '']
+    ];
+    usersData.forEach(r => usersSheet.appendRow(r));
+    log.push('Users: seeded ' + usersData.length + ' rows');
+  })();
 
   safeWrite('Products',
     ['ProductID','SKU','Name','Capacity_ml','Material','HSN','Weight_g','WallThickness_mm','NeckSize_mm','Status'],
