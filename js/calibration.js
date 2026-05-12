@@ -133,6 +133,7 @@
     document.getElementById('cal-freq-display').textContent = '—';
     document.getElementById('cal-result').value = 'Pass';
     document.getElementById('cal-cert-no').value = '';
+    document.getElementById('cal-agency').value = '';
     document.getElementById('cal-done-by').value = '';
     document.getElementById('cal-remarks').value = '';
   }
@@ -148,6 +149,7 @@
     const date = document.getElementById('cal-date').value;
     const result = document.getElementById('cal-result').value;
     const certNo = document.getElementById('cal-cert-no').value.trim();
+    const agency = document.getElementById('cal-agency').value.trim();
     const doneBy = document.getElementById('cal-done-by').value.trim();
     const remarks = document.getElementById('cal-remarks').value.trim();
 
@@ -158,7 +160,7 @@
     try {
       const res = await Api.post('saveCalibrationLog', {
         userId: Auth.getUserId(), inst_id: instId, inst_name: instName,
-        calibration_date: date, result, certificate_no: certNo, done_by: doneBy, remarks
+        calibration_date: date, result, certificate_no: certNo, agency, done_by: doneBy, remarks
       });
       if (!res || !res.success) { UI.showToast(res?.error || 'Save failed', 'error'); return; }
       const inst = instruments.find(i => i.id === instId);

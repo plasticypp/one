@@ -106,6 +106,8 @@
       const supplierName = (supplierCache.find(s => String(s.id) === String(r.supplier_id)) || {}).name || r.supplier_id;
       const dateStr = r.date ? String(r.date).slice(0, 10) : '';
       const tr = document.createElement('tr');
+      const iqcStatus = r.iqc_status || 'Pending';
+      const iqcCls = iqcStatus === 'Accept' ? 'status-approved' : iqcStatus === 'Reject' ? 'status-rejected' : iqcStatus === 'Hold' ? 'status-hold' : 'status-pending';
       tr.innerHTML = `
         <td style="font-weight:600;font-size:var(--text-sm);">${r.grn_id || ''}</td>
         <td class="text-muted">${dateStr}</td>
@@ -113,6 +115,7 @@
         <td>${r.material || ''}</td>
         <td><strong>${r.qty_kg || ''}</strong> kg</td>
         <td class="text-muted">${r.lot_no || '—'}</td>
+        <td><span class="status-chip ${iqcCls}">${esc(iqcStatus)}</span></td>
       `;
       tbody.appendChild(tr);
     });
@@ -169,7 +172,7 @@
         else UI.showToast('GRN saved — ' + (res.grn_id || ''));
         await loadGRNList();
       } else {
-        errEl.textContent = res.error === 'internal_error' ? 'Save failed. Check Apps Script logs.' : (res.error || 'Save failed');
+        errEl.textContent = res.error === 'unapproved_supplier' ? 'Supplier not on Approved Supplier List. Contact QMR.' : res.error === 'internal_error' ? 'Save failed. Check Apps Script logs.' : (res.error || 'Save failed');
       }
     } finally {
       btn.disabled = false;
@@ -190,6 +193,7 @@
       <div class="detail-row"><span>Material</span><strong>${r.material || '—'}</strong></div>
       <div class="detail-row"><span>Lot No</span><strong>${r.lot_no || '—'}</strong></div>
       <div class="detail-row"><span>Qty Received</span><strong>${r.qty_kg ?? '—'} kg</strong></div>
+      <div class="detail-row"><span>IQC Status</span><strong>${r.iqc_status || 'Pending'}</strong></div>
     `;
     const canEdit = ['director','store','qmr'].includes(session.role);
     const iqcLink = `<a class="btn btn-secondary" href="quality.html?tab=iqc&lot=${encodeURIComponent(r.lot_no||'')}">Log IQC Check →</a>`;
@@ -226,7 +230,7 @@
 
   async function deleteGRN(grnId) {
     if (!confirm('Delete GRN ' + grnId + '?')) return;
-    const res = await Api.post('deleteRecord', { sheet: 'GRN', idCol: 'grn_id', idVal: grnId, userId: Auth.getUserId() });
+    const res = await Api.post('deleteRecord', { sheet: 'RMStock', idCol: 'grn_id', idVal: grnId, userId: Auth.getUserId() });
     if (res.success) { slideDetailOut(); await loadGRNList(); }
     else UI.showToast('Delete failed: ' + res.error);
   }

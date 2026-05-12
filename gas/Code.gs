@@ -1150,7 +1150,7 @@ function closeBatch(data) {
 
       // Param-log gate: warn if no param logs exist (director can override)
       if (data.override !== 'true') {
-        const plSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('ProductionLog');
+        const plSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Production_Log');
         if (plSheet) {
           const plRows = plSheet.getDataRange().getValues();
           if (plRows.length > 1) {
@@ -1874,7 +1874,7 @@ function seedQualityData() {
 function getCalibrationList(params) {
   var authErr = requireRole(params, ['director','qmr','supervisor']);
   if (authErr) return { success: false, error: authErr };
-  var sheet = ensureSheet('Calibration_Log', ['inst_id','inst_name','calibration_date','due_date','result','certificate_no','done_by','remarks']);
+  var sheet = ensureSheet('Calibration_Log', ['calib_id','inst_id','inst_name','calibration_date','due_date','result','certificate_no','agency','done_by','remarks']);
   var rows = sheet.getDataRange().getValues();
   if (rows.length <= 1) return { success: true, data: [] };
   var hdrs = rows[0];
@@ -1900,14 +1900,18 @@ function saveCalibrationLog(data) {
   dueDate.setMonth(dueDate.getMonth() + (inst ? inst.frequency_months : 12));
   var dueDateStr = Utilities.formatDate(dueDate, Session.getScriptTimeZone(), 'yyyy-MM-dd');
 
-  var sheet = ensureSheet('Calibration_Log', ['inst_id','inst_name','calibration_date','due_date','result','certificate_no','done_by','remarks']);
+  var sheet = ensureSheet('Calibration_Log', ['calib_id','inst_id','inst_name','calibration_date','due_date','result','certificate_no','agency','done_by','remarks']);
+  var existingRows = sheet.getDataRange().getValues();
+  var calibId = 'CAL' + String(existingRows.length).padStart(4, '0');
   sheet.appendRow([
+    calibId,
     data.inst_id,
     data.inst_name,
     data.calibration_date,
     dueDateStr,
     data.result,
     data.certificate_no || '',
+    data.agency || '',
     data.done_by,
     data.remarks || ''
   ]);
@@ -2084,10 +2088,10 @@ function createWorkbookSkeleton() {
     'Material_Issues':  ['IssueID','IssueDate','WorkOrderID','MaterialID','LotNo','QtyIssued_kg','IssuedBy','Remarks'],
     // Production
     'Work_Orders':      ['WOID','WODate','ProductID','MachineID','MouldID','TargetQty','Shift','OperatorID','SupervisorID','Status','StartTime','EndTime'],
-    'Production_Log':   ['LogID','WOID','BatchNo','LogTime','Zone1Temp','Zone2Temp','BlowPressure_bar','CycleTime_sec','ParissonWeight_g','Operator','Remarks'],
+    'Production_Log':   ['log_id','batch_id','log_time','zone1_temp','zone2_temp','blow_pressure_bar','cycle_time_sec','parison_weight_g','operator_id','remarks'],
     'Batch_Register':   ['BatchNo','ProductID','WOID','MachineID','MouldID','OperatorID','SupervisorID','ProdDate','Shift','QtyProduced','QtyRejected','QtyPassed','RMBatchNos','Status','IQCRef','IPCRef','OQCRef','DispatchRef'],
     // Quality
-    'IQC_Records':      ['IQCID','GRNID','MaterialID','LotNo','InspDate','InspectorID','MFI_Result','Density_Result','Visual_Result','COA_OK','LotLabel_OK','Decision','Remarks'],
+    'IQC_Records':      ['iqc_id','grn_id','lot_no','material','supplier_id','insp_date','inspector_id','mfi_result','density_result','visual_result','coa_ok','decision','remarks','released_by','released_at'],
     'IPC_Records':      ['IPCID','WOID','BatchNo','InspTime','InspectorID','Weight_g','WallThk_Shoulder','WallThk_Body','WallThk_Base','LeakTest','Height_mm','OD_mm','NeckOD_mm','CapFit','Decision','Remarks'],
     'OQC_Records':      ['OQCID','BatchNo','InspDate','InspectorID','WeightAQL','DimAQL','LeakAQL','VisualResult','LabelAQL','TorqueAQL','CartonQtyAQL','Decision','SampleSize','Remarks'],
     'Defect_Log':       ['DefectID','BatchNo','WOID','DefectCode','DefectName','Severity','QtyAffected','DetectedAt','OperatorID','InspectorID','RootCause','Action','Remarks'],
@@ -2102,7 +2106,7 @@ function createWorkbookSkeleton() {
     'Spare_Consumption':['ConsumID','BreakdownID','PMID','SpareID','QtyUsed','Date','TechnicianID','Remarks'],
     // Compliance
     'CAPA_Register':    ['CAPAID','CAPADate','Source','NCRRef','ProblemDesc','RootCause','CorrectiveAction','PreventiveAction','ResponsibleID','TargetDate','Status','ClosedDate','Effectiveness'],
-    'Calibration_Log':  ['CalibID','EquipID','CalibDate','Agency','CertNo','Result','NextDue','CertFile','Remarks'],
+    'Calibration_Log':  ['calib_id','inst_id','inst_name','calibration_date','due_date','result','certificate_no','agency','done_by','remarks'],
     'Training_Log':     ['TrainingID','Date','Topic','TrainerID','Participants','Method','EvalScore','Status','Remarks'],
     'Legal_Register':   ['LegalID','Act','Requirement','Applicability','ComplianceStatus','LastReview','NextReview','Remarks'],
     'KPI_Log':          ['LogID','LogDate','KPICode','KPIName','Value','Unit','Target','Period','RecordedBy'],
