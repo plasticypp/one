@@ -422,7 +422,7 @@
 
   // ── Detail Panel ──────────────────────────────────────────────────────────
 
-  function openBatchDetail(batchId) {
+  async function openBatchDetail(batchId) {
     const r = batchCache.find(b => String(b.batch_id) === String(batchId));
     if (!r) return;
     const pName = (productCache.find(p => String(p.id) === String(r.product_id)) || {}).name || r.product_id;
@@ -438,6 +438,7 @@
       <div class="detail-row"><span>Status</span><strong>${r.status}</strong></div>
       <div class="detail-row"><span>Start Time</span><strong>${r.start_time || '—'}</strong></div>
       <div class="detail-row"><span>End Time</span><strong>${r.end_time || '—'}</strong></div>
+      <div id="detail-issues-section"></div>
     `;
     const canEdit = ['director','supervisor'].includes(session.role) && r.status !== 'Closed';
     document.getElementById('detail-actions').innerHTML = canEdit
@@ -445,6 +446,29 @@
          <button class="btn-deactivate" onclick="Production.deleteBatch('${batchId}')">Delete</button>`
       : '';
     slideDetailIn();
+
+    // Async: load material issues
+    const miRes = await Api.get('getMaterialIssueByBatch', { batch_id: batchId });
+    const section = document.getElementById('detail-issues-section');
+    if (!section) return;
+    const issues = miRes.success ? miRes.data : [];
+    if (!issues.length) {
+      section.innerHTML = '<div style="margin-top:16px;font-size:var(--text-sm);color:var(--color-text-muted)">No materials issued for this batch.</div>';
+      return;
+    }
+    section.innerHTML = `
+      <div style="margin-top:16px;font-weight:600;font-size:var(--text-sm);border-top:1px solid var(--color-border);padding-top:12px;margin-bottom:8px">Materials Issued</div>
+      ${issues.map(i => `
+        <div style="display:flex;justify-content:space-between;font-size:var(--text-sm);padding:4px 0;border-bottom:1px solid var(--color-border-light)">
+          <div>
+            <div style="font-weight:500">${esc(i.material)} · ${esc(i.lot_no)}</div>
+            <div style="color:var(--color-text-muted);font-size:var(--text-xs)">${esc(i.grn_id)} · ${esc(i.status)}</div>
+          </div>
+          <div style="font-weight:700;white-space:nowrap">${esc(String(i.qty_issued_kg))} kg</div>
+        </div>`).join('')}
+      <div style="text-align:right;margin-top:6px;">
+        <a href="pickslip.html?batch_id=${encodeURIComponent(batchId)}" target="_blank" style="font-size:var(--text-sm);color:var(--color-primary)">View Pick Slip →</a>
+      </div>`;
   }
 
   function editBatch(batchId) {

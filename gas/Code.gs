@@ -4240,6 +4240,19 @@ function getPickSlip(params) {
   };
 }
 
+function getMaterialIssueByBatch(params) {
+  const batchId = params && params.batch_id;
+  if (!batchId) return { success: false, error: 'batch_id required' };
+  const sheet = ensureSheet('MaterialIssue', MI_HEADERS);
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length < 2) return { success: true, data: [] };
+  const headers = rows[0];
+  const data = rows.slice(1)
+    .map(r => rowToObj(headers, r))
+    .filter(r => String(r.batch_id) === String(batchId));
+  return { success: true, data };
+}
+
 function addBooked_qtyColumn() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName('RMStock');
