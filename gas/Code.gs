@@ -214,6 +214,7 @@ function doGet(e) {
       if (action === 'saveCalibrationLog')    return respond(saveCalibrationLog(data));
       if (action === 'saveIPC')               return respond(saveIPC(data));
       if (action === 'saveFQC')               return respond(saveFQC(data));
+      if (action === 'saveOQC')               return respond(saveOQC(data));
     }
 
     if (action === 'getQualityParams') return respond(getQualityParams(e.parameter));
@@ -3234,6 +3235,54 @@ function saveFQC(data) {
   ]);
 
   return { success: true, fqc_id: fqcId };
+}
+
+function saveOQC(data) {
+  var authError = requireRole(data, ['director','qmr','supervisor']);
+  if (authError) return { success: false, error: authError };
+  var fieldError = validateFields(data, ['batch_no','inspector_id','decision']);
+  if (fieldError) return { success: false, error: fieldError };
+
+  const OQC_HDR = ['OQCID','BatchNo','InspDate','InspectorID',
+    'SampleSize','VisualResult','visual_defects',
+    'dim_height_ok','dim_od_ok','dim_neck_ok',
+    'leak_test','drop_test','cap_fitment',
+    'aql_defects_found','aql_pass',
+    'hold_reason','Decision','Remarks','SavedAt'];
+  const sheet = ensureSheet('OQC_Records', OQC_HDR);
+  const rows  = sheet.getDataRange().getValues();
+  const oqcId = 'OQC' + String(rows.length).padStart(4, '0');
+  const today = new Date().toISOString().slice(0, 10);
+
+  sheet.appendRow([
+    oqcId, data.batch_no, data.insp_date || today, data.inspector_id,
+    Number(data.sample_size) || 0, data.visual_result || '',
+    data.visual_defects || '',
+    data.dim_height_ok || '', data.dim_od_ok || '', data.dim_neck_ok || '',
+    data.leak_test || '', data.drop_test || '', data.cap_fitment || '',
+    Number(data.aql_defects_found) || 0, data.aql_pass || '',
+    data.hold_reason || '', data.decision, data.remarks || '', today
+  ]);
+
+  // Update BatchTraceability oqc_status
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const btSheet = ss.getSheetByName('BatchTraceability');
+  if (btSheet) {
+    const btRows = btSheet.getDataRange().getValues();
+    const btHdrs = btRows[0];
+    const batchNoIdx  = btHdrs.indexOf('batch_no');
+    const oqcStatusIdx = btHdrs.indexOf('oqc_status');
+    if (batchNoIdx >= 0 && oqcStatusIdx >= 0) {
+      for (let i = 1; i < btRows.length; i++) {
+        if (String(btRows[i][batchNoIdx]) === String(data.batch_no)) {
+          btSheet.getRange(i + 1, oqcStatusIdx + 1).setValue(data.decision === 'OK' ? 'OK' : 'HOLD');
+          break;
+        }
+      }
+    }
+  }
+
+  return { success: true, oqc_id: oqcId, decision: data.decision };
 }
 
 function getFQCList(params) {

@@ -6,6 +6,7 @@
   let customerCache = [];
   let productCache = [];
   let machineCache = [];
+  let inspectorCache = [];
   let soCache = [];
   let dispatchingSOId = null;
   let editingSOId = null;
@@ -70,14 +71,16 @@
   // ── Dropdowns ─────────────────────────────────────────────────────────────
 
   async function loadDropdowns() {
-    const [cRes, pRes, mRes] = await Promise.all([
+    const [cRes, pRes, mRes, iRes] = await Promise.all([
       Api.get('getMasterDropdown', { entity: 'Customers' }),
       Api.get('getMasterDropdown', { entity: 'Products' }),
-      Api.get('getMachineList')
+      Api.get('getMachineList'),
+      Api.get('getMasterDropdown', { entity: 'Personnel' })
     ]);
-    customerCache = cRes.success ? cRes.data : [];
-    productCache  = pRes.success ? pRes.data : [];
-    machineCache  = mRes.success ? mRes.data : [];
+    customerCache  = cRes.success ? cRes.data : [];
+    productCache   = pRes.success ? pRes.data : [];
+    machineCache   = mRes.success ? mRes.data : [];
+    inspectorCache = iRes.success ? iRes.data : [];
     populateFormDropdowns();
   }
 
@@ -574,9 +577,114 @@
     document.getElementById('detail-panel').classList.remove('slide-in');
   }
 
+  function openOQCFromDispatch() {
+    const batchNo = (document.getElementById('dispatch-batch-no')?.value || '').trim();
+    if (!batchNo) { UI.showToast('Select a batch first'); return; }
+    openOQCPanel(batchNo);
+  }
+
+  // ── OQC Inspection Panel ──────────────────────────────────────────────────
+
+  function openOQCPanel(batchNo) {
+    const el = id => document.getElementById(id);
+    el('oqc-batch-no').value    = batchNo;
+    el('oqc-batch-display').value = batchNo;
+    el('oqc-insp-date').value   = new Date().toISOString().slice(0, 10);
+    el('oqc-visual-result').value = '';
+    el('oqc-visual-defects').value = '';
+    el('oqc-dim-height').value  = 'Pass';
+    el('oqc-dim-od').value      = 'Pass';
+    el('oqc-dim-neck').value    = 'Pass';
+    el('oqc-leak-test').value   = 'Pass';
+    el('oqc-drop-test').value   = 'Pass';
+    el('oqc-cap-fitment').value = 'Pass';
+    el('oqc-aql-defects').value = '0';
+    el('oqc-aql-pass').value    = 'Pass';
+    el('oqc-decision').value    = 'OK';
+    el('oqc-hold-reason').value = '';
+    el('oqc-hold-reason-row').style.display = 'none';
+    el('oqc-remarks').value     = '';
+    el('oqc-sample-size').value = '';
+
+    // Populate inspector dropdown
+    const sel = el('oqc-inspector');
+    sel.innerHTML = '<option value="">— select —</option>';
+    inspectorCache.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p.id;
+      o.textContent = p.name;
+      sel.appendChild(o);
+    });
+
+    // Toggle hold-reason on decision change
+    el('oqc-decision').onchange = function() {
+      el('oqc-hold-reason-row').style.display = this.value === 'HOLD' ? '' : 'none';
+    };
+
+    document.getElementById('oqc-panel').classList.add('slide-in');
+    document.getElementById('main-content').classList.add('slide-out');
+  }
+
+  function closeOQCPanel() {
+    document.getElementById('oqc-panel').classList.remove('slide-in');
+    document.getElementById('main-content').classList.remove('slide-out');
+  }
+
+  async function submitOQC() {
+    const g = id => document.getElementById(id).value;
+    const batchNo     = g('oqc-batch-no');
+    const inspectorId = g('oqc-inspector');
+    const sampleSize  = g('oqc-sample-size');
+    const visualResult = g('oqc-visual-result');
+    const decision    = g('oqc-decision');
+    const holdReason  = g('oqc-hold-reason');
+
+    if (!inspectorId)  { UI.showToast('Select QA inspector'); return; }
+    if (!sampleSize)   { UI.showToast('Enter sample size'); return; }
+    if (!visualResult) { UI.showToast('Select visual result'); return; }
+    if (decision === 'HOLD' && !holdReason.trim()) { UI.showToast('Enter hold reason'); return; }
+
+    UI.showSpinner(true);
+    try {
+      const res = await Api.post('saveOQC', {
+        batch_no:           batchNo,
+        insp_date:          g('oqc-insp-date'),
+        inspector_id:       inspectorId,
+        sample_size:        Number(sampleSize),
+        visual_result:      visualResult,
+        visual_defects:     g('oqc-visual-defects'),
+        dim_height_ok:      g('oqc-dim-height'),
+        dim_od_ok:          g('oqc-dim-od'),
+        dim_neck_ok:        g('oqc-dim-neck'),
+        leak_test:          g('oqc-leak-test'),
+        drop_test:          g('oqc-drop-test'),
+        cap_fitment:        g('oqc-cap-fitment'),
+        aql_defects_found:  Number(g('oqc-aql-defects')),
+        aql_pass:           g('oqc-aql-pass'),
+        decision,
+        hold_reason:        holdReason,
+        remarks:            g('oqc-remarks'),
+        userId:             Auth.getUserId()
+      });
+      if (res.success) {
+        UI.showToast('OQC saved — ' + res.oqc_id + ' (' + res.decision + ')');
+        closeOQCPanel();
+        if (res.decision === 'OK') {
+          // Re-open dispatch action panel — batch is now cleared
+          slideDispatchActionPanelIn();
+        } else {
+          UI.showToast('Batch placed on HOLD — dispatch blocked');
+          dispatchingSOId = null;
+        }
+      } else {
+        UI.showToast('OQC save failed: ' + (res.error || 'unknown'));
+      }
+    } finally { UI.showSpinner(false); }
+  }
+
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  return { init, loadSOList, submitSO, dispatchAction, submitDispatchAction, closeDispatchActionPanel, editSO, deleteSO, openBatchSelectPanel, selectBatch, openPlanBatchPanel, slidePlanBatchPanelOut, submitPlanBatch };
+  return { init, loadSOList, submitSO, dispatchAction, submitDispatchAction, closeDispatchActionPanel, editSO, deleteSO, openBatchSelectPanel, selectBatch, openPlanBatchPanel, slidePlanBatchPanelOut, submitPlanBatch, openOQCPanel, openOQCFromDispatch, closeOQCPanel, submitOQC };
 })();
 
 // Global shims for inline onclick handlers

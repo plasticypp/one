@@ -184,6 +184,11 @@
         <label>Polybag Qty</label>
         <input type="number" id="dispatch-polybag-qty" placeholder="e.g. 6" min="0">
       </div>
+      <div class="field-group">
+        <button class="btn btn-secondary btn-full" type="button" onclick="Dispatch.openOQCFromDispatch()" style="margin-top:4px;">
+          Perform OQC Inspection
+        </button>
+      </div>
       <div class="field-group" id="dispatch-override-row" style="display:none;">
         <label style="color:var(--color-error,#c62828);font-weight:600;">Director Override</label>
         <label style="display:flex;align-items:center;gap:8px;font-weight:400;">
@@ -256,6 +261,134 @@
     </div>
     <div class="form-body" id="detail-body"></div>
     <div class="form-actions" id="detail-actions"></div>
+  </div>
+
+  <!-- OQC Inspection Panel -->
+  <div id="oqc-panel" class="form-panel" style="z-index:350;">
+    <div class="form-header">
+      <button class="back-btn" onclick="Dispatch.closeOQCPanel()" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="form-title">OQC Inspection</span>
+    </div>
+    <div class="form-body">
+      <input type="hidden" id="oqc-batch-no">
+      <div class="field-group">
+        <label>Batch No</label>
+        <input type="text" id="oqc-batch-display" disabled>
+      </div>
+      <div class="field-group">
+        <label>Inspection Date</label>
+        <input type="date" id="oqc-insp-date">
+      </div>
+      <div class="field-group">
+        <label>QA Inspector *</label>
+        <select id="oqc-inspector"><option value="">— select —</option></select>
+      </div>
+      <div class="field-group">
+        <label>Sample Size *</label>
+        <input type="number" id="oqc-sample-size" min="1" placeholder="e.g. 20">
+      </div>
+
+      <div style="font-weight:600;font-size:0.85rem;color:var(--color-text-muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.05em;">Visual Inspection</div>
+      <div class="field-group">
+        <label>Overall Visual Result *</label>
+        <select id="oqc-visual-result">
+          <option value="">— select —</option>
+          <option value="Pass">Pass</option>
+          <option value="Fail">Fail</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Defects Found (if any)</label>
+        <input type="text" id="oqc-visual-defects" placeholder="e.g. flash, colour variation">
+      </div>
+
+      <div style="font-weight:600;font-size:0.85rem;color:var(--color-text-muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.05em;">Dimensional Spot Check</div>
+      <div class="field-group">
+        <label>Height OK?</label>
+        <select id="oqc-dim-height">
+          <option value="Pass">Pass</option>
+          <option value="Fail">Fail</option>
+          <option value="NA">N/A</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>OD OK?</label>
+        <select id="oqc-dim-od">
+          <option value="Pass">Pass</option>
+          <option value="Fail">Fail</option>
+          <option value="NA">N/A</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Neck OD OK?</label>
+        <select id="oqc-dim-neck">
+          <option value="Pass">Pass</option>
+          <option value="Fail">Fail</option>
+          <option value="NA">N/A</option>
+        </select>
+      </div>
+
+      <div style="font-weight:600;font-size:0.85rem;color:var(--color-text-muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.05em;">Functional Tests</div>
+      <div class="field-group">
+        <label>Leak Test (1 bar / 30 sec)</label>
+        <select id="oqc-leak-test">
+          <option value="Pass">Pass</option>
+          <option value="Fail">Fail</option>
+          <option value="NA">N/A</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Drop Test (1 m)</label>
+        <select id="oqc-drop-test">
+          <option value="Pass">Pass</option>
+          <option value="Fail">Fail</option>
+          <option value="NA">N/A</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Cap Fitment</label>
+        <select id="oqc-cap-fitment">
+          <option value="Pass">Pass</option>
+          <option value="Fail">Fail</option>
+          <option value="NA">N/A</option>
+        </select>
+      </div>
+
+      <div style="font-weight:600;font-size:0.85rem;color:var(--color-text-muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.05em;">AQL Summary</div>
+      <div class="field-group">
+        <label>Defects Found (count)</label>
+        <input type="number" id="oqc-aql-defects" min="0" value="0">
+      </div>
+      <div class="field-group">
+        <label>AQL Decision</label>
+        <select id="oqc-aql-pass">
+          <option value="Pass">Pass</option>
+          <option value="Fail">Fail</option>
+        </select>
+      </div>
+
+      <div style="font-weight:600;font-size:0.85rem;color:var(--color-text-muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.05em;">Final Decision</div>
+      <div class="field-group">
+        <label>OQC Decision *</label>
+        <select id="oqc-decision">
+          <option value="OK">OK — Cleared for Dispatch</option>
+          <option value="HOLD">HOLD — Do Not Dispatch</option>
+        </select>
+      </div>
+      <div class="field-group" id="oqc-hold-reason-row" style="display:none;">
+        <label>Hold Reason *</label>
+        <input type="text" id="oqc-hold-reason" placeholder="Reason for hold">
+      </div>
+      <div class="field-group">
+        <label>Remarks</label>
+        <textarea id="oqc-remarks" rows="2" style="width:100%;resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary btn-full" onclick="Dispatch.submitOQC()">Save OQC &amp; Continue</button>
+    </div>
   </div>
 
   <!-- Spinner -->
