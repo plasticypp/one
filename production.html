@@ -30,6 +30,7 @@
     <button class="sub-tab active" data-tab="batches">Batch Orders</button>
     <button class="sub-tab" data-tab="fg">Finished Goods</button>
     <button class="sub-tab" data-tab="params">Params Log</button>
+    <button class="sub-tab" data-tab="plan">Plan</button>
   </div>
 
   <!-- Main Content -->
@@ -113,6 +114,28 @@
       </div>
     </div>
 
+    <!-- Plan Tab -->
+    <div id="tab-plan" class="tab-content hidden">
+      <div style="padding:12px 16px 0;">
+        <p style="font-size:var(--text-sm);color:var(--color-text-muted);margin-bottom:12px;">SO feasibility — FG stock vs RM availability based on BOM</p>
+        <div id="plan-cards">
+          <div class="td-loading" style="padding:32px;text-align:center;color:var(--color-text-muted)">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Lot Picker Panel -->
+  <div class="form-panel" id="lot-picker-panel">
+    <div class="form-header">
+      <button class="back-btn" onclick="Production.slideLotPickerOut()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span class="form-title">Issue Materials — <span id="lot-picker-batch-id"></span></span>
+    </div>
+    <div class="form-body" id="lot-picker-body"></div>
+    <div class="form-actions">
+      <button class="btn-primary" onclick="Production.confirmIssueMaterials()">Confirm Issue</button>
+    </div>
   </div>
 
   <!-- Params Log Form Panel -->

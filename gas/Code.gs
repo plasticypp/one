@@ -4015,3 +4015,241 @@ function _migrateSheet(ss, sheetName, targetHeaders) {
   if (added.length === 0) return sheetName + ': already up-to-date';
   return sheetName + ': inserted ' + added.length + ' column(s) — ' + added.join(', ');
 }
+
+// ── SO Feasibility & Material Issue ─────────────────────────────────────────
+
+const MI_HEADERS = ['issue_id','batch_id','lot_no','grn_id','material','qty_issued_kg','issued_by','issued_at','status'];
+
+function getSOFeasibility(params) {
+  const soId = params && params.so_id;
+  if (!soId) return { success: false, error: 'so_id required' };
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // Load SO row
+  const soSheet = ss.getSheetByName('SalesOrders');
+  if (!soSheet) return { success: false, error: 'SalesOrders sheet missing' };
+  const soRows = soSheet.getDataRange().getValues();
+  const soHeaders = soRows[0];
+  const soObj = soRows.slice(1).map(r => rowToObj(soHeaders, r)).find(r => String(r.so_id) === String(soId));
+  if (!soObj) return { success: false, error: 'SO not found' };
+
+  const productId = soObj.product_id;
+  const qtyNeeded = (Number(soObj.qty_ordered) || 0) - (Number(soObj.qty_dispatched) || 0);
+
+  // FG stock for this product
+  const fgSheet = ss.getSheetByName('FinishedGoods');
+  let fgQty = 0;
+  if (fgSheet) {
+    const fgRows = fgSheet.getDataRange().getValues();
+    const fgH = fgRows[0];
+    fgRows.slice(1).forEach(r => {
+      const obj = rowToObj(fgH, r);
+      if (String(obj.product_id) === String(productId) && String(obj.status || '').toLowerCase() !== 'dispatched') {
+        fgQty += Number(obj.qty) || 0;
+      }
+    });
+  }
+
+  // BOM for this product
+  const bom = BOM_KB.find(b => b.product_id === productId);
+  if (!bom) return { success: true, data: { so_id: soId, product_id: productId, qty_remaining: qtyNeeded, fg_stock: fgQty, can_fulfill_from_stock: fgQty >= qtyNeeded, bom_requirements: [], feasible_qty: 0, shortfall_items: [] } };
+
+  // Load RMStock lots — handle both canonical (qty_kg, iqc_status, lot_no, grn_id, material, date)
+  // and legacy schemas (StockID, MaterialID, etc.)
+  const rmSheet = ss.getSheetByName('RMStock');
+  const lots = [];
+  if (rmSheet) {
+    const rmRows = rmSheet.getDataRange().getValues();
+    const rmH = rmRows[0];
+    rmRows.slice(1).forEach(r => {
+      const obj = rowToObj(rmH, r);
+      // Canonical schema
+      const material = obj.material || obj.Material || obj.MaterialID || '';
+      const lotNo    = obj.lot_no || obj.LotNo || obj.StockID || '';
+      const grnId    = obj.grn_id || obj.GRN_ID || '';
+      const qtyKg    = Number(obj.qty_kg || obj.QtyKg || obj.Qty || 0);
+      const iqcSt    = String(obj.iqc_status || obj.IQC_Status || 'Received').trim();
+      const dt       = String(obj.date || obj.Date || obj.GRN_Date || '');
+      const booked   = Number(obj.booked_qty || 0);
+      const used     = Number(obj.used_qty || 0);
+      const avail    = qtyKg - booked - used;
+      if (material && avail > 0) {
+        lots.push({ lot_no: lotNo, grn_id: grnId, material, qty_kg: qtyKg, booked_qty: booked, used_qty: used, available_kg: avail, iqc_status: iqcSt, date: dt });
+      }
+    });
+  }
+
+  // For each BOM item, compute available and shortfall
+  let feasibleQty = Infinity;
+  const bomRequirements = bom.rm_items.map(item => {
+    const usableLots = lots
+      .filter(l => l.material === item.material && (l.iqc_status === 'Accept' || l.iqc_status === 'Received'))
+      .sort((a, b) => String(a.date).localeCompare(String(b.date))); // FIFO
+
+    const availableKg = usableLots.reduce((s, l) => s + l.available_kg, 0);
+    const neededKg    = item.qty_per_unit_kg * qtyNeeded;
+    const shortfallKg = Math.max(0, neededKg - availableKg);
+    const canProduceQty = item.qty_per_unit_kg > 0 ? Math.floor(availableKg / item.qty_per_unit_kg) : Infinity;
+    if (canProduceQty < feasibleQty) feasibleQty = canProduceQty;
+
+    return {
+      material:        item.material,
+      qty_per_unit_kg: item.qty_per_unit_kg,
+      qty_needed_kg:   Math.round(neededKg * 1000) / 1000,
+      available_kg:    Math.round(availableKg * 1000) / 1000,
+      shortfall_kg:    Math.round(shortfallKg * 1000) / 1000,
+      lots:            usableLots
+    };
+  });
+
+  if (feasibleQty === Infinity) feasibleQty = 0;
+  const shortfallItems = bomRequirements.filter(b => b.shortfall_kg > 0).map(b => b.material);
+
+  return {
+    success: true,
+    data: {
+      so_id:                soId,
+      product_id:           productId,
+      qty_remaining:        qtyNeeded,
+      fg_stock:             fgQty,
+      can_fulfill_from_stock: fgQty >= qtyNeeded,
+      feasible_qty:         Math.min(feasibleQty, qtyNeeded),
+      shortfall_items:      shortfallItems,
+      bom_requirements:     bomRequirements
+    }
+  };
+}
+
+function issueMaterials(data) {
+  var authError = requireRole(data, ['director','supervisor','store']);
+  if (authError) return { success: false, error: authError };
+
+  const batchId = data.batch_id;
+  const lots    = data.lots; // [{lot_no, qty_kg}]
+  if (!batchId || !Array.isArray(lots) || lots.length === 0) return { success: false, error: 'batch_id and lots[] required' };
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const miSheet = ensureSheet('MaterialIssue', MI_HEADERS);
+  const rmSheet = ss.getSheetByName('RMStock');
+
+  const now = new Date().toISOString();
+  const issuedBy = data.userId || 'unknown';
+
+  // Load RMStock for booked_qty update
+  let rmRows = null, rmHeaders = null;
+  if (rmSheet) {
+    rmRows = rmSheet.getDataRange().getValues();
+    rmHeaders = rmRows[0];
+  }
+
+  const issueIds = [];
+  lots.forEach((lot, idx) => {
+    const issueId = 'MI-' + batchId + '-' + String(idx + 1).padStart(2, '0');
+    issueIds.push(issueId);
+
+    // Find material from lot_no in RMStock
+    let material = lot.material || '';
+    let grnId = lot.grn_id || '';
+
+    miSheet.appendRow([
+      issueId,
+      batchId,
+      lot.lot_no || '',
+      grnId,
+      material,
+      Number(lot.qty_kg) || 0,
+      issuedBy,
+      now,
+      'Booked'
+    ]);
+
+    // Increment booked_qty on RMStock row
+    if (rmRows && rmHeaders) {
+      const lotNoIdx = rmHeaders.indexOf('lot_no');
+      const bookedIdx = rmHeaders.indexOf('booked_qty');
+      if (lotNoIdx >= 0 && bookedIdx >= 0) {
+        for (let i = 1; i < rmRows.length; i++) {
+          if (String(rmRows[i][lotNoIdx]) === String(lot.lot_no)) {
+            const cur = Number(rmRows[i][bookedIdx]) || 0;
+            rmSheet.getRange(i + 1, bookedIdx + 1).setValue(cur + Number(lot.qty_kg));
+            rmRows[i][bookedIdx] = cur + Number(lot.qty_kg); // keep in sync
+            break;
+          }
+        }
+      }
+    }
+  });
+
+  return { success: true, issue_ids: issueIds };
+}
+
+function getPickSlip(params) {
+  const batchId = params && params.batch_id;
+  if (!batchId) return { success: false, error: 'batch_id required' };
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // Batch info
+  const boSheet = ss.getSheetByName('BatchOrders');
+  if (!boSheet) return { success: false, error: 'BatchOrders sheet missing' };
+  const boRows = boSheet.getDataRange().getValues();
+  const boHeaders = boRows[0];
+  const batch = boRows.slice(1).map(r => rowToObj(boHeaders, r)).find(r => String(r.batch_id) === String(batchId));
+  if (!batch) return { success: false, error: 'Batch not found' };
+
+  // Product name
+  const prodSheet = ss.getSheetByName('Products');
+  let productName = batch.product_id;
+  if (prodSheet) {
+    const pr = prodSheet.getDataRange().getValues();
+    const ph = pr[0];
+    const pidIdx = ph.indexOf('product_id'), pnIdx = ph.indexOf('name');
+    const pRow = pr.slice(1).find(r => String(r[pidIdx]) === String(batch.product_id));
+    if (pRow) productName = pRow[pnIdx] || productName;
+  }
+
+  // Material issues for this batch
+  const miSheet = ensureSheet('MaterialIssue', MI_HEADERS);
+  const miRows = miSheet.getDataRange().getValues();
+  const miHeaders = miRows[0];
+  const issues = miRows.slice(1)
+    .map(r => rowToObj(miHeaders, r))
+    .filter(r => String(r.batch_id) === String(batchId));
+
+  return {
+    success: true,
+    data: {
+      batch_id:     batchId,
+      product_id:   batch.product_id,
+      product_name: productName,
+      planned_qty:  batch.planned_qty,
+      date:         String(batch.date || '').slice(0, 10),
+      so_id:        batch.so_id || '',
+      issued_at:    issues.length ? issues[0].issued_at : '',
+      issued_by:    issues.length ? issues[0].issued_by : '',
+      items:        issues.map(i => ({
+        issue_id:    i.issue_id,
+        lot_no:      i.lot_no,
+        grn_id:      i.grn_id,
+        material:    i.material,
+        qty_kg:      i.qty_issued_kg,
+        status:      i.status
+      }))
+    }
+  };
+}
+
+function addBooked_qtyColumn() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('RMStock');
+  if (!sheet) return 'RMStock sheet not found';
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  if (headers.includes('booked_qty')) return 'booked_qty already exists';
+  const col = sheet.getLastColumn() + 1;
+  sheet.getRange(1, col).setValue('booked_qty');
+  for (let i = 2; i <= sheet.getLastRow(); i++) {
+    sheet.getRange(i, col).setValue(0);
+  }
+  return 'booked_qty column added at col ' + col;
+}

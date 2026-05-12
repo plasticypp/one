@@ -11,6 +11,12 @@
   let editingBatchId = null;
   let activeTab = 'batches';
 
+  // Plan tab state
+  let planSOList = [];
+  let lotPickerBatchId = null;
+  let lotPickerSOId = null;
+  let lotPickerFeasibility = null;
+
   // ── Init ──────────────────────────────────────────────────────────────────
 
   async function init() {
@@ -37,8 +43,9 @@
       const myBatches = batchCache.filter(b => String(b.operator_id) === String(session.id));
       renderBatchTable(myBatches);
     } else if (view === 'plan') {
+      activeTab = 'plan';
       renderTabs();
-      // scroll to first Open/Planned batch
+      await loadPlanTab();
     } else if (view === 'today') {
       renderTabs();
       const today = new Date().toISOString().slice(0, 10);
@@ -83,14 +90,17 @@
         document.getElementById('tab-batches').classList.toggle('hidden', activeTab !== 'batches');
         document.getElementById('tab-fg').classList.toggle('hidden', activeTab !== 'fg');
         document.getElementById('tab-params').classList.toggle('hidden', activeTab !== 'params');
+        document.getElementById('tab-plan').classList.toggle('hidden', activeTab !== 'plan');
         if (activeTab === 'fg') await loadFinishedGoods();
         if (activeTab === 'batches') await loadBatches();
         if (activeTab === 'params') await loadParamsLog();
+        if (activeTab === 'plan') await loadPlanTab();
       });
     });
     document.getElementById('tab-batches').classList.toggle('hidden', activeTab !== 'batches');
     document.getElementById('tab-fg').classList.toggle('hidden', activeTab !== 'fg');
     document.getElementById('tab-params').classList.toggle('hidden', activeTab !== 'params');
+    document.getElementById('tab-plan').classList.toggle('hidden', activeTab !== 'plan');
   }
 
   // ── Dropdowns ─────────────────────────────────────────────────────────────
@@ -498,6 +508,212 @@
     });
   }
 
+  // ── Plan Tab ──────────────────────────────────────────────────────────────
+
+  async function loadPlanTab() {
+    const container = document.getElementById('plan-cards');
+    container.innerHTML = '<div class="td-loading" style="padding:32px;text-align:center;color:var(--color-text-muted)">Loading…</div>';
+    try {
+      const res = await Api.get('getSOList', { status: 'active' });
+      planSOList = res.success ? res.data : [];
+      if (!planSOList.length) {
+        container.innerHTML = '<div style="padding:32px;text-align:center;color:var(--color-text-muted)">No active Sales Orders</div>';
+        return;
+      }
+      // Fetch feasibility for each SO in parallel
+      const feasResults = await Promise.all(planSOList.map(so => Api.get('getSOFeasibility', { so_id: so.so_id })));
+      container.innerHTML = '';
+      planSOList.forEach((so, i) => {
+        const f = feasResults[i].success ? feasResults[i].data : null;
+        container.appendChild(buildPlanCard(so, f));
+      });
+    } catch (e) {
+      container.innerHTML = '<div style="padding:32px;text-align:center;color:#c62828">Failed to load plan data</div>';
+    }
+  }
+
+  function buildPlanCard(so, f) {
+    const div = document.createElement('div');
+    div.style.cssText = 'border:1px solid var(--color-border);border-radius:10px;padding:14px 16px;margin-bottom:12px;background:var(--color-surface)';
+
+    const productName = so.product_name || so.product_id;
+    const qtyRemaining = so.qty_remaining || 0;
+
+    let fgRow = '';
+    let bomRows = '';
+    let actionBtn = '';
+
+    if (f) {
+      const fgBadge = f.fg_stock >= qtyRemaining
+        ? `<span style="color:#16a34a;font-weight:600">✓ ${f.fg_stock} in stock</span>`
+        : `<span style="color:#92400e">${f.fg_stock} in stock</span>`;
+
+      fgRow = `<div style="display:flex;justify-content:space-between;font-size:var(--text-sm);margin:8px 0 4px;">
+        <span style="color:var(--color-text-muted)">FG Stock</span>${fgBadge}</div>`;
+
+      if (f.bom_requirements && f.bom_requirements.length) {
+        bomRows = f.bom_requirements.map(b => {
+          const ok = b.shortfall_kg <= 0;
+          return `<div style="display:flex;justify-content:space-between;font-size:var(--text-sm);padding:3px 0;">
+            <span>${b.material}</span>
+            <span style="color:${ok ? '#16a34a' : '#c62828'};font-weight:600">
+              ${ok ? `✓ ${b.available_kg} kg avail` : `⚠ Short ${b.shortfall_kg} kg`}
+            </span></div>`;
+        }).join('');
+      }
+
+      const canProduce = f.feasible_qty > 0;
+      const linkedBatch = batchCache.find(b => String(b.so_id) === String(so.so_id) && b.status !== 'Closed');
+
+      if (f.can_fulfill_from_stock) {
+        actionBtn = `<button class="btn-sm" style="background:#16a34a;color:#fff;margin-top:10px" disabled>Ready to Dispatch</button>`;
+      } else if (linkedBatch && (linkedBatch.status === 'Planned' || linkedBatch.status === 'In Progress')) {
+        const hasIssue = false; // TODO: check MaterialIssue sheet
+        actionBtn = `<button class="btn-sm" style="background:#EA580C;color:#fff;margin-top:10px"
+          onclick="Production.openLotPicker('${linkedBatch.batch_id}','${so.so_id}')">Issue Materials → ${linkedBatch.batch_id}</button>`;
+      } else if (canProduce) {
+        actionBtn = `<button class="btn-sm" style="background:#1d4ed8;color:#fff;margin-top:10px"
+          onclick="Production.planBatchForSO('${so.so_id}','${so.product_id}',${qtyRemaining})">Plan Batch</button>`;
+      } else {
+        actionBtn = `<button class="btn-sm" style="background:#6b7280;color:#fff;margin-top:10px" disabled>Raise Reorder</button>`;
+      }
+    }
+
+    div.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+        <div>
+          <div style="font-weight:700;font-size:var(--text-base)">${esc(so.so_id)}</div>
+          <div style="font-size:var(--text-sm);color:var(--color-text-muted)">${esc(productName)} · ${esc(so.customer_name || '')}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:var(--text-xl);font-weight:700">${qtyRemaining}</div>
+          <div style="font-size:var(--text-xs);color:var(--color-text-muted)">pcs remaining</div>
+        </div>
+      </div>
+      ${fgRow}
+      <div style="border-top:1px solid var(--color-border);margin:8px 0;padding-top:8px;">${bomRows}</div>
+      ${actionBtn}
+    `;
+    return div;
+  }
+
+  async function planBatchForSO(soId, productId, plannedQty) {
+    if (!['director','supervisor'].includes(session.role)) { UI.showToast('Director or Supervisor only'); return; }
+    const machineId = machineCache.length ? machineCache[0].id : '';
+    UI.showSpinner(true);
+    try {
+      const res = await Api.post('planBatchFromSO', {
+        so_id: soId, product_id: productId, planned_qty: plannedQty,
+        machine_id: machineId, userId: Auth.getUserId()
+      });
+      if (res.success) {
+        UI.showToast('Batch ' + res.batch_id + ' planned');
+        await Promise.all([loadBatches(), loadPlanTab()]);
+      } else {
+        UI.showToast('Error: ' + res.error);
+      }
+    } finally { UI.showSpinner(false); }
+  }
+
+  async function openLotPicker(batchId, soId) {
+    lotPickerBatchId = batchId;
+    lotPickerSOId = soId;
+    document.getElementById('lot-picker-batch-id').textContent = batchId;
+    document.getElementById('lot-picker-body').innerHTML = '<div class="td-loading" style="padding:20px;text-align:center">Loading…</div>';
+    slideLotPickerIn();
+
+    const res = await Api.get('getSOFeasibility', { so_id: soId });
+    if (!res.success) { document.getElementById('lot-picker-body').innerHTML = '<div style="color:#c62828;padding:16px">Failed to load feasibility</div>'; return; }
+    lotPickerFeasibility = res.data;
+    renderLotPicker(res.data);
+  }
+
+  function renderLotPicker(f) {
+    const body = document.getElementById('lot-picker-body');
+    if (!f.bom_requirements || !f.bom_requirements.length) {
+      body.innerHTML = '<div style="padding:16px;color:var(--color-text-muted)">No BOM requirements found</div>';
+      return;
+    }
+
+    const qtyNeeded = f.qty_remaining;
+    let html = `<p style="font-size:var(--text-sm);color:var(--color-text-muted);margin-bottom:12px">Batch: <strong>${esc(lotPickerBatchId)}</strong> · Planned qty: <strong>${qtyNeeded}</strong> pcs</p>`;
+
+    f.bom_requirements.forEach(item => {
+      const neededKg = item.qty_needed_kg;
+      html += `<div style="margin-bottom:16px;border:1px solid var(--color-border);border-radius:8px;padding:12px">
+        <div style="font-weight:600;margin-bottom:8px">${esc(item.material)} — need ${neededKg} kg</div>`;
+
+      if (!item.lots || !item.lots.length) {
+        html += `<div style="font-size:var(--text-sm);color:#c62828">No usable lots available</div>`;
+      } else {
+        item.lots.forEach(lot => {
+          html += `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--color-border-light);font-size:var(--text-sm)">
+            <input type="checkbox" class="lot-check" data-lot="${esc(lot.lot_no)}" data-grn="${esc(lot.grn_id)}" data-material="${esc(item.material)}" data-avail="${lot.available_kg}" checked style="width:16px;height:16px">
+            <div style="flex:1">
+              <div style="font-weight:500">${esc(lot.lot_no)} (${esc(lot.grn_id)})</div>
+              <div style="color:var(--color-text-muted)">${lot.available_kg} kg avail · IQC: ${esc(lot.iqc_status)} · ${esc(lot.date).slice(0,10)}</div>
+            </div>
+            <input type="number" class="lot-qty" data-lot="${esc(lot.lot_no)}" data-material="${esc(item.material)}" value="${Math.min(lot.available_kg, neededKg)}" max="${lot.available_kg}" min="0" step="0.001" style="width:80px;border:1px solid var(--color-border);border-radius:6px;padding:4px 6px;font-size:var(--text-sm)">
+            <span style="color:var(--color-text-muted)">kg</span>
+          </div>`;
+        });
+      }
+      html += '</div>';
+    });
+
+    body.innerHTML = html;
+  }
+
+  async function confirmIssueMaterials() {
+    const checks = document.querySelectorAll('.lot-check:checked');
+    if (!checks.length) { UI.showToast('Select at least one lot'); return; }
+
+    const lots = [];
+    checks.forEach(cb => {
+      const lotNo = cb.dataset.lot;
+      const material = cb.dataset.material;
+      const grn_id = cb.dataset.grn;
+      const qtyInput = document.querySelector(`.lot-qty[data-lot="${lotNo}"][data-material="${material}"]`);
+      const qtyKg = qtyInput ? Number(qtyInput.value) : 0;
+      if (qtyKg > 0) lots.push({ lot_no: lotNo, grn_id, material, qty_kg: qtyKg });
+    });
+
+    if (!lots.length) { UI.showToast('Enter quantity for selected lots'); return; }
+
+    UI.showSpinner(true);
+    try {
+      const res = await Api.post('issueMaterials', {
+        batch_id: lotPickerBatchId,
+        lots,
+        userId: Auth.getUserId()
+      });
+      if (res.success) {
+        UI.showToast('Materials issued — ' + res.issue_ids.join(', '));
+        slideLotPickerOut();
+        window.open('pickslip.html?batch_id=' + encodeURIComponent(lotPickerBatchId), '_blank');
+        await loadPlanTab();
+      } else {
+        UI.showToast('Error: ' + res.error);
+      }
+    } finally { UI.showSpinner(false); }
+  }
+
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function slideLotPickerIn() {
+    document.getElementById('main-content').classList.add('slide-out');
+    document.getElementById('lot-picker-panel').classList.add('slide-in');
+  }
+
+  function slideLotPickerOut() {
+    document.getElementById('main-content').classList.remove('slide-out');
+    document.getElementById('lot-picker-panel').classList.remove('slide-in');
+    lotPickerBatchId = null;
+    lotPickerSOId = null;
+  }
+
   // ── Slide Transitions ─────────────────────────────────────────────────────
 
   function slideFormIn() {
@@ -534,5 +750,5 @@
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  return { init, loadBatches, submitBatch, closeBatchAction, submitClose, editBatch, deleteBatch, loadParamsLog, submitParamsLog, slideParamsPanelOut };
+  return { init, loadBatches, submitBatch, closeBatchAction, submitClose, editBatch, deleteBatch, loadParamsLog, submitParamsLog, slideParamsPanelOut, planBatchForSO, openLotPicker, confirmIssueMaterials, slideLotPickerOut };
 })();
