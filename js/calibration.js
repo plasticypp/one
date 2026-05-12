@@ -1,4 +1,4 @@
-const Calibration = (() => {
+﻿const Calibration = (() => {
 
   let session = null;
   let instruments = [];
@@ -177,18 +177,6 @@ const Calibration = (() => {
     if (!v) return '—';
     const d = new Date(v);
     return isNaN(d) ? String(v) : d.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
-  }
-
-  function UI.showSpinner(on) {
-    document.getElementById('spinner').classList.toggle('hidden', !on);
-  }
-
-  function UI.showToast(msg, type) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.className = 'toast' + (type === 'error' ? ' toast-error' : ' toast-success');
-    t.classList.remove('hidden');
-    setTimeout(() => t.classList.add('hidden'), 3000);
   }
 
   return { init };

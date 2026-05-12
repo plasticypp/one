@@ -1,4 +1,4 @@
-const Quality = (() => {
+﻿const Quality = (() => {
 
   // ── State ─────────────────────────────────────────────────────────────────
 
@@ -474,16 +474,6 @@ const Quality = (() => {
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
-
-  function UI.showSpinner(show) {
-    document.getElementById('spinner').classList.toggle('hidden', !show);
-  }
-  function UI.showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2500);
-  }
   function showToastWithLink(msg, linkText, href) {
     const t = document.getElementById('toast');
     t.innerHTML = msg + ' <a href="' + href + '" style="color:#fff;text-decoration:underline;">' + linkText + '</a>';

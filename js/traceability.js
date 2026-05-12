@@ -1,11 +1,4 @@
-const Traceability = (() => {
-  function UI.showSpinner(v) { document.getElementById('spinner').classList.toggle('hidden', !v); }
-  function UI.showToast(msg, type) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.className = 'toast show' + (type === 'error' ? ' error' : '');
-    setTimeout(() => t.classList.remove('show'), 3000);
-  }
+﻿const Traceability = (() => {
   function esc(v) { return (v == null ? '—' : String(v)).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
   function fmt(v) { return v ? new Date(v).toLocaleDateString() : '—'; }
 

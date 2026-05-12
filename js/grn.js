@@ -1,4 +1,4 @@
-const GRN = (() => {
+﻿const GRN = (() => {
 
   let session = null;
   let supplierCache = [];
@@ -365,17 +365,6 @@ const GRN = (() => {
   function slideDetailIn()  { document.getElementById('detail-panel').classList.add('slide-in'); }
   function slideDetailOut() { document.getElementById('detail-panel').classList.remove('slide-in'); }
 
-  function UI.showSpinner(show) {
-    document.getElementById('spinner').classList.toggle('hidden', !show);
-  }
-
-  function UI.showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.className = 'toast show';
-    clearTimeout(t._timer);
-    t._timer = setTimeout(() => { t.className = 'toast'; }, 2500);
-  }
 
   // ── IQC ──────────────────────────────────────────────────────────────
   async function loadIQCList() {

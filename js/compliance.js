@@ -1,4 +1,4 @@
-const Compliance = (() => {
+﻿const Compliance = (() => {
 
   let session = null;
   let capaStatusFilter = 'all';
@@ -423,17 +423,6 @@ const Compliance = (() => {
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
-
-  function UI.showSpinner(show) {
-    document.getElementById('spinner').classList.toggle('hidden', !show);
-  }
-
-  function UI.showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2500);
-  }
 
   return { init, openCapaForm, closeCapaForm, submitCapa, loadCapa: loadCapaList, openLegalForm, closeLegalForm, submitLegalEntry, closeCapaItemFromDetail, editCapa, deleteCapa };
 })();
