@@ -117,6 +117,7 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-3);
+  padding: var(--space-4);
 }
 .tile {
   background: var(--color-surface);
@@ -292,6 +293,15 @@ body {
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
+
+/* ── Home Stats Strip ── */
+.home-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4) 0;
+}
+.home-stats:empty { display: none; }
 
 /* ── Stat Cards (KPI Dashboard) ── */
 .stat-grid {

@@ -75,6 +75,37 @@ const App = (() => {
     today:       'overduePMs'
   };
 
+  const ROLE_STATS = {
+    director:   [
+      { key: 'activeBatches',     label: 'Active Batches',     mod: 'neutral' },
+      { key: 'openBreakdowns',    label: 'Open Breakdowns',    mod: d => d > 0 ? 'error'  : 'ok' },
+      { key: 'openCapas',         label: 'Open CAPAs',         mod: d => d > 0 ? 'warn'   : 'ok' },
+      { key: 'overdueCompliance', label: 'Overdue Compliance', mod: d => d > 0 ? 'error'  : 'ok' },
+      { key: 'lowStockCount',     label: 'Low Stock',          mod: d => d > 0 ? 'warn'   : 'ok' },
+      { key: 'overduePMs',        label: 'Overdue PMs',        mod: d => d > 0 ? 'warn'   : 'ok' },
+      { key: 'openComplaints',    label: 'Complaints',         mod: d => d > 0 ? 'error'  : 'ok' },
+    ],
+    qmr: [
+      { key: 'openCapas',            label: 'Open CAPAs',        mod: d => d > 0 ? 'warn'  : 'ok' },
+      { key: 'overdueCompliance',    label: 'Overdue Compliance', mod: d => d > 0 ? 'error' : 'ok' },
+      { key: 'overdueCalibrations',  label: 'Overdue Calib.',    mod: d => d > 0 ? 'warn'  : 'ok' },
+      { key: 'openComplaints',       label: 'Complaints',        mod: d => d > 0 ? 'error' : 'ok' },
+    ],
+    supervisor: [
+      { key: 'activeBatches',  label: 'Active Batches', mod: 'neutral' },
+      { key: 'openBreakdowns', label: 'Breakdowns',     mod: d => d > 0 ? 'error' : 'ok' },
+      { key: 'overduePMs',     label: 'Overdue PMs',    mod: d => d > 0 ? 'warn'  : 'ok' },
+    ],
+    operator: [
+      { key: 'activeBatches', label: 'Active Batches', mod: 'neutral' },
+    ],
+    store: [
+      { key: 'openGRNs',      label: 'Open GRNs',  mod: d => d > 0 ? 'warn' : 'ok' },
+      { key: 'lowStockCount', label: 'Low Stock',   mod: d => d > 0 ? 'warn' : 'ok' },
+    ],
+    hr: [],
+  };
+
   function renderHome(role) {
     const grid = document.getElementById('home-tiles');
     if (!grid) return;
@@ -90,21 +121,36 @@ const App = (() => {
       btn.addEventListener('click', () => handleTile(id));
       grid.appendChild(btn);
     });
-    loadDashboardStats();
+    loadDashboardStats(role);
   }
 
-  async function loadDashboardStats() {
+  async function loadDashboardStats(role) {
     try {
       const res = await Api.get('getDashboardStats');
       if (!res || !res.success) return;
       const stats = res.data;
+
+      // Stat strip
+      const statsEl = document.getElementById('home-stats');
+      const defs = ROLE_STATS[role] || [];
+      if (statsEl && defs.length) {
+        statsEl.innerHTML = defs.map(({ key, label, mod }) => {
+          const val = stats[key] ?? '—';
+          const m = typeof mod === 'function' ? mod(val) : mod;
+          return `<div class="stat-card stat-card--${m}">
+            <div class="stat-card-value">${val}</div>
+            <div class="stat-card-label">${label}</div>
+          </div>`;
+        }).join('');
+      }
+
+      // Tile badges
       document.querySelectorAll('#home-tiles .tile').forEach(btn => {
         const id = btn.dataset.tileId;
         const statKey = TILE_STAT[id];
         if (!statKey) return;
         const count = stats[statKey];
         if (count == null) return;
-        // remove existing badge if re-rendered
         const existing = btn.querySelector('.tile-badge');
         if (existing) existing.remove();
         if (count > 0) {
