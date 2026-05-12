@@ -1,6 +1,6 @@
 const Traceability = (() => {
-  function showSpinner(v) { document.getElementById('spinner').classList.toggle('hidden', !v); }
-  function showToast(msg, type) {
+  function UI.showSpinner(v) { document.getElementById('spinner').classList.toggle('hidden', !v); }
+  function UI.showToast(msg, type) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.className = 'toast show' + (type === 'error' ? ' error' : '');
@@ -11,8 +11,8 @@ const Traceability = (() => {
 
   async function search() {
     const q = document.getElementById('trace-search').value.trim();
-    if (!q) { showToast('Enter a batch number or lot number', 'error'); return; }
-    showSpinner(true);
+    if (!q) { UI.showToast('Enter a batch number or lot number', 'error'); return; }
+    UI.showSpinner(true);
     document.getElementById('trace-results').classList.add('hidden');
     document.getElementById('trace-empty').classList.add('hidden');
     try {
@@ -23,9 +23,9 @@ const Traceability = (() => {
       }
       renderResults(res.data);
     } catch (e) {
-      showToast('Search failed: ' + e.message, 'error');
+      UI.showToast('Search failed: ' + e.message, 'error');
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 

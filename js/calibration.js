@@ -41,7 +41,7 @@ const Calibration = (() => {
   }
 
   async function loadData() {
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const [instRes, logRes] = await Promise.all([
         Api.get('getInstrumentsKB', {}),
@@ -53,7 +53,7 @@ const Calibration = (() => {
       renderSummary();
       renderTable();
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -152,24 +152,24 @@ const Calibration = (() => {
     const remarks = document.getElementById('cal-remarks').value.trim();
 
     if (!instId || !date || !doneBy) {
-      showToast('Instrument, date and done-by are required', 'error'); return;
+      UI.showToast('Instrument, date and done-by are required', 'error'); return;
     }
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.post('saveCalibrationLog', {
         userId: Auth.getUserId(), inst_id: instId, inst_name: instName,
         calibration_date: date, result, certificate_no: certNo, done_by: doneBy, remarks
       });
-      if (!res || !res.success) { showToast(res?.error || 'Save failed', 'error'); return; }
+      if (!res || !res.success) { UI.showToast(res?.error || 'Save failed', 'error'); return; }
       const inst = instruments.find(i => i.id === instId);
       const freqMonths = inst ? inst.frequency_months : 12;
       const nextDue = new Date(date);
       nextDue.setMonth(nextDue.getMonth() + freqMonths);
-      showToast('Saved — next due ' + nextDue.toISOString().slice(0,10));
+      UI.showToast('Saved — next due ' + nextDue.toISOString().slice(0,10));
       closeForm();
       await loadData();
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -179,11 +179,11 @@ const Calibration = (() => {
     return isNaN(d) ? String(v) : d.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
   }
 
-  function showSpinner(on) {
+  function UI.showSpinner(on) {
     document.getElementById('spinner').classList.toggle('hidden', !on);
   }
 
-  function showToast(msg, type) {
+  function UI.showToast(msg, type) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.className = 'toast' + (type === 'error' ? ' toast-error' : ' toast-success');

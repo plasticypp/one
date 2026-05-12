@@ -68,7 +68,7 @@ const Maintenance = (() => {
   // ── Breakdowns ────────────────────────────────────────────────────────────
 
   async function loadBreakdowns(status) {
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const params = { status: status || 'all' };
       const res = await Api.get('getBreakdownList', params);
@@ -76,7 +76,7 @@ const Maintenance = (() => {
       bdCache = records;
       renderBreakdowns(records);
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -150,7 +150,7 @@ const Maintenance = (() => {
       document.querySelectorAll('#form-body [data-key]').forEach(el => {
         data[el.dataset.key] = el.value;
       });
-      showSpinner(true);
+      UI.showSpinner(true);
       try {
         const res = await Api.post('updateRecord', {
           sheet: 'Breakdown_Log',
@@ -165,16 +165,16 @@ const Maintenance = (() => {
           }
         });
         if (res && res.success) {
-          showToast('Breakdown updated');
+          UI.showToast('Breakdown updated');
           editingBreakdownId = null;
           slideFormOut();
           const filter = document.getElementById('status-filter').value;
           await loadBreakdowns(filter);
         } else {
-          showToast('Update failed: ' + (res && res.error || 'error'));
+          UI.showToast('Update failed: ' + (res && res.error || 'error'));
         }
       } finally {
-        showSpinner(false);
+        UI.showSpinner(false);
       }
       return;
     }
@@ -182,20 +182,20 @@ const Maintenance = (() => {
     document.querySelectorAll('#form-body [data-key]').forEach(el => {
       data[el.dataset.key] = el.value;
     });
-    if (!data.machine_id) { showToast('Select a machine'); return; }
-    showSpinner(true);
+    if (!data.machine_id) { UI.showToast('Select a machine'); return; }
+    UI.showSpinner(true);
     try {
       const res = await Api.post('saveBreakdown', { ...data, userId: Auth.getUserId() });
       if (res.success) {
-        showToast('Breakdown logged');
+        UI.showToast('Breakdown logged');
         slideFormOut();
         const filter = document.getElementById('status-filter').value;
         await loadBreakdowns(filter);
       } else {
-        showToast('Error: ' + (res.error || 'save failed'));
+        UI.showToast('Error: ' + (res.error || 'save failed'));
       }
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -217,18 +217,18 @@ const Maintenance = (() => {
 
   async function deleteBreakdown(bdId) {
     if (!confirm('Delete breakdown record ' + bdId + '?')) return;
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.post('deleteRecord', { sheet: 'Breakdown_Log', idCol: 'breakdown_id', idVal: bdId, userId: Auth.getUserId() });
       if (res && res.success) {
-        showToast('Breakdown deleted');
+        UI.showToast('Breakdown deleted');
         const filter = document.getElementById('status-filter').value;
         await loadBreakdowns(filter);
       } else {
-        showToast('Delete failed: ' + (res && res.error || 'error'));
+        UI.showToast('Delete failed: ' + (res && res.error || 'error'));
       }
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -254,11 +254,11 @@ const Maintenance = (() => {
     const resolvedBy = document.getElementById('resolve-by').value.trim();
     const resolvedDate = document.getElementById('resolve-date').value;
 
-    if (!notes) { showToast('Resolution notes are required'); return; }
-    if (!resolvedBy) { showToast('Resolved by is required'); return; }
-    if (!resolvedDate) { showToast('Resolved date is required'); return; }
+    if (!notes) { UI.showToast('Resolution notes are required'); return; }
+    if (!resolvedBy) { UI.showToast('Resolved by is required'); return; }
+    if (!resolvedDate) { UI.showToast('Resolved date is required'); return; }
 
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const sparesEl   = document.getElementById('resolve-spares');
       const downtimeEl = document.getElementById('resolve-downtime');
@@ -276,16 +276,16 @@ const Maintenance = (() => {
         userId:       Auth.getUserId()
       });
       if (res.success) {
-        showToast('Breakdown resolved');
+        UI.showToast('Breakdown resolved');
         resolvingBdId = null;
         slideResolvePanelOut();
         const filter = document.getElementById('status-filter').value;
         await loadBreakdowns(filter);
       } else {
-        showToast('Error: ' + (res.error || 'resolve failed'));
+        UI.showToast('Error: ' + (res.error || 'resolve failed'));
       }
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -315,13 +315,13 @@ const Maintenance = (() => {
   // ── PM Schedule ───────────────────────────────────────────────────────────
 
   async function loadPMSchedule() {
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.get('getPMSchedule');
       pmCache = res.success ? res.data : [];
       renderPMSchedule(pmCache);
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -406,22 +406,22 @@ const Maintenance = (() => {
   async function submitPMTask() {
     const data = {};
     document.querySelectorAll('#form-body [data-key]').forEach(el => { data[el.dataset.key] = el.value; });
-    if (!data.equip_id) { showToast('Select a machine'); return; }
-    if (!data.task_type) { showToast('Task description required'); return; }
-    showSpinner(true);
+    if (!data.equip_id) { UI.showToast('Select a machine'); return; }
+    if (!data.task_type) { UI.showToast('Task description required'); return; }
+    UI.showSpinner(true);
     try {
       const payload = { ...data, userId: Auth.getUserId() };
       if (editingPMId) payload.pm_id = editingPMId;
       const res = await Api.post('savePMTask', payload);
       if (res.success) {
-        showToast(editingPMId ? 'PM task updated' : 'PM task added');
+        UI.showToast(editingPMId ? 'PM task updated' : 'PM task added');
         editingPMId = null;
         slideFormOut();
         await loadPMSchedule();
       } else {
-        showToast('Error: ' + (res.error || 'save failed'));
+        UI.showToast('Error: ' + (res.error || 'save failed'));
       }
-    } finally { showSpinner(false); }
+    } finally { UI.showSpinner(false); }
   }
 
   function editPM(pmId) {
@@ -430,22 +430,22 @@ const Maintenance = (() => {
 
   async function deletePM(pmId) {
     if (!confirm('Delete PM task ' + pmId + '?')) return;
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.post('deletePMTask', { pm_id: pmId, userId: Auth.getUserId() });
-      if (res.success) { showToast('PM task deleted'); await loadPMSchedule(); }
-      else showToast('Delete failed: ' + res.error);
-    } finally { showSpinner(false); }
+      if (res.success) { UI.showToast('PM task deleted'); await loadPMSchedule(); }
+      else UI.showToast('Delete failed: ' + res.error);
+    } finally { UI.showSpinner(false); }
   }
 
   async function completePM(pmId) {
     if (!confirm('Mark PM ' + pmId + ' as complete?')) return;
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.post('completePM', { pm_id: pmId, remarks: '', userId: Auth.getUserId() });
-      if (res.success) { showToast('PM marked complete'); await loadPMSchedule(); }
-      else showToast('Error: ' + res.error);
-    } finally { showSpinner(false); }
+      if (res.success) { UI.showToast('PM marked complete'); await loadPMSchedule(); }
+      else UI.showToast('Error: ' + res.error);
+    } finally { UI.showSpinner(false); }
   }
 
   // ── Slide Transitions ─────────────────────────────────────────────────────
@@ -487,11 +487,11 @@ const Maintenance = (() => {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  function showSpinner(show) {
+  function UI.showSpinner(show) {
     document.getElementById('spinner').classList.toggle('hidden', !show);
   }
 
-  function showToast(msg) {
+  function UI.showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');

@@ -104,7 +104,7 @@ const Dispatch = (() => {
   // ── SO List ───────────────────────────────────────────────────────────────
 
   async function loadSOList(status) {
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const filterStatus = status || document.getElementById('filter-status').value;
       const params = {};
@@ -114,15 +114,15 @@ const Dispatch = (() => {
       soCache = rows;
       renderSOTable(rows);
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
   function statusChip(status) {
-    const colors = { Pending: '#f57c00', Partial: '#e65100', Dispatched: '#2e7d32' };
-    const bg     = { Pending: '#fff3e0', Partial: '#fbe9e7', Dispatched: '#e8f5e9' };
-    const color  = colors[status] || '#616161';
-    const bgCol  = bg[status]     || '#f5f5f5';
+    const colors = { Pending: 'var(--color-warning)', Partial: 'var(--color-warning)', Dispatched: 'var(--color-success)' };
+    const bg     = { Pending: 'var(--color-warning-bg, #fff3e0)', Partial: 'var(--color-warning-bg, #fbe9e7)', Dispatched: 'var(--color-success-bg, #e8f5e9)' };
+    const color  = colors[status] || 'var(--color-text-muted)';
+    const bgCol  = bg[status]     || 'var(--color-surface)';
     return `<span style="background:${bgCol};color:${color};padding:3px 10px;border-radius:12px;font-size:0.8rem;font-weight:600;">${status}</span>`;
   }
 
@@ -187,10 +187,10 @@ const Dispatch = (() => {
 
     if (editingSOId) {
       if (!customer_id || !product_id || !qty_ordered) {
-        showToast('Customer, Product and Qty are required');
+        UI.showToast('Customer, Product and Qty are required');
         return;
       }
-      showSpinner(true);
+      UI.showSpinner(true);
       try {
         const res = await Api.post('updateRecord', {
           sheet: 'SalesOrders', idCol: 'so_id', idVal: editingSOId,
@@ -202,23 +202,23 @@ const Dispatch = (() => {
           slideFormOut();
           await loadSOList();
         } else {
-          showToast('Update failed: ' + res.error);
+          UI.showToast('Update failed: ' + res.error);
         }
-      } finally { showSpinner(false); }
+      } finally { UI.showSpinner(false); }
       return;
     }
 
     if (!customer_id || !product_id || !qty_ordered) {
-      showToast('Customer, Product and Qty are required');
+      UI.showToast('Customer, Product and Qty are required');
       return;
     }
 
     if (invoice_no && soCache.some(s => s.invoice_no && s.invoice_no.trim() === invoice_no)) {
-      showToast('Invoice no already exists — check for duplicate SO');
+      UI.showToast('Invoice no already exists — check for duplicate SO');
       return;
     }
 
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.post('saveSO', {
         date,
@@ -229,14 +229,14 @@ const Dispatch = (() => {
         userId:      Auth.getUserId()
       });
       if (res.success) {
-        showToast('SO saved — ' + (res.so_id || ''));
+        UI.showToast('SO saved — ' + (res.so_id || ''));
         slideFormOut();
         await loadSOList();
       } else {
-        showToast('Error: ' + (res.error || 'save failed'));
+        UI.showToast('Error: ' + (res.error || 'save failed'));
       }
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -273,10 +273,10 @@ const Dispatch = (() => {
     const machineId  = document.getElementById('plan-machine').value;
     const plannedQty = document.getElementById('plan-qty').value;
     const date       = document.getElementById('plan-date').value;
-    if (!machineId) { showToast('Select a machine'); return; }
-    if (!plannedQty || Number(plannedQty) <= 0) { showToast('Enter planned quantity'); return; }
+    if (!machineId) { UI.showToast('Select a machine'); return; }
+    if (!plannedQty || Number(plannedQty) <= 0) { UI.showToast('Enter planned quantity'); return; }
     const so = soCache.find(s => String(s.so_id) === String(planningSOId));
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.post('planBatchFromSO', {
         so_id:       planningSOId,
@@ -287,13 +287,13 @@ const Dispatch = (() => {
         userId:      Auth.getUserId()
       });
       if (res.success) {
-        showToast('Batch ' + res.batch_id + ' planned — go to Production');
+        UI.showToast('Batch ' + res.batch_id + ' planned — go to Production');
         slidePlanBatchPanelOut();
         await loadSOList();
       } else {
-        showToast('Error: ' + (res.error || 'plan failed'));
+        UI.showToast('Error: ' + (res.error || 'plan failed'));
       }
-    } finally { showSpinner(false); }
+    } finally { UI.showSpinner(false); }
   }
 
   // ── Dispatch Action Panel ─────────────────────────────────────────────────
@@ -317,24 +317,7 @@ const Dispatch = (() => {
     setVal('dispatch-invoice',        '');
     setVal('dispatch-vehicle',        '');
 
-    // Also populate legacy dp-* fields in case old dispatch-panel is still present
-    setVal('dp-so-id',    soId);
-    setVal('dp-customer', customerName);
-    setVal('dp-product',  productName);
-    setVal('dp-ordered',  so.qty_ordered || 0);
-    setVal('dp-already',  so.qty_dispatched || 0);
-    setVal('dp-qty',      '');
-    setVal('dp-date',     new Date().toISOString().slice(0, 10));
-    setVal('dp-vehicle',  '');
-    setVal('dp-driver',   '');
-
-    // Use new dispatch-action-panel if it exists, otherwise fall back to old panel
-    const newPanel = document.getElementById('dispatch-action-panel');
-    if (newPanel) {
-      slideDispatchActionPanelIn();
-    } else {
-      slideDispatchPanelIn();
-    }
+    slideDispatchActionPanelIn();
   }
 
   function closeDispatchActionPanel() {
@@ -387,11 +370,11 @@ const Dispatch = (() => {
     let valid = true;
     if (!qty || qty <= 0)  { if (eQty)  eQty.textContent  = 'Enter a valid quantity'; valid = false; }
     if (!date)             { if (eDate) eDate.textContent = 'Date is required'; valid = false; }
-    if (!batchNo)          { showToast('Select a batch before dispatching'); valid = false; }
+    if (!batchNo)          { UI.showToast('Select a batch before dispatching'); valid = false; }
     if (!valid) return;
 
     const so = soCache.find(s => String(s.so_id) === String(dispatchingSOId));
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.post('saveDispatch', {
         so_id:         dispatchingSOId,
@@ -407,7 +390,7 @@ const Dispatch = (() => {
         userId:        Auth.getUserId()
       });
       if (res.success) {
-        showToast('Dispatched — ' + (res.dispatch_id || ''));
+        UI.showToast('Dispatched — ' + (res.dispatch_id || ''));
         dispatchingSOId = null;
         slideDispatchActionPanelOut();
         await loadSOList();
@@ -424,41 +407,11 @@ const Dispatch = (() => {
           batch_not_found:          'Batch not found',
           insufficient_stock:       'Insufficient FG stock for this product'
         };
-        showToast(msgs[res.error] || ('Error: ' + res.error));
+        UI.showToast(msgs[res.error] || ('Error: ' + res.error));
       }
-    } finally { showSpinner(false); }
+    } finally { UI.showSpinner(false); }
   }
 
-  async function submitDispatch() {
-    const qty  = Number(document.getElementById('dp-qty').value);
-    const date = document.getElementById('dp-date').value;
-    if (!qty || qty <= 0) { showToast('Enter a valid quantity'); return; }
-    if (!date) { showToast('Dispatch date required'); return; }
-    const so = soCache.find(s => String(s.so_id) === String(dispatchingSOId));
-    showSpinner(true);
-    try {
-      const res = await Api.post('saveDispatch', {
-        so_id:          dispatchingSOId,
-        product_id:     so ? so.product_id : '',
-        qty,
-        dispatch_date:  date,
-        vehicle_no:     document.getElementById('dp-vehicle').value.trim(),
-        driver_name:    document.getElementById('dp-driver').value.trim(),
-        dispatched_by:  session.username || session.name || '',
-        userId:         Auth.getUserId()
-      });
-      if (res.success) {
-        showToast('Dispatched — ' + res.dispatch_id);
-        dispatchingSOId = null;
-        slideDispatchPanelOut();
-        await loadSOList();
-      } else if (res.error === 'insufficient_stock') {
-        showToast('Insufficient FG stock for this product');
-      } else {
-        showToast('Error: ' + res.error);
-      }
-    } finally { showSpinner(false); }
-  }
 
   // ── Detail Panel ──────────────────────────────────────────────────────────
 
@@ -507,19 +460,19 @@ const Dispatch = (() => {
     if (!confirm('Delete SO ' + soId + '?')) return;
     const res = await Api.post('deleteRecord', { sheet: 'SalesOrders', idCol: 'so_id', idVal: soId, userId: Auth.getUserId() });
     if (res.success) { slideDetailOut(); await loadSOList(); }
-    else showToast('Delete failed: ' + res.error);
+    else UI.showToast('Delete failed: ' + res.error);
   }
 
   // ── Dispatch Log ──────────────────────────────────────────────────────────
 
   async function loadDispatchLog() {
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.get('getDispatchList', {});
       const rows = res.success ? res.data : [];
       renderDispatchTable(rows);
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -559,17 +512,6 @@ const Dispatch = (() => {
     editingSOId = null;
   }
 
-  function slideDispatchPanelIn() {
-    document.getElementById('main-content').classList.add('slide-out');
-    document.getElementById('dispatch-panel').classList.add('slide-in');
-  }
-
-  function slideDispatchPanelOut() {
-    document.getElementById('main-content').classList.remove('slide-out');
-    document.getElementById('dispatch-panel').classList.remove('slide-in');
-    dispatchingSOId = null;
-  }
-
   function slideDispatchActionPanelIn() {
     document.getElementById('main-content').classList.add('slide-out');
     document.getElementById('dispatch-action-panel').classList.add('slide-in');
@@ -593,18 +535,18 @@ const Dispatch = (() => {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  function showSpinner(show) {
+  function UI.showSpinner(show) {
     document.getElementById('spinner').classList.toggle('hidden', !show);
   }
 
-  function showToast(msg) {
+  function UI.showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2500);
   }
 
-  return { init, loadSOList, submitSO, dispatchAction, submitDispatch, submitDispatchAction, closeDispatchActionPanel, editSO, deleteSO, openBatchSelectPanel, selectBatch, openPlanBatchPanel, slidePlanBatchPanelOut, submitPlanBatch };
+  return { init, loadSOList, submitSO, dispatchAction, submitDispatchAction, closeDispatchActionPanel, editSO, deleteSO, openBatchSelectPanel, selectBatch, openPlanBatchPanel, slidePlanBatchPanelOut, submitPlanBatch };
 })();
 
 // Global shims for inline onclick handlers

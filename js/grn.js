@@ -12,7 +12,7 @@ const GRN = (() => {
     if (!session) { Auth.requireLogin(); return; }
     await Lang.init(session.lang);
     setupHeader();
-    await loadSuppliers();
+    await Promise.all([loadSuppliers(), loadMaterials()]);
     await loadGRNList();
   }
 
@@ -52,11 +52,37 @@ const GRN = (() => {
       });
       filterSel.addEventListener('change', loadGRNList);
     }
+    // populate form supplier selects
+    ['field-supplier','rr-supplier'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      sel.innerHTML = '<option value="">— select supplier —</option>';
+      supplierCache.forEach(s => {
+        const o = document.createElement('option');
+        o.value = s.id; o.textContent = s.name;
+        sel.appendChild(o);
+      });
+    });
+  }
+
+  async function loadMaterials() {
+    const res = await Api.get('getMaterialList');
+    materialCache = res.success ? res.data : [];
+    ['field-material','rr-material'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      sel.innerHTML = '<option value="">— select material —</option>';
+      materialCache.forEach(m => {
+        const o = document.createElement('option');
+        o.value = m.name; o.textContent = m.name;
+        sel.appendChild(o);
+      });
+    });
   }
 
 
   async function loadGRNList() {
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const supplierId = document.getElementById('filter-supplier').value;
       const params = supplierId ? { supplier_id: supplierId } : {};
@@ -65,7 +91,7 @@ const GRN = (() => {
       grnCache = rows;
       renderGRNTable(rows);
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -130,7 +156,7 @@ const GRN = (() => {
 
     const btn = document.getElementById('btn-save-grn');
     btn.disabled = true;
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.post('saveGRN', {
         date, supplier_id: supplierId, material,
@@ -139,15 +165,15 @@ const GRN = (() => {
       });
       if (res.success) {
         slideFormOut();
-        if (res.warning === 'duplicate_lot_no') showToast('Warning: duplicate lot no — saved anyway', 'warning');
-        else showToast('GRN saved — ' + (res.grn_id || ''));
+        if (res.warning === 'duplicate_lot_no') UI.showToast('Warning: duplicate lot no — saved anyway', 'warning');
+        else UI.showToast('GRN saved — ' + (res.grn_id || ''));
         await loadGRNList();
       } else {
         errEl.textContent = res.error === 'internal_error' ? 'Save failed. Check Apps Script logs.' : (res.error || 'Save failed');
       }
     } finally {
       btn.disabled = false;
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -189,7 +215,7 @@ const GRN = (() => {
     });
     sel.disabled = true;
     document.getElementById('field-material').value = r.material || '';
-    document.getElementById('field-material').readOnly = true;
+    document.getElementById('field-material').disabled = true;
     document.getElementById('field-date').value = r.date || '';
     document.getElementById('field-qty-kg').value = r.qty_kg || '';
     const lotEl = document.getElementById('field-lot-no');
@@ -202,16 +228,16 @@ const GRN = (() => {
     if (!confirm('Delete GRN ' + grnId + '?')) return;
     const res = await Api.post('deleteRecord', { sheet: 'GRN', idCol: 'grn_id', idVal: grnId, userId: Auth.getUserId() });
     if (res.success) { slideDetailOut(); await loadGRNList(); }
-    else showToast('Delete failed: ' + res.error);
+    else UI.showToast('Delete failed: ' + res.error);
   }
 
   async function loadStockLevels() {
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.get('getRMStock');
       renderStockTable(res.success ? res.data : []);
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -236,7 +262,7 @@ const GRN = (() => {
   // ── Reorder Requests ──────────────────────────────────────────────────────
 
   async function loadReorderList() {
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const statusEl = document.getElementById('filter-rr-status');
       const status = statusEl ? statusEl.value : 'all';
@@ -244,7 +270,7 @@ const GRN = (() => {
       rrCache = res.success ? res.data : [];
       renderReorderTable(rrCache);
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -299,33 +325,33 @@ const GRN = (() => {
     const requested_qty = document.getElementById('rr-qty').value;
     const notes        = document.getElementById('rr-notes').value.trim();
     if (!material || !requested_qty || Number(requested_qty) <= 0) {
-      showToast('Material and qty required');
+      UI.showToast('Material and qty required');
       return;
     }
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.post('saveReorderRequest', {
         material, supplier_id, requested_qty: Number(requested_qty), notes,
         userId: Auth.getUserId()
       });
       if (res.success) {
-        showToast('Reorder request saved — ' + res.rr_id);
+        UI.showToast('Reorder request saved — ' + res.rr_id);
         closeReorderForm();
         await loadReorderList();
       } else {
-        showToast('Error: ' + (res.error || 'save failed'));
+        UI.showToast('Error: ' + (res.error || 'save failed'));
       }
-    } finally { showSpinner(false); }
+    } finally { UI.showSpinner(false); }
   }
 
   async function markOrdered(rrId) {
     if (!confirm('Mark RR ' + rrId + ' as Ordered?')) return;
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.post('closeReorderRequest', { rr_id: rrId, status: 'Ordered', userId: Auth.getUserId() });
-      if (res.success) { showToast('Marked as Ordered'); await loadReorderList(); }
-      else showToast('Error: ' + res.error);
-    } finally { showSpinner(false); }
+      if (res.success) { UI.showToast('Marked as Ordered'); await loadReorderList(); }
+      else UI.showToast('Error: ' + res.error);
+    } finally { UI.showSpinner(false); }
   }
 
   function slideFormIn()  { document.getElementById('form-panel').classList.add('slide-in'); }
@@ -333,17 +359,17 @@ const GRN = (() => {
     document.getElementById('form-panel').classList.remove('slide-in');
     editingGrnId = null;
     document.getElementById('field-supplier').disabled = false;
-    document.getElementById('field-material').readOnly = false;
+    document.getElementById('field-material').disabled = false;
   }
 
   function slideDetailIn()  { document.getElementById('detail-panel').classList.add('slide-in'); }
   function slideDetailOut() { document.getElementById('detail-panel').classList.remove('slide-in'); }
 
-  function showSpinner(show) {
+  function UI.showSpinner(show) {
     document.getElementById('spinner').classList.toggle('hidden', !show);
   }
 
-  function showToast(msg) {
+  function UI.showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.className = 'toast show';
@@ -395,7 +421,7 @@ const GRN = (() => {
 
   async function submitIQCResult() {
     const decision = document.getElementById('iqc-decision').value;
-    if (!decision) { showToast('Select a decision'); return; }
+    if (!decision) { UI.showToast('Select a decision'); return; }
     const payload = {
       grn_id:         document.getElementById('iqc-grn-id').value,
       lot_no:         document.getElementById('iqc-lot-no').value,
@@ -411,11 +437,11 @@ const GRN = (() => {
     try {
       const res = await Api.post('saveIQCResult', payload);
       if (!res.success) throw new Error(res.error || 'Save failed');
-      showToast('IQC result saved');
+      UI.showToast('IQC result saved');
       document.getElementById('iqc-form-panel').classList.remove('slide-in');
       loadIQCList();
     } catch (e) {
-      showToast('Error: ' + e.message);
+      UI.showToast('Error: ' + e.message);
     }
   }
 

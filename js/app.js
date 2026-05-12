@@ -60,7 +60,7 @@ const App = (() => {
 
   // Maps tile id → stat key returned by getDashboardStats
   const TILE_STAT = {
-    grn:         'openGRNs',
+    grn:         'pendingIQC',
     production:  'activeBatches',
     mybatches:   'activeBatches',
     workorders:  'activeBatches',
@@ -78,6 +78,7 @@ const App = (() => {
   const ROLE_STATS = {
     director:   [
       { key: 'activeBatches',     label: 'Active Batches',     mod: 'neutral' },
+      { key: 'pendingIQC',        label: 'IQC Pending',        mod: d => d > 0 ? 'error'  : 'ok' },
       { key: 'openBreakdowns',    label: 'Open Breakdowns',    mod: d => d > 0 ? 'error'  : 'ok' },
       { key: 'openCapas',         label: 'Open CAPAs',         mod: d => d > 0 ? 'warn'   : 'ok' },
       { key: 'overdueCompliance', label: 'Overdue Compliance', mod: d => d > 0 ? 'error'  : 'ok' },
@@ -100,8 +101,9 @@ const App = (() => {
       { key: 'activeBatches', label: 'Active Batches', mod: 'neutral' },
     ],
     store: [
-      { key: 'openGRNs',      label: 'Open GRNs',  mod: d => d > 0 ? 'warn' : 'ok' },
-      { key: 'lowStockCount', label: 'Low Stock',   mod: d => d > 0 ? 'warn' : 'ok' },
+      { key: 'openGRNs',      label: 'Open GRNs',     mod: d => d > 0 ? 'warn'  : 'ok' },
+      { key: 'pendingIQC',    label: 'IQC Pending',   mod: d => d > 0 ? 'error' : 'ok' },
+      { key: 'lowStockCount', label: 'Low Stock',      mod: d => d > 0 ? 'warn'  : 'ok' },
     ],
     hr: [],
   };

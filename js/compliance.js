@@ -63,13 +63,13 @@ const Compliance = (() => {
   // ── Legal Register ────────────────────────────────────────────────────────
 
   async function loadLegalRegister() {
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.get('getLegalRegister');
       const data = res.success ? res.data : [];
       renderLegalTable(data);
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -131,8 +131,8 @@ const Compliance = (() => {
   async function submitLegalEntry() {
     const act = document.getElementById('lf-act').value.trim();
     const nextReview = document.getElementById('lf-next-review').value;
-    if (!act) { showToast('Act / Regulation is required'); return; }
-    if (!nextReview) { showToast('Next Review Date is required'); return; }
+    if (!act) { UI.showToast('Act / Regulation is required'); return; }
+    if (!nextReview) { UI.showToast('Next Review Date is required'); return; }
     const data = {
       LegalID:          editingLegalId || undefined,
       Act:              act,
@@ -144,17 +144,17 @@ const Compliance = (() => {
       Remarks:          document.getElementById('lf-remarks').value.trim()
     };
     if (!data.LegalID) delete data.LegalID;
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.post('saveLegalEntry', { ...data, userId: Auth.getUserId() });
       if (res.success) {
-        showToast('Saved');
+        UI.showToast('Saved');
         closeLegalForm();
         await loadLegalRegister();
       } else {
-        showToast('Save failed: ' + res.error);
+        UI.showToast('Save failed: ' + res.error);
       }
-    } finally { showSpinner(false); }
+    } finally { UI.showSpinner(false); }
   }
 
   // ── CAPA Log ──────────────────────────────────────────────────────────────
@@ -164,7 +164,7 @@ const Compliance = (() => {
     document.querySelectorAll('.capa-filter-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.status === status);
     });
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const params = status && status !== 'all' ? { status } : {};
       const res = await Api.get('getCapaList', params);
@@ -172,7 +172,7 @@ const Compliance = (() => {
       capaCache = data;
       renderCapaTable(data);
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -265,17 +265,17 @@ const Compliance = (() => {
   async function closeCapaItemFromDetail(id) {
     const effectiveness = prompt('Effectiveness notes (optional):');
     if (effectiveness === null) return;
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.post('updateCapaStatus', { capa_id: id, status: 'Closed', effectiveness, userId: Auth.getUserId() });
       if (res.success) {
-        showToast('CAPA closed');
+        UI.showToast('CAPA closed');
         closeCapaDetail();
         await loadCapaList(capaStatusFilter);
       } else {
-        showToast('Update failed');
+        UI.showToast('Update failed');
       }
-    } finally { showSpinner(false); }
+    } finally { UI.showSpinner(false); }
   }
 
   // ── CAPA Form ─────────────────────────────────────────────────────────────
@@ -330,7 +330,7 @@ const Compliance = (() => {
     Api.post('deleteRecord', { sheet: 'CAPA_Register', idCol: 'capa_id', idVal: capaId, userId: Auth.getUserId() })
       .then(res => {
         if (res && res.success) loadCapaList(capaStatusFilter);
-        else showToast('Delete failed: ' + (res && res.error || 'error'), 'error');
+        else UI.showToast('Delete failed: ' + (res && res.error || 'error'), 'error');
       });
   }
 
@@ -338,11 +338,11 @@ const Compliance = (() => {
     const source = document.getElementById('capa-form-source').value;
     const description = document.getElementById('capa-form-description').value;
     if (!source || !description) {
-      showToast('Source and Description are required');
+      UI.showToast('Source and Description are required');
       return;
     }
     if (editingCapaId) {
-      showSpinner(true);
+      UI.showSpinner(true);
       try {
         const res = await Api.post('updateRecord', {
           sheet: 'CAPA_Register',
@@ -365,9 +365,9 @@ const Compliance = (() => {
           closeCapaForm();
           await loadCapaList(capaStatusFilter);
         } else {
-          showToast('Update failed: ' + (res && res.error));
+          UI.showToast('Update failed: ' + (res && res.error));
         }
-      } finally { showSpinner(false); }
+      } finally { UI.showSpinner(false); }
       return;
     }
     const data = {
@@ -380,44 +380,44 @@ const Compliance = (() => {
       responsible_id:       (document.getElementById('capa-form-responsible') || {}).value || '',
       target_date:          document.getElementById('capa-form-target-date').value
     };
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.post('saveCapa', { ...data, userId: Auth.getUserId() });
       if (res.success) {
-        showToast('CAPA saved: ' + res.capa_id);
+        UI.showToast('CAPA saved: ' + res.capa_id);
         closeCapaForm();
         await loadCapaList(capaStatusFilter);
       } else {
-        showToast('Save failed');
+        UI.showToast('Save failed');
       }
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
   async function closeCapaItem(id) {
     if (!confirm('Mark CAPA ' + id + ' as Closed?')) return;
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.post('updateCapaStatus', { capa_id: id, status: 'Closed', userId: Auth.getUserId() });
       if (res.success) {
-        showToast('CAPA closed');
+        UI.showToast('CAPA closed');
         await loadCapaList(capaStatusFilter);
       } else {
-        showToast('Update failed');
+        UI.showToast('Update failed');
       }
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  function showSpinner(show) {
+  function UI.showSpinner(show) {
     document.getElementById('spinner').classList.toggle('hidden', !show);
   }
 
-  function showToast(msg) {
+  function UI.showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');

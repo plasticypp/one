@@ -221,6 +221,7 @@ function doGet(e) {
     if (action === 'getBatchRecord')        return respond(getBatchRecord(e.parameter));
     if (action === 'getOQCBatchList')       return respond(getOQCBatchList());
     if (action === 'getRMStock')            return respond(getRMStock());
+    if (action === 'getMaterialList')       return respond(getMaterialList());
     if (action === 'getSuppliers')          return respond(getSuppliers());
     if (action === 'getMachineList')        return respond(getMachineList());
     if (action === 'getOperatorList')       return respond(getOperatorList());
@@ -356,7 +357,7 @@ function rowsToObjects(rows) {
 
 // ── Master Data CRUD ─────────────────────────────────────────────────────────
 
-const MASTER_ENTITIES = ['Products','Customers','Suppliers','Equipment','Tooling','Spares','Personnel','BOM','QualityParams'];
+const MASTER_ENTITIES = ['Products','Customers','Suppliers','Equipment','Tooling','Spares','Personnel','BOM','QualityParams','Materials'];
 
 function assertValidEntity(entity) {
   if (!MASTER_ENTITIES.includes(entity)) throw new Error('invalid_entity');
@@ -1043,6 +1044,19 @@ function closeBatch(data) {
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][0]) === String(data.batch_id)) {
       if (rows[i][7] === 'Closed') return { success: false, error: 'already_closed' };
+      // Param-log gate: warn if no param logs exist (director can override)
+      if (data.override !== 'true') {
+        const plSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('ProductionLog');
+        if (plSheet) {
+          const plRows = plSheet.getDataRange().getValues();
+          if (plRows.length > 1) {
+            const plHeaders = plRows[0];
+            const plBatchIdx = plHeaders.indexOf('batch_id');
+            const hasLogs = plBatchIdx >= 0 && plRows.slice(1).some(r => String(r[plBatchIdx]) === String(data.batch_id));
+            if (!hasLogs) return { success: false, error: 'no_param_logs' };
+          }
+        }
+      }
       // Quality gate: block if NG rate > 20%
       const qcSheet = getSheet('QualityChecks');
       const qcRows = qcSheet.getDataRange().getValues();
@@ -1556,6 +1570,40 @@ function getRMStock() {
   return { success: true, data };
 }
 
+function getMaterialList() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('Materials');
+  if (!sheet || sheet.getLastRow() < 2) {
+    // Auto-create sheet with headers if missing
+    if (!sheet) {
+      sheet = ss.insertSheet('Materials');
+      sheet.getRange(1,1,1,4).setValues([['material_id','name','unit','active']]);
+      sheet.setFrozenRows(1);
+    }
+    return { success: true, data: [] };
+  }
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+  const activeIdx = headers.indexOf('active');
+  const nameIdx   = headers.indexOf('name');
+  const idIdx     = headers.indexOf('material_id');
+  return {
+    success: true,
+    data: rows.slice(1)
+      .filter(r => r[idIdx] && (activeIdx < 0 || String(r[activeIdx]).toUpperCase() !== 'FALSE'))
+      .map(r => ({ id: r[idIdx], name: r[nameIdx] || r[idIdx] }))
+  };
+}
+
+function setupMaterials() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (ss.getSheetByName('Materials')) { Logger.log('Materials sheet already exists'); return; }
+  const sheet = ss.insertSheet('Materials');
+  sheet.getRange(1,1,1,4).setValues([['material_id','name','unit','active']]);
+  sheet.setFrozenRows(1);
+  Logger.log('Materials sheet created — add rows: material_id, name (e.g. HDPE Resin), unit (kg), active (TRUE)');
+}
+
 function getSuppliers() {
   const sheet = getSheet('Suppliers');
   const rows = sheet.getDataRange().getValues();
@@ -1773,7 +1821,14 @@ function getDashboardStats() {
     return d && d < today;
   }).length;
 
-  const data = { openGRNs, activeBatches, openBreakdowns, openCapas, overdueCompliance, overdueCalibrations, lowStockCount, overduePMs, openComplaints };
+  // Pending IQC — GRN rows where iqc_status is blank or 'Pending'
+  const grnHdrs = grnRows[0] || [];
+  const iqcStatusIdx = grnHdrs.indexOf('iqc_status');
+  const pendingIQC = iqcStatusIdx >= 0
+    ? grnRows.slice(1).filter(r => r[0] && (!r[iqcStatusIdx] || r[iqcStatusIdx] === 'Pending')).length
+    : 0;
+
+  const data = { openGRNs, activeBatches, openBreakdowns, openCapas, overdueCompliance, overdueCalibrations, lowStockCount, overduePMs, openComplaints, pendingIQC };
   _cachePut('dashboard_stats', data, 30);
   return { success: true, data };
 }

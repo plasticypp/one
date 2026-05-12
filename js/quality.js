@@ -135,12 +135,12 @@ const Quality = (() => {
   // ── Summary Tab ───────────────────────────────────────────────────────────
 
   async function loadSummary() {
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.get('getQualitySummary');
       renderSummaryCards(res.success ? res.data : []);
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -153,7 +153,7 @@ const Quality = (() => {
     }
     rows.forEach(r => {
       const rate  = r.pass_rate;
-      const color = rate >= 95 ? '#2e7d32' : rate >= 80 ? '#f57f17' : '#c62828';
+      const color = rate >= 95 ? 'var(--color-success)' : rate >= 80 ? '#f57f17' : 'var(--color-error)';
       const bg    = rate >= 95 ? '#f1f8f1' : rate >= 80 ? '#fffde7' : '#fff5f5';
       const card  = document.createElement('div');
       card.className = 'qc-card';
@@ -182,7 +182,7 @@ const Quality = (() => {
   // ── Check Log Tabs ────────────────────────────────────────────────────────
 
   async function loadChecks(batchId, stage) {
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const params = { stage };
       if (batchId) params.batch_id = batchId;
@@ -191,7 +191,7 @@ const Quality = (() => {
       checkCache[stage] = rows;
       renderChecksTable(rows, stage);
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -264,7 +264,7 @@ const Quality = (() => {
 
   async function loadParamSheet(stage, productId) {
     if (!productId) { renderParamSheet([]); return; }
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       // Try QualityParams master first, fall back to INSPECTION_PLANS
       const [masterRes, planRes] = await Promise.all([
@@ -281,7 +281,7 @@ const Quality = (() => {
       ];
       renderParamSheet(combined);
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -376,13 +376,13 @@ const Quality = (() => {
     const eBatch = document.getElementById('err-batch');
     if (eBatch) eBatch.textContent = '';
     if (!batchId) { if (eBatch) eBatch.textContent = 'Select a batch'; return; }
-    if (!sheetRows.length) { showToast('No parameters loaded — add params in Masters → Quality Params'); return; }
+    if (!sheetRows.length) { UI.showToast('No parameters loaded — add params in Masters → Quality Params'); return; }
 
     const filledRows = sheetRows.filter(r => r.actual_value !== '' && r.actual_value !== null);
-    if (!filledRows.length) { showToast('Enter at least one actual value'); return; }
+    if (!filledRows.length) { UI.showToast('Enter at least one actual value'); return; }
 
     const batch = batchCache.find(b => String(b.batch_id) === String(batchId));
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.post('saveQualityCheckSheet', {
         batch_id:    batchId,
@@ -410,13 +410,13 @@ const Quality = (() => {
           showToastWithLink('Check sheet saved — NG result.', 'Log NCR →',
             'ncr.html?batch=' + batchParam + '&stage=' + (activeStage || 'IPC'));
         } else {
-          showToast('Check sheet saved — All OK');
+          UI.showToast('Check sheet saved — All OK');
         }
       } else {
-        showToast('Error: ' + (res.error || 'save failed'));
+        UI.showToast('Error: ' + (res.error || 'save failed'));
       }
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -475,10 +475,10 @@ const Quality = (() => {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  function showSpinner(show) {
+  function UI.showSpinner(show) {
     document.getElementById('spinner').classList.toggle('hidden', !show);
   }
-  function showToast(msg) {
+  function UI.showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');

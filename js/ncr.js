@@ -98,13 +98,13 @@ const NCR = (() => {
 
   // ── NCR Log ────────────────────────────────────────────────────────────────
   async function loadNCRs(filters) {
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.get('getNCRList', filters || {});
       ncrCache = res.success ? res.data : [];
       renderNCRTable(ncrCache);
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -176,12 +176,12 @@ const NCR = (() => {
     const date        = document.getElementById('field-ncr-date').value;
 
     if (!batchId || !defectType || !qty || !disposition) {
-      showToast('Batch, Defect Type, Qty, and Disposition are required');
+      UI.showToast('Batch, Defect Type, Qty, and Disposition are required');
       return;
     }
 
     if (editingNcrId) {
-      showSpinner(true);
+      UI.showSpinner(true);
       try {
         const fields = { date, batch_id: batchId, stage, defect_type: defectType, severity, qty_affected: Number(qty), disposition, detected_by: detectedBy, remarks };
         const res = await Api.post('updateRecord', {
@@ -189,12 +189,12 @@ const NCR = (() => {
           userId: Auth.getUserId(), fields
         });
         if (res.success) { editingNcrId = null; slideFormOut(); await loadNCRs(); }
-        else showToast('Update failed: ' + res.error);
-      } finally { showSpinner(false); }
+        else UI.showToast('Update failed: ' + res.error);
+      } finally { UI.showSpinner(false); }
       return;
     }
 
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.post('saveNCR', {
         date, batch_id: batchId, stage, defect_type: defectType, severity,
@@ -204,15 +204,15 @@ const NCR = (() => {
       if (res.success) {
         slideFormOut();
         await loadNCRs();
-        showToast('NCR saved — ' + res.ncr_id);
+        UI.showToast('NCR saved — ' + res.ncr_id);
         if (res.capa_required) {
           showCAPABanner(res.capa_trigger_reason);
-          if (res.capa_id) showToast('CAPA auto-created: ' + res.capa_id);
+          if (res.capa_id) UI.showToast('CAPA auto-created: ' + res.capa_id);
         }
       } else {
-        showToast('Error: ' + (res.error || 'save failed'));
+        UI.showToast('Error: ' + (res.error || 'save failed'));
       }
-    } finally { showSpinner(false); }
+    } finally { UI.showSpinner(false); }
   }
 
   // ── CAPA Banner ────────────────────────────────────────────────────────────
@@ -278,7 +278,7 @@ const NCR = (() => {
       sheet: 'NCR_Log', idCol: 'ncr_id', idVal: ncrId, userId: Auth.getUserId()
     });
     if (res.success) { slideDetailOut(); await loadNCRs(); }
-    else showToast('Delete failed: ' + res.error);
+    else UI.showToast('Delete failed: ' + res.error);
   }
 
   // ── Defect Catalogue ───────────────────────────────────────────────────────
@@ -302,8 +302,8 @@ const NCR = (() => {
       grid.innerHTML = '<p class="empty-msg">No defects loaded</p>';
       return;
     }
-    const sevColor = { Critical: '#c62828', Major: '#e65100', Minor: '#2e7d32' };
-    const sevBg    = { Critical: '#fff5f5', Major: '#fff3e0', Minor: '#f1f8f1' };
+    const sevColor = { Critical: 'var(--color-error)', Major: 'var(--color-warning)', Minor: 'var(--color-success)' };
+    const sevBg    = { Critical: '#fff5f5', Major: 'var(--color-warning-bg, #fff3e0)', Minor: '#f1f8f1' };
     defectCache.forEach(d => {
       const color = sevColor[d.severity] || '#555';
       const bg    = sevBg[d.severity]    || '#f9f9f9';
@@ -334,8 +334,8 @@ const NCR = (() => {
   function slideDetailOut() { document.getElementById('main-content').classList.remove('slide-out'); document.getElementById('detail-panel').classList.remove('slide-in'); }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
-  function showSpinner(show) { document.getElementById('spinner').classList.toggle('hidden', !show); }
-  function showToast(msg) {
+  function UI.showSpinner(show) { document.getElementById('spinner').classList.toggle('hidden', !show); }
+  function UI.showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');

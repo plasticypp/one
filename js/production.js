@@ -109,14 +109,14 @@ const Production = (() => {
   // ── Production Params Log ─────────────────────────────────────────────────
 
   async function loadParamsLog() {
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const batchSel = document.getElementById('filter-params-batch');
       const batchId = batchSel ? batchSel.value : '';
       const params = batchId ? { batch_id: batchId } : {};
       const res = await Api.get('getProductionLog', params);
       renderParamsTable(res.success ? res.data : []);
-    } finally { showSpinner(false); }
+    } finally { UI.showSpinner(false); }
   }
 
   function renderParamsTable(rows) {
@@ -162,8 +162,8 @@ const Production = (() => {
 
   async function submitParamsLog() {
     const batchId = document.getElementById('params-batch-sel').value;
-    if (!batchId) { showToast('Select a batch'); return; }
-    showSpinner(true);
+    if (!batchId) { UI.showToast('Select a batch'); return; }
+    UI.showSpinner(true);
     try {
       const res = await Api.post('saveProductionLog', {
         batch_id:          batchId,
@@ -176,11 +176,11 @@ const Production = (() => {
         userId:            Auth.getUserId()
       });
       if (res.success) {
-        showToast('Params logged — ' + res.log_id);
+        UI.showToast('Params logged — ' + res.log_id);
         slideParamsPanelOut();
         await loadParamsLog();
-      } else { showToast('Error: ' + res.error); }
-    } finally { showSpinner(false); }
+      } else { UI.showToast('Error: ' + res.error); }
+    } finally { UI.showSpinner(false); }
   }
 
   function populateFormDropdowns() {
@@ -215,7 +215,7 @@ const Production = (() => {
   // ── Batch List ────────────────────────────────────────────────────────────
 
   async function loadBatches(status) {
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const filterStatus = status || document.getElementById('filter-status').value || 'all';
       const params = {};
@@ -238,7 +238,7 @@ const Production = (() => {
         });
       }
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -297,10 +297,10 @@ const Production = (() => {
 
     if (editingBatchId) {
       if (!productId || !machineId || !plannedQty) {
-        showToast('Product, Machine and Planned Qty are required');
+        UI.showToast('Product, Machine and Planned Qty are required');
         return;
       }
-      showSpinner(true);
+      UI.showSpinner(true);
       try {
         const res = await Api.post('updateRecord', {
           sheet: 'BatchOrders', idCol: 'batch_id', idVal: editingBatchId,
@@ -312,18 +312,18 @@ const Production = (() => {
           slideFormOut();
           await loadBatches();
         } else {
-          showToast('Update failed: ' + res.error);
+          UI.showToast('Update failed: ' + res.error);
         }
-      } finally { showSpinner(false); }
+      } finally { UI.showSpinner(false); }
       return;
     }
 
     if (!productId || !machineId || !plannedQty) {
-      showToast('Product, Machine and Planned Qty are required');
+      UI.showToast('Product, Machine and Planned Qty are required');
       return;
     }
 
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.post('saveBatch', {
         product_id:  productId,
@@ -334,14 +334,14 @@ const Production = (() => {
         userId:      Auth.getUserId()
       });
       if (res.success) {
-        showToast('Batch saved — ' + (res.batch_id || ''));
+        UI.showToast('Batch saved — ' + (res.batch_id || ''));
         slideFormOut();
         await loadBatches();
       } else {
-        showToast('Error: ' + (res.error || 'save failed'));
+        UI.showToast('Error: ' + (res.error || 'save failed'));
       }
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -372,16 +372,8 @@ const Production = (() => {
 
   async function submitClose() {
     const actualQty = Number(document.getElementById('close-actual-qty').value);
-    if (!actualQty || actualQty <= 0) { showToast('Enter actual quantity'); return; }
-    showSpinner(true);
-    try {
-      const logCheck = await Api.get('getProductionLog', { batch_id: closingBatchId });
-      if (logCheck.success && (!logCheck.data || logCheck.data.length === 0)) {
-        showSpinner(false);
-        if (!confirm('No parameter logs found for this batch. Close anyway?')) return;
-        showSpinner(true);
-      }
-    } catch (_) {}
+    if (!actualQty || actualQty <= 0) { UI.showToast('Enter actual quantity'); return; }
+    UI.showSpinner(true);
     try {
       const res = await Api.post('closeBatch', {
         batch_id:   closingBatchId,
@@ -392,16 +384,18 @@ const Production = (() => {
         userId:     Auth.getUserId()
       });
       if (res.success) {
-        showToast('Batch ' + closingBatchId + ' closed');
+        UI.showToast('Batch ' + closingBatchId + ' closed');
         closingBatchId = null;
         slideClosePanelOut();
         await loadBatches();
+      } else if (res.error === 'no_param_logs') {
+        UI.showToast('No parameter logs found for this batch. Log params before closing.');
       } else if (res.error === 'quality_gate') {
-        showToast(`Quality gate: ${res.ng_count}/${res.total} NG (${res.ng_rate}%). Only director can override.`);
+        UI.showToast(`Quality gate: ${res.ng_count}/${res.total} NG (${res.ng_rate}%). Only director can override.`);
       } else {
-        showToast('Error: ' + res.error);
+        UI.showToast('Error: ' + res.error);
       }
-    } finally { showSpinner(false); }
+    } finally { UI.showSpinner(false); }
   }
 
   // ── Detail Panel ──────────────────────────────────────────────────────────
@@ -450,19 +444,19 @@ const Production = (() => {
     if (!confirm('Delete batch ' + batchId + '?')) return;
     const res = await Api.post('deleteRecord', { sheet: 'BatchOrders', idCol: 'batch_id', idVal: batchId, userId: Auth.getUserId() });
     if (res.success) { slideDetailOut(); await loadBatches(); }
-    else showToast('Delete failed: ' + res.error);
+    else UI.showToast('Delete failed: ' + res.error);
   }
 
   // ── Finished Goods ────────────────────────────────────────────────────────
 
   async function loadFinishedGoods() {
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.get('getFinishedGoods');
       const rows = res.success ? res.data : [];
       renderFGTable(rows);
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -526,11 +520,11 @@ const Production = (() => {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  function showSpinner(show) {
+  function UI.showSpinner(show) {
     document.getElementById('spinner').classList.toggle('hidden', !show);
   }
 
-  function showToast(msg) {
+  function UI.showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');

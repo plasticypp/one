@@ -64,13 +64,13 @@ const People = (() => {
   // ── Personnel ─────────────────────────────────────────────────────────────
 
   async function loadPersonnel() {
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.get('getPersonnelList');
       personnelCache = res && res.success ? res.data : [];
       renderPersonnel(personnelCache);
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -126,10 +126,10 @@ const People = (() => {
     const name       = document.getElementById('pf-name').value.trim();
     const role       = document.getElementById('pf-role').value;
     const department = document.getElementById('pf-department').value;
-    if (!name)       { showToast('Name is required'); return; }
-    if (!role)       { showToast('Select a role'); return; }
-    if (!department) { showToast('Select a department'); return; }
-    showSpinner(true);
+    if (!name)       { UI.showToast('Name is required'); return; }
+    if (!role)       { UI.showToast('Select a role'); return; }
+    if (!department) { UI.showToast('Select a department'); return; }
+    UI.showSpinner(true);
     try {
       const res = await Api.post('savePersonnel', {
         PersonID:      document.getElementById('pf-person-id').value || undefined,
@@ -140,28 +140,28 @@ const People = (() => {
         userId:        Auth.getUserId()
       });
       if (res && res.success) {
-        showToast(document.getElementById('pf-person-id').value ? 'Personnel updated' : 'Personnel added: ' + res.person_id);
+        UI.showToast(document.getElementById('pf-person-id').value ? 'Personnel updated' : 'Personnel added: ' + res.person_id);
         closePersonnelForm();
         await loadPersonnel();
       } else {
-        showToast('Error: ' + (res && res.error || 'save failed'));
+        UI.showToast('Error: ' + (res && res.error || 'save failed'));
       }
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
   // ── Training Log ──────────────────────────────────────────────────────────
 
   async function loadTraining() {
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const res = await Api.get('getTrainingLog', {});
       trainingCache = res && res.success ? res.data : [];
       const filter = document.getElementById('training-status-filter').value;
       renderTraining(trainingCache, filter);
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
@@ -215,10 +215,10 @@ const People = (() => {
     const topic   = document.getElementById('tf-topic').value;
     const date    = document.getElementById('tf-date').value;
     const trainer = document.getElementById('tf-trainer').value.trim();
-    if (!topic)   { showToast('Select a topic'); return; }
-    if (!date)    { showToast('Enter date'); return; }
-    if (!trainer) { showToast('Enter trainer name'); return; }
-    showSpinner(true);
+    if (!topic)   { UI.showToast('Select a topic'); return; }
+    if (!date)    { UI.showToast('Enter date'); return; }
+    if (!trainer) { UI.showToast('Enter trainer name'); return; }
+    UI.showSpinner(true);
     try {
       const res = await Api.post('saveTrainingLog', {
         topic,
@@ -232,24 +232,24 @@ const People = (() => {
         userId:       Auth.getUserId()
       });
       if (res && res.success) {
-        showToast('Training logged');
+        UI.showToast('Training logged');
         closeTrainingForm();
         await loadTraining();
       } else {
-        showToast('Error: ' + (res && res.error || 'save failed'));
+        UI.showToast('Error: ' + (res && res.error || 'save failed'));
       }
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  function showSpinner(show) {
+  function UI.showSpinner(show) {
     document.getElementById('spinner').classList.toggle('hidden', !show);
   }
 
-  function showToast(msg) {
+  function UI.showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');
@@ -261,7 +261,7 @@ const People = (() => {
   async function loadTrainingMatrix() {
     const wrap = document.getElementById('matrix-wrap');
     wrap.innerHTML = '<p class="text-muted" style="padding:var(--space-8);text-align:center;">Loading…</p>';
-    showSpinner(true);
+    UI.showSpinner(true);
     try {
       const [pRes, tRes] = await Promise.all([
         Api.get('getPersonnelList'),
@@ -316,7 +316,7 @@ const People = (() => {
     } catch (e) {
       wrap.innerHTML = '<p class="text-muted" style="padding:var(--space-8);text-align:center;">Failed to load matrix.</p>';
     } finally {
-      showSpinner(false);
+      UI.showSpinner(false);
     }
   }
 
