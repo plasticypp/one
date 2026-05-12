@@ -832,13 +832,54 @@ function saveLegalEntry(data) {
 
 function getGRNList(params) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName('RMStock');
-  if (!sheet) return { success: true, data: [] };
-  const rows = sheet.getDataRange().getValues();
-  if (rows.length < 2) return { success: true, data: [] };
-  const headers = rows[0];
-  let data = rows.slice(1).map(r => rowToObj(headers, r));
-  if (params.supplier_id) {
+  let data = [];
+
+  // Read RMStock (written by saveGRN — canonical going-forward)
+  const rmSheet = ss.getSheetByName('RMStock');
+  if (rmSheet) {
+    const rows = rmSheet.getDataRange().getValues();
+    if (rows.length > 1) {
+      const headers = rows[0];
+      rows.slice(1).filter(r => r[0]).forEach(r => {
+        const obj = rowToObj(headers, r);
+        data.push({
+          grn_id:      obj.grn_id    || obj.date || '',
+          date:        obj.date      || '',
+          supplier_id: obj.supplier_id || '',
+          material:    obj.material  || obj.material_id || '',
+          lot_no:      obj.lot_no    || '',
+          qty_kg:      obj.qty_kg    || obj.qty_received || '',
+          iqc_status:  obj.iqc_status || 'Pending'
+        });
+      });
+    }
+  }
+
+  // Also read legacy GRN sheet (from seedInventoryData), normalise fields
+  const grnSheet = ss.getSheetByName('GRN');
+  if (grnSheet) {
+    const rows = grnSheet.getDataRange().getValues();
+    if (rows.length > 1) {
+      const headers = rows[0];
+      const existingIds = new Set(data.map(d => d.grn_id));
+      rows.slice(1).filter(r => r[0]).forEach(r => {
+        const obj = rowToObj(headers, r);
+        const id = obj.grn_id || '';
+        if (existingIds.has(id)) return; // don't duplicate
+        data.push({
+          grn_id:      id,
+          date:        obj.date || '',
+          supplier_id: obj.supplier_id || '',
+          material:    obj.material || obj.material_id || '',
+          lot_no:      obj.lot_no || obj.invoice_no || '',
+          qty_kg:      obj.qty_kg || obj.qty_received || '',
+          iqc_status:  obj.iqc_status || obj.status || 'Pending'
+        });
+      });
+    }
+  }
+
+  if (params && params.supplier_id) {
     data = data.filter(r => String(r.supplier_id) === String(params.supplier_id));
   }
   return { success: true, data };
