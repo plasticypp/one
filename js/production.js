@@ -446,6 +446,8 @@
     document.getElementById('field-product').value = r.product_id || '';
     document.getElementById('field-machine').value = r.machine_id || '';
     document.getElementById('field-operator').value = r.operator_id || '';
+    document.getElementById('field-shift').value = r.shift || 'A';
+    document.getElementById('field-rm-lot').value = r.rm_lot || '';
     document.getElementById('field-planned-qty').value = r.planned_qty || '';
     document.getElementById('field-start-time').value = r.start_time || '';
     document.getElementById('form-title').textContent = 'Edit Batch';
