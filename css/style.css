@@ -298,10 +298,13 @@ body {
 .home-stats {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-3);
+  gap: var(--space-2);
   padding: var(--space-4) var(--space-4) 0;
 }
 .home-stats:empty { display: none; }
+.home-stats .stat-card { padding: var(--space-3); }
+.home-stats .stat-card-value { font-size: 1.75rem; }
+.home-stats .stat-card-label { font-size: 10px; }
 
 /* ── Stat Cards (KPI Dashboard) ── */
 .stat-grid {
