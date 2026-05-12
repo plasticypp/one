@@ -208,7 +208,8 @@ const Complaints = (() => {
         complaint_no, root_cause, corrective_action, userId: Auth.getUserId()
       });
       if (res && res.success) {
-        showToast('Complaint closed');
+        if (res.capa_id) showToast('Complaint closed — CAPA auto-created: ' + res.capa_id);
+        else showToast('Complaint closed');
         closeClosePanel();
         await loadComplaints();
       } else {

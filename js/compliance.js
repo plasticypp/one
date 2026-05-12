@@ -393,7 +393,8 @@
     try {
       const res = await Api.post('saveCapa', { ...data, userId: Auth.getUserId() });
       if (res.success) {
-        UI.showToast('CAPA saved: ' + res.capa_id);
+        if (res.responsible_warn) UI.showToast('CAPA saved — responsible person not in Personnel list');
+        else UI.showToast('CAPA saved: ' + res.capa_id);
         closeCapaForm();
         await loadCapaList(capaStatusFilter);
       } else if (res.error && res.error.startsWith('invalid_responsible')) {

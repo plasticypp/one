@@ -388,6 +388,8 @@
         closingBatchId = null;
         slideClosePanelOut();
         await loadBatches();
+      } else if (res.error === 'iqc_not_passed') {
+        UI.showToast(`IQC gate: RM lot ${res.lot_no} has not passed IQC. Complete IQC before closing batch.`);
       } else if (res.error === 'no_param_logs') {
         UI.showToast('No parameter logs found for this batch. Log params before closing.');
       } else if (res.error === 'quality_gate') {

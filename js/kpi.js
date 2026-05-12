@@ -70,10 +70,19 @@ const KPI = (() => {
     }
     tbody.innerHTML = data.map(r => {
       const def = kpisKB.find(k => k.id === r.KPICode) || {};
+      const val = parseFloat(r.Value);
+      let rag = '';
+      if (!isNaN(val) && def.target_value != null && def.target_operator) {
+        const tv = def.target_value;
+        const met = def.target_operator === 'gte' ? val >= tv : val <= tv;
+        const color = met ? '#2e7d32' : '#c62828';
+        const bg    = met ? '#e8f5e9' : '#ffebee';
+        rag = ` style="color:${color};background:${bg};border-radius:4px;padding:2px 6px;"`;
+      }
       return `<tr>
         <td>${String(r.LogDate || '').slice(0, 10)}</td>
         <td>${r.KPIName || def.name || r.KPICode || '—'}</td>
-        <td style="font-weight:600;">${r.Value ?? '—'} ${r.Unit || ''}</td>
+        <td${rag}>${r.Value ?? '—'} ${r.Unit || ''}</td>
         <td>${r.Target || def.target_label || '—'}</td>
         <td>${r.Period || '—'}</td>
         <td>${r.RecordedBy || '—'}</td>

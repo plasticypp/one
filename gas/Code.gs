@@ -35,14 +35,14 @@ const TRAINING_PLAN_KB = [
 ];
 
 const KPIS_KB = [
-  { id: 'KPI001', name: 'Rejection Rate',            category: 'Quality',   unit: '%',     target_label: '< 3%'   },
-  { id: 'KPI002', name: 'Customer Complaint Rate',   category: 'Customer',  unit: 'count', target_label: '0/month' },
-  { id: 'KPI003', name: 'On-Time Delivery Rate',     category: 'Delivery',  unit: '%',     target_label: '≥ 95%'  },
-  { id: 'KPI004', name: 'First Pass Yield (FPY)',    category: 'Quality',   unit: '%',     target_label: '≥ 97%'  },
-  { id: 'KPI005', name: 'Machine Downtime (MTBF)',   category: 'Equipment', unit: 'hrs',   target_label: '≥ 200h' },
-  { id: 'KPI006', name: 'PM Compliance Rate',        category: 'Equipment', unit: '%',     target_label: '≥ 90%'  },
-  { id: 'KPI007', name: 'Raw Material Yield',        category: 'Process',   unit: '%',     target_label: '≥ 98%'  },
-  { id: 'KPI008', name: 'CAPA Closure Rate',         category: 'Quality',   unit: '%',     target_label: '≥ 80%'  }
+  { id: 'KPI001', name: 'Rejection Rate',            category: 'Quality',   unit: '%',     target_label: '< 3%',    target_value: 3,   target_operator: 'lte' },
+  { id: 'KPI002', name: 'Customer Complaint Rate',   category: 'Customer',  unit: 'count', target_label: '0/month', target_value: 0,   target_operator: 'lte' },
+  { id: 'KPI003', name: 'On-Time Delivery Rate',     category: 'Delivery',  unit: '%',     target_label: '≥ 95%',   target_value: 95,  target_operator: 'gte' },
+  { id: 'KPI004', name: 'First Pass Yield (FPY)',    category: 'Quality',   unit: '%',     target_label: '≥ 97%',   target_value: 97,  target_operator: 'gte' },
+  { id: 'KPI005', name: 'Machine Downtime (MTBF)',   category: 'Equipment', unit: 'hrs',   target_label: '≥ 200h',  target_value: 200, target_operator: 'gte' },
+  { id: 'KPI006', name: 'PM Compliance Rate',        category: 'Equipment', unit: '%',     target_label: '≥ 90%',   target_value: 90,  target_operator: 'gte' },
+  { id: 'KPI007', name: 'Raw Material Yield',        category: 'Process',   unit: '%',     target_label: '≥ 98%',   target_value: 98,  target_operator: 'gte' },
+  { id: 'KPI008', name: 'CAPA Closure Rate',         category: 'Quality',   unit: '%',     target_label: '≥ 80%',   target_value: 80,  target_operator: 'gte' }
 ];
 
 // ── Wave 6 KB Constants ──────────────────────────────────────────────────────
@@ -233,6 +233,7 @@ function doGet(e) {
     if (action === 'getKPILog')             return respond(getKPILog(e.parameter));
     if (action === 'getCustomerComplaints') return respond(getCustomerComplaints(e.parameter));
     if (action === 'getKPIsKB')            return respond({ success: true, data: KPIS_KB });
+    if (action === 'getBreakdownCodesKB')  return respond({ success: true, data: BREAKDOWN_CODES_KB });
     if (action === 'getTrainingPlanKB')    return respond({ success: true, data: TRAINING_PLAN_KB });
     if (action === 'getCalibrationList')   return respond(getCalibrationList(e.parameter));
     if (action === 'getInstrumentsKB')     return respond({ success: true, data: INSTRUMENTS_KB });
@@ -694,6 +695,9 @@ function planBatchFromSO(data) {
     data.so_id
   ]);
 
+  // Seed BatchTraceability so dispatch gate can find this batch
+  upsertBatchTraceability({ batch_no: batchId, product_id: data.product_id, production_date: data.date || today, machine_id: data.machine_id });
+
   // Link back: write batch_id into SO row
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const soSheet = ss.getSheetByName('SalesOrders');
@@ -839,6 +843,12 @@ function saveGRN(data) {
 
   var fieldError = validateFields(data, ['supplier_id','material','qty_kg','date']);
   if (fieldError) return { success: false, error: fieldError };
+
+  // Approved supplier gate
+  const approvedIds = SUPPLIERS_KB.map(s => s.id);
+  if (!approvedIds.includes(String(data.supplier_id))) {
+    return { success: false, error: 'unapproved_supplier' };
+  }
 
   const RM_HEADERS = ['date','grn_id','supplier_id','material','lot_no','qty_kg','iqc_status'];
   const sheet = ensureSheet('RMStock', RM_HEADERS);
@@ -1088,6 +1098,10 @@ function saveBatch(data) {
     data.start_time || '',
     ''
   ]);
+
+  // Seed BatchTraceability so dispatch gate can find this batch
+  upsertBatchTraceability({ batch_no: batchId, product_id: data.product_id, production_date: data.batch_date || today, machine_id: data.machine_id });
+
   return { success: true, batch_id: batchId };
 }
 
@@ -1105,6 +1119,35 @@ function closeBatch(data) {
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][0]) === String(data.batch_id)) {
       if (rows[i][7] === 'Closed') return { success: false, error: 'already_closed' };
+      // IQC gate: if a RM lot is linked, ensure it has passed IQC before close
+      if (data.override !== 'true') {
+        const btSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('BatchTraceability');
+        if (btSheet) {
+          const btRows = btSheet.getDataRange().getValues();
+          const btHdrs = btRows[0];
+          const btBatchIdx = btHdrs.indexOf('batch_no');
+          const btLotIdx   = btHdrs.indexOf('rm_lot_no');
+          const btRow = btBatchIdx >= 0 ? btRows.slice(1).find(r => String(r[btBatchIdx]) === String(data.batch_id)) : null;
+          if (btRow && btLotIdx >= 0 && btRow[btLotIdx]) {
+            const lotNos = String(btRow[btLotIdx]).split(',').map(s => s.trim()).filter(Boolean);
+            const rmSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('RMStock');
+            if (rmSheet && lotNos.length > 0) {
+              const rmRows = rmSheet.getDataRange().getValues();
+              const rmHdrs = rmRows[0];
+              const rmLotIdx = rmHdrs.indexOf('lot_no');
+              const rmIqcIdx = rmHdrs.indexOf('iqc_status');
+              if (rmLotIdx >= 0 && rmIqcIdx >= 0) {
+                const failedLot = lotNos.find(lot => {
+                  const rmRow = rmRows.slice(1).find(r => String(r[rmLotIdx]) === lot);
+                  return rmRow && rmRow[rmIqcIdx] !== 'Passed';
+                });
+                if (failedLot) return { success: false, error: 'iqc_not_passed', lot_no: failedLot };
+              }
+            }
+          }
+        }
+      }
+
       // Param-log gate: warn if no param logs exist (director can override)
       if (data.override !== 'true') {
         const plSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('ProductionLog');
@@ -1523,6 +1566,15 @@ function saveQualityCheckSheet(data) {
     savedIds.push(checkId);
   });
   upsertBatchTraceability({ batch_no: data.batch_id, product_id: data.product_id || '', production_date: today, stage, result: overallResult });
+
+  // Mirror OQC result to OQC_Records sheet for AQL traceability
+  if (stage === 'OQC') {
+    const oqcSheet = ensureSheet('OQC_Records', ['oqc_id','batch_no','product_id','check_date','inspector_id','overall_result','remarks']);
+    const oqcRows = oqcSheet.getDataRange().getValues();
+    const oqcId = 'OQC' + String(oqcRows.length).padStart(4, '0');
+    oqcSheet.appendRow([oqcId, data.batch_id, data.product_id || '', today, data.inspector_id || '', overallResult, data.remarks || '']);
+  }
+
   return { success: true, check_ids: savedIds, overall_result: overallResult };
 }
 
@@ -2164,7 +2216,8 @@ function saveCapa(data) {
   var fieldError = validateFields(data, ['source','description','target_date']);
   if (fieldError) return { success: false, error: fieldError };
 
-  // Validate responsible_id against Personnel if provided
+  // Validate responsible_id against Personnel — warn only, don't block (legacy free-text support)
+  let responsibleWarn = false;
   if (data.responsible_id) {
     const pSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Personnel');
     if (pSheet) {
@@ -2173,7 +2226,7 @@ function saveCapa(data) {
       const pIdIdx = pHdrs.indexOf('PersonID') >= 0 ? pHdrs.indexOf('PersonID') : pHdrs.indexOf('person_id');
       if (pIdIdx >= 0) {
         const found = pRows.slice(1).some(r => String(r[pIdIdx]) === String(data.responsible_id));
-        if (!found) return { success: false, error: 'invalid_responsible: ' + data.responsible_id };
+        if (!found) responsibleWarn = true;
       }
     }
   }
@@ -2213,7 +2266,7 @@ function saveCapa(data) {
       'Open'
     ]);
   }
-  return { success: true, capa_id };
+  return { success: true, capa_id, responsible_warn: responsibleWarn };
 }
 
 function updateCapaStatus(data) {
@@ -2784,6 +2837,7 @@ function closeCustomerComplaint(data) {
   const cdIdx     = headers.indexOf('ClosedDate');
   const cbIdx     = headers.indexOf('ClosedBy');
   const today = new Date().toISOString().slice(0, 10);
+  const sevIdx = headers.indexOf('Severity');
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][noIdx]) === String(data.complaint_no)) {
       if (statusIdx >= 0) sheet.getRange(i+1, statusIdx+1).setValue('Closed');
@@ -2791,7 +2845,28 @@ function closeCustomerComplaint(data) {
       if (caIdx     >= 0) sheet.getRange(i+1, caIdx+1).setValue(data.corrective_action || '');
       if (cdIdx     >= 0) sheet.getRange(i+1, cdIdx+1).setValue(today);
       if (cbIdx     >= 0) sheet.getRange(i+1, cbIdx+1).setValue(data.userId || '');
-      return { success: true };
+
+      // Auto-create CAPA for Critical complaints
+      let capaId = null;
+      const severity = sevIdx >= 0 ? rows[i][sevIdx] : '';
+      if (severity === 'Critical' || data.create_capa === 'true') {
+        try {
+          const capaRes = saveCapa({
+            source: 'Customer Complaint',
+            ncr_ref: data.complaint_no,
+            description: data.root_cause || 'Customer complaint: ' + data.complaint_no,
+            root_cause: data.root_cause || '',
+            corrective_action: data.corrective_action || '',
+            target_date: data.target_date || '',
+            responsible_id: data.responsible_id || '',
+            userId: data.userId,
+            role: data.role
+          });
+          if (capaRes && capaRes.success) capaId = capaRes.capa_id;
+        } catch(e) { Logger.log('CAPA auto-create for complaint failed: ' + e.message); }
+      }
+
+      return { success: true, capa_id: capaId };
     }
   }
   return { success: false, error: 'not_found' };

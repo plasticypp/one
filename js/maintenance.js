@@ -3,6 +3,7 @@
   let session = null;
   let activeTab = 'breakdowns';
   let equipDropdown = [];
+  let bdCodesDropdown = [];
   let bdCache = [];
   let pmCache = [];
   let resolvingBdId = null;
@@ -114,9 +115,16 @@
       const res = await Api.get('getMasterDropdown', { entity: 'Equipment' });
       equipDropdown = res.success ? res.data : [];
     }
+    if (bdCodesDropdown.length === 0) {
+      const bcRes = await Api.get('getBreakdownCodesKB');
+      bdCodesDropdown = bcRes && bcRes.success ? bcRes.data : [
+        { id: 'MECH', label: 'Mechanical' }, { id: 'ELEC', label: 'Electrical' },
+        { id: 'PNEUM', label: 'Pneumatic' }, { id: 'HYD', label: 'Hydraulic' }, { id: 'OTHER', label: 'Other' }
+      ];
+    }
 
     const machineOpts = equipDropdown.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
-    const codeOpts = ['MECH','ELEC','PNEUM','HYD','OTHER'].map(c => `<option value="${c}">${c}</option>`).join('');
+    const codeOpts = bdCodesDropdown.map(c => `<option value="${c.id}">${c.label}</option>`).join('');
 
     document.getElementById('form-title').textContent = 'Log Breakdown';
     document.getElementById('form-body').innerHTML = `
