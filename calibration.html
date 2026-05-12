@@ -90,8 +90,59 @@
         <div>Frequency: <span id="cal-freq-display">—</span></div>
       </div>
       <div class="form-group" style="margin-top:var(--space-3);">
+        <label class="form-label">Make / Model</label>
+        <input class="form-input" type="text" id="cal-make-model" placeholder="e.g. Mitutoyo 530-312">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Serial No</label>
+        <input class="form-input" type="text" id="cal-serial-no" placeholder="Serial number">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Range / Capacity</label>
+        <input class="form-input" type="text" id="cal-range" placeholder="e.g. 0–150 mm">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Location</label>
+        <input class="form-input" type="text" id="cal-location" placeholder="e.g. QC Lab, Production">
+      </div>
+      <div class="form-group">
         <label class="form-label">Calibration Date *</label>
         <input class="form-input" type="date" id="cal-date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Calibration Method</label>
+        <input class="form-input" type="text" id="cal-method" placeholder="e.g. Comparison with reference standard">
+      </div>
+      <div class="form-group">
+        <label class="form-label">As-Found Condition</label>
+        <select class="form-select" id="cal-as-found">
+          <option value="">— select —</option>
+          <option value="In Tolerance">In Tolerance</option>
+          <option value="Out of Tolerance">Out of Tolerance</option>
+          <option value="Not Assessed">Not Assessed</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Adjustments Made</label>
+        <select class="form-select" id="cal-adjustments">
+          <option value="None">None</option>
+          <option value="Yes">Yes</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">As-Left Condition</label>
+        <select class="form-select" id="cal-as-left">
+          <option value="">— select —</option>
+          <option value="In Tolerance">In Tolerance</option>
+          <option value="Out of Tolerance">Out of Tolerance</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Out-of-Tolerance Flag</label>
+        <select class="form-select" id="cal-oot-flag">
+          <option value="No">No</option>
+          <option value="Yes">Yes</option>
+        </select>
       </div>
       <div class="form-group">
         <label class="form-label">Result *</label>

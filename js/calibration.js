@@ -131,11 +131,20 @@
     document.getElementById('cal-inst-select').value = '';
     document.getElementById('cal-standard-display').textContent = '—';
     document.getElementById('cal-freq-display').textContent = '—';
-    document.getElementById('cal-result').value = 'Pass';
-    document.getElementById('cal-cert-no').value = '';
-    document.getElementById('cal-agency').value = '';
-    document.getElementById('cal-done-by').value = '';
-    document.getElementById('cal-remarks').value = '';
+    document.getElementById('cal-make-model').value  = '';
+    document.getElementById('cal-serial-no').value   = '';
+    document.getElementById('cal-range').value        = '';
+    document.getElementById('cal-location').value     = '';
+    document.getElementById('cal-method').value       = '';
+    document.getElementById('cal-as-found').value     = '';
+    document.getElementById('cal-adjustments').value  = 'None';
+    document.getElementById('cal-as-left').value      = '';
+    document.getElementById('cal-oot-flag').value     = 'No';
+    document.getElementById('cal-result').value       = 'Pass';
+    document.getElementById('cal-cert-no').value      = '';
+    document.getElementById('cal-agency').value       = '';
+    document.getElementById('cal-done-by').value      = '';
+    document.getElementById('cal-remarks').value      = '';
   }
 
   function closeForm() {
@@ -159,8 +168,24 @@
     UI.showSpinner(true);
     try {
       const res = await Api.post('saveCalibrationLog', {
-        userId: Auth.getUserId(), inst_id: instId, inst_name: instName,
-        calibration_date: date, result, certificate_no: certNo, agency, done_by: doneBy, remarks
+        userId:             Auth.getUserId(),
+        inst_id:            instId,
+        inst_name:          instName,
+        make_model:         document.getElementById('cal-make-model').value.trim(),
+        serial_no:          document.getElementById('cal-serial-no').value.trim(),
+        range_capacity:     document.getElementById('cal-range').value.trim(),
+        location:           document.getElementById('cal-location').value.trim(),
+        calibration_date:   date,
+        calibration_method: document.getElementById('cal-method').value.trim(),
+        as_found:           document.getElementById('cal-as-found').value,
+        adjustments_made:   document.getElementById('cal-adjustments').value,
+        as_left:            document.getElementById('cal-as-left').value,
+        oot_flag:           document.getElementById('cal-oot-flag').value,
+        result,
+        certificate_no:     certNo,
+        agency,
+        done_by:            doneBy,
+        remarks
       });
       if (!res || !res.success) { UI.showToast(res?.error || 'Save failed', 'error'); return; }
       const inst = instruments.find(i => i.id === instId);

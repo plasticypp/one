@@ -1920,15 +1920,25 @@ function saveCalibrationLog(data) {
   dueDate.setMonth(dueDate.getMonth() + (inst ? inst.frequency_months : 12));
   var dueDateStr = Utilities.formatDate(dueDate, Session.getScriptTimeZone(), 'yyyy-MM-dd');
 
-  var sheet = ensureSheet('Calibration_Log', ['calib_id','inst_id','inst_name','calibration_date','due_date','result','certificate_no','agency','done_by','remarks']);
+  var CAL_HEADERS = ['calib_id','inst_id','inst_name','make_model','serial_no','range_capacity','location','calibration_date','due_date','calibration_method','as_found','adjustments_made','as_left','oot_flag','result','certificate_no','agency','done_by','remarks'];
+  var sheet = ensureSheet('Calibration_Log', CAL_HEADERS);
   var existingRows = sheet.getDataRange().getValues();
   var calibId = 'CAL' + String(existingRows.length).padStart(4, '0');
   sheet.appendRow([
     calibId,
     data.inst_id,
     data.inst_name,
+    data.make_model || '',
+    data.serial_no || '',
+    data.range_capacity || '',
+    data.location || '',
     data.calibration_date,
     dueDateStr,
+    data.calibration_method || '',
+    data.as_found || '',
+    data.adjustments_made || 'None',
+    data.as_left || '',
+    data.oot_flag || 'No',
     data.result,
     data.certificate_no || '',
     data.agency || '',
@@ -2806,7 +2816,7 @@ function saveCustomerComplaint(data) {
   var fieldError = validateFields(data, ['customer_id','description','complaint_type']);
   if (fieldError) return { success: false, error: fieldError };
 
-  const CC_HEADERS = ['ComplaintNo','DateReceived','CustomerID','ContactPerson','BatchNoRef','ProductID','ComplaintType','Description','Severity','Status','RootCause','CorrectiveAction','ClosedDate','ClosedBy','Remarks'];
+  const CC_HEADERS = ['ComplaintNo','DateReceived','CustomerID','ContactPerson','BatchNoRef','ProductID','ComplaintType','Description','Severity','InvoiceRef','AckSent','Status','RootCause','Investigation','CorrectiveAction','ResponseDate','ResponseSummary','CustomerAcceptance','ClosedDate','ClosedBy','Remarks'];
   const sheet = ensureSheet('Customer_Complaints', CC_HEADERS);
   const rows = sheet.getDataRange().getValues();
   const today = new Date();
@@ -2824,11 +2834,10 @@ function saveCustomerComplaint(data) {
     data.complaint_type,
     data.description,
     data.severity || 'Medium',
+    data.invoice_ref || '',
+    data.ack_sent || 'No',
     'Open',
-    '',
-    '',
-    '',
-    '',
+    '', '', '', '', '', '', '', '',
     data.remarks || ''
   ]);
   return { success: true, complaint_no };
@@ -2841,24 +2850,33 @@ function closeCustomerComplaint(data) {
   var fieldError = validateFields(data, ['complaint_no']);
   if (fieldError) return { success: false, error: fieldError };
 
-  const sheet = ensureSheet('Customer_Complaints', ['ComplaintNo','DateReceived','CustomerID','ContactPerson','BatchNoRef','ProductID','ComplaintType','Description','Severity','Status','RootCause','CorrectiveAction','ClosedDate','ClosedBy','Remarks']);
+  const CC_CLOSE_HEADERS = ['ComplaintNo','DateReceived','CustomerID','ContactPerson','BatchNoRef','ProductID','ComplaintType','Description','Severity','InvoiceRef','AckSent','Status','RootCause','Investigation','CorrectiveAction','ResponseDate','ResponseSummary','CustomerAcceptance','ClosedDate','ClosedBy','Remarks'];
+  const sheet = ensureSheet('Customer_Complaints', CC_CLOSE_HEADERS);
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
-  const noIdx     = headers.indexOf('ComplaintNo');
-  const statusIdx = headers.indexOf('Status');
-  const rcIdx     = headers.indexOf('RootCause');
-  const caIdx     = headers.indexOf('CorrectiveAction');
-  const cdIdx     = headers.indexOf('ClosedDate');
-  const cbIdx     = headers.indexOf('ClosedBy');
+  const noIdx            = headers.indexOf('ComplaintNo');
+  const statusIdx        = headers.indexOf('Status');
+  const rcIdx            = headers.indexOf('RootCause');
+  const investIdx        = headers.indexOf('Investigation');
+  const caIdx            = headers.indexOf('CorrectiveAction');
+  const respDateIdx      = headers.indexOf('ResponseDate');
+  const respSummaryIdx   = headers.indexOf('ResponseSummary');
+  const custAcceptIdx    = headers.indexOf('CustomerAcceptance');
+  const cdIdx            = headers.indexOf('ClosedDate');
+  const cbIdx            = headers.indexOf('ClosedBy');
   const today = new Date().toISOString().slice(0, 10);
   const sevIdx = headers.indexOf('Severity');
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][noIdx]) === String(data.complaint_no)) {
-      if (statusIdx >= 0) sheet.getRange(i+1, statusIdx+1).setValue('Closed');
-      if (rcIdx     >= 0) sheet.getRange(i+1, rcIdx+1).setValue(data.root_cause || '');
-      if (caIdx     >= 0) sheet.getRange(i+1, caIdx+1).setValue(data.corrective_action || '');
-      if (cdIdx     >= 0) sheet.getRange(i+1, cdIdx+1).setValue(today);
-      if (cbIdx     >= 0) sheet.getRange(i+1, cbIdx+1).setValue(data.userId || '');
+      if (statusIdx      >= 0) sheet.getRange(i+1, statusIdx+1).setValue('Closed');
+      if (rcIdx          >= 0) sheet.getRange(i+1, rcIdx+1).setValue(data.root_cause || '');
+      if (investIdx      >= 0) sheet.getRange(i+1, investIdx+1).setValue(data.investigation || '');
+      if (caIdx          >= 0) sheet.getRange(i+1, caIdx+1).setValue(data.corrective_action || '');
+      if (respDateIdx    >= 0) sheet.getRange(i+1, respDateIdx+1).setValue(data.response_date || '');
+      if (respSummaryIdx >= 0) sheet.getRange(i+1, respSummaryIdx+1).setValue(data.response_summary || '');
+      if (custAcceptIdx  >= 0) sheet.getRange(i+1, custAcceptIdx+1).setValue(data.customer_acceptance || '');
+      if (cdIdx          >= 0) sheet.getRange(i+1, cdIdx+1).setValue(today);
+      if (cbIdx          >= 0) sheet.getRange(i+1, cbIdx+1).setValue(data.userId || '');
 
       // Auto-create CAPA for Critical complaints
       let capaId = null;

@@ -103,12 +103,14 @@ const Complaints = (() => {
       '<option value="">— select product —</option>' +
       prods.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
 
-    document.getElementById('cf-contact').value    = '';
-    document.getElementById('cf-batch').value      = '';
-    document.getElementById('cf-type').value       = '';
+    document.getElementById('cf-contact').value     = '';
+    document.getElementById('cf-batch').value       = '';
+    document.getElementById('cf-type').value        = '';
     document.getElementById('cf-description').value = '';
-    document.getElementById('cf-severity').value   = 'Medium';
-    document.getElementById('cf-remarks').value    = '';
+    document.getElementById('cf-severity').value    = 'Medium';
+    document.getElementById('cf-invoice-ref').value = '';
+    document.getElementById('cf-ack-sent').value    = 'No';
+    document.getElementById('cf-remarks').value     = '';
 
     document.getElementById('complaint-form-panel').classList.add('slide-in');
     document.getElementById('complaints-list-panel').classList.add('slide-out');
@@ -136,6 +138,8 @@ const Complaints = (() => {
         complaint_type,
         description,
         severity:       document.getElementById('cf-severity').value,
+        invoice_ref:    document.getElementById('cf-invoice-ref').value.trim(),
+        ack_sent:       document.getElementById('cf-ack-sent').value,
         remarks:        document.getElementById('cf-remarks').value.trim(),
         userId:         Auth.getUserId()
       });
@@ -183,10 +187,14 @@ const Complaints = (() => {
   // ── Close Panel ───────────────────────────────────────────────────────────
 
   function openClosePanel(complaintNo) {
-    document.getElementById('close-complaint-no').value = complaintNo;
+    document.getElementById('close-complaint-no').value    = complaintNo;
     document.getElementById('close-display-no').textContent = complaintNo;
-    document.getElementById('close-root-cause').value = '';
-    document.getElementById('close-action').value = '';
+    document.getElementById('close-root-cause').value       = '';
+    document.getElementById('close-investigation').value    = '';
+    document.getElementById('close-action').value           = '';
+    document.getElementById('close-response-date').value    = '';
+    document.getElementById('close-response-summary').value = '';
+    document.getElementById('close-customer-acceptance').value = '';
     document.getElementById('close-complaint-panel').classList.add('slide-in');
     document.getElementById('complaints-list-panel').classList.add('slide-out');
   }
@@ -205,7 +213,14 @@ const Complaints = (() => {
     showSpinner(true);
     try {
       const res = await Api.post('closeCustomerComplaint', {
-        complaint_no, root_cause, corrective_action, userId: Auth.getUserId()
+        complaint_no,
+        root_cause,
+        investigation:       document.getElementById('close-investigation').value.trim(),
+        corrective_action,
+        response_date:       document.getElementById('close-response-date').value,
+        response_summary:    document.getElementById('close-response-summary').value.trim(),
+        customer_acceptance: document.getElementById('close-customer-acceptance').value,
+        userId:              Auth.getUserId()
       });
       if (res && res.success) {
         if (res.capa_id) showToast('Complaint closed — CAPA auto-created: ' + res.capa_id);

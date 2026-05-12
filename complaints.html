@@ -105,6 +105,17 @@
         </select>
       </div>
       <div class="field-group">
+        <label>Invoice / Order Ref</label>
+        <input type="text" id="cf-invoice-ref" placeholder="e.g. INV-2024-001 or SO-001">
+      </div>
+      <div class="field-group">
+        <label>Acknowledgement Sent?</label>
+        <select id="cf-ack-sent">
+          <option value="No">No</option>
+          <option value="Yes">Yes</option>
+        </select>
+      </div>
+      <div class="field-group">
         <label>Remarks</label>
         <textarea id="cf-remarks" rows="2"></textarea>
       </div>
@@ -140,8 +151,29 @@
         <textarea id="close-root-cause" rows="3" placeholder="Identified root cause"></textarea>
       </div>
       <div class="field-group">
+        <label>Investigation Findings</label>
+        <textarea id="close-investigation" rows="3" placeholder="Summary of investigation"></textarea>
+      </div>
+      <div class="field-group">
         <label>Corrective Action Taken</label>
         <textarea id="close-action" rows="3" placeholder="Actions taken to resolve and prevent recurrence"></textarea>
+      </div>
+      <div class="field-group">
+        <label>Customer Response Date</label>
+        <input type="date" id="close-response-date">
+      </div>
+      <div class="field-group">
+        <label>Response Summary (sent to customer)</label>
+        <textarea id="close-response-summary" rows="2" placeholder="What was communicated to the customer"></textarea>
+      </div>
+      <div class="field-group">
+        <label>Customer Acceptance</label>
+        <select id="close-customer-acceptance">
+          <option value="">— pending —</option>
+          <option value="Accepted">Accepted</option>
+          <option value="Rejected">Rejected</option>
+          <option value="No Response">No Response</option>
+        </select>
       </div>
     </div>
     <div class="form-actions">
