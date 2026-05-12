@@ -2570,7 +2570,8 @@ function saveDispatch(data) {
   if (fgSheet) {
     const fgRows = fgSheet.getDataRange().getValues();
     const fgHeaders = fgRows[0];
-    const batchIdx = fgHeaders.indexOf('batch_no');
+    // FinishedGoods uses batch_id column (same value as BatchTraceability batch_no)
+    const batchIdx = fgHeaders.indexOf('batch_id') >= 0 ? fgHeaders.indexOf('batch_id') : fgHeaders.indexOf('batch_no');
     const qtyIdx   = fgHeaders.indexOf('qty');
     const statusIdx = fgHeaders.indexOf('status');
     let found = false;
@@ -2706,6 +2707,21 @@ function getFGBatches() {
     pr.slice(1).filter(r => r[idIdx]).forEach(r => { prodMap[String(r[idIdx])] = r[nameIdx] || r[idIdx]; });
   }
 
+  // Build FinishedGoods qty map: batch_id → available qty (batch_id = production batch ID)
+  const fgQtyMap = {};
+  const fgSheet = ss.getSheetByName('FinishedGoods');
+  if (fgSheet && fgSheet.getLastRow() > 1) {
+    const fgRows = fgSheet.getDataRange().getValues();
+    const fgH = fgRows[0];
+    const bIdx = fgH.indexOf('batch_id'), qIdx = fgH.indexOf('qty'), sIdx = fgH.indexOf('status');
+    fgRows.slice(1).filter(r => r[bIdx]).forEach(r => {
+      if (sIdx < 0 || r[sIdx] === 'Available') {
+        const key = String(r[bIdx]);
+        fgQtyMap[key] = (fgQtyMap[key] || 0) + (Number(r[qIdx]) || 0);
+      }
+    });
+  }
+
   // BatchTraceability: oqc_status = OK and no dispatch_id
   const btSheet = ss.getSheetByName('BatchTraceability');
   if (!btSheet || btSheet.getLastRow() < 2) return { success: true, data: [] };
@@ -2718,23 +2734,25 @@ function getFGBatches() {
     .map(r => rowToObj(btHeaders, r))
     .filter(r => r.oqc_status === 'OK' && !r.dispatch_id)
     .map(r => {
-      const prodDate = r.start_date || r.planned_date || '';
+      const prodDate = r.production_date || r.start_date || r.planned_date || '';
       let ageDays = 0;
-      if (prodDate) {
-        const d = new Date(prodDate);
-        ageDays = Math.floor((today - d) / 86400000);
-      }
+      if (prodDate) ageDays = Math.floor((today - new Date(prodDate)) / 86400000);
+      // Qty: prefer FinishedGoods actual qty, fall back to BT fields
+      const qty = fgQtyMap[String(r.batch_no)] != null
+        ? fgQtyMap[String(r.batch_no)]
+        : (Number(r.qty_produced) || Number(r.planned_qty) || 0);
       return {
-        batch_no:      r.batch_no,
-        product_id:    r.product_id,
-        product_name:  prodMap[String(r.product_id)] || r.product_id,
-        qty:           Number(r.qty_produced) || Number(r.planned_qty) || 0,
+        batch_no:       r.batch_no,
+        product_id:     r.product_id,
+        product_name:   prodMap[String(r.product_id)] || r.product_id,
+        qty,
         production_date: String(prodDate).slice(0, 10),
-        machine_id:    r.machine_id || '',
-        oqc_status:    r.oqc_status,
-        age_days:      ageDays
+        machine_id:     r.machine_id || '',
+        oqc_status:     r.oqc_status,
+        age_days:       ageDays
       };
-    });
+    })
+    .filter(r => r.qty > 0);
 
   return { success: true, data };
 }
