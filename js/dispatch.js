@@ -36,7 +36,6 @@
       editingSOId = null;
       slideFormOut();
     });
-    document.getElementById('dispatch-back').addEventListener('click', slideDispatchPanelOut);
     const dispatchActionBackBtn = document.getElementById('dispatch-action-back-btn');
     if (dispatchActionBackBtn) dispatchActionBackBtn.addEventListener('click', slideDispatchActionPanelOut);
     document.getElementById('detail-back').addEventListener('click', slideDetailOut);
