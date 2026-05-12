@@ -104,6 +104,7 @@
     tbody.innerHTML = '';
     rows.forEach(r => {
       const supplierName = (supplierCache.find(s => String(s.id) === String(r.supplier_id)) || {}).name || r.supplier_id;
+      const materialName = (materialCache.find(m => String(m.id) === String(r.material)) || {}).name || r.material;
       const dateStr = r.date ? String(r.date).slice(0, 10) : '';
       const tr = document.createElement('tr');
       const iqcStatus = r.iqc_status || 'Pending';
@@ -112,7 +113,7 @@
         <td style="font-weight:600;font-size:var(--text-sm);">${r.grn_id || ''}</td>
         <td class="text-muted">${dateStr}</td>
         <td>${supplierName}</td>
-        <td>${r.material || ''}</td>
+        <td>${materialName || ''}</td>
         <td><strong>${r.qty_kg || ''}</strong> kg</td>
         <td class="text-muted">${r.lot_no || '—'}</td>
         <td><span class="status-chip ${iqcCls}">${esc(iqcStatus)}</span></td>
