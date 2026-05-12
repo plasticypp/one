@@ -134,14 +134,16 @@ const App = (() => {
       const statsEl = document.getElementById('home-stats');
       const defs = ROLE_STATS[role] || [];
       if (statsEl && defs.length) {
-        statsEl.innerHTML = defs.map(({ key, label, mod }) => {
-          const val = stats[key] ?? '—';
-          const m = typeof mod === 'function' ? mod(val) : mod;
-          return `<div class="stat-card stat-card--${m}">
-            <div class="stat-card-value">${val}</div>
-            <div class="stat-card-label">${label}</div>
-          </div>`;
-        }).join('');
+        statsEl.innerHTML = defs
+          .filter(({ key }) => stats[key] != null)
+          .map(({ key, label, mod }) => {
+            const val = stats[key];
+            const m = typeof mod === 'function' ? mod(val) : mod;
+            return `<div class="home-stat-chip home-stat-chip--${m}">
+              <span class="home-stat-chip-value">${val}</span>
+              <span class="home-stat-chip-label">${label}</span>
+            </div>`;
+          }).join('');
       }
 
       // Tile badges
