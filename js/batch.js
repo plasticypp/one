@@ -36,16 +36,59 @@
     ? (dispatch.dispatch_date || '—') + (dispatch.so_id ? ' (SO: ' + dispatch.so_id + ')' : '')
     : 'Not yet dispatched';
 
+  const qcRows = quality_checks.length
+    ? quality_checks.map(q => `
+        <tr>
+          <td>${String(q.check_date || '').slice(0,10)}</td>
+          <td>${q.check_type || '—'}</td>
+          <td>${q.parameter || '—'}</td>
+          <td>${q.result_value !== undefined ? q.result_value : '—'}</td>
+          <td>${q.result !== undefined ? q.result : '—'}</td>
+          <td>${q.checked_by || '—'}</td>
+        </tr>`).join('')
+    : '<tr><td colspan="6" style="text-align:center;color:#6b7280;padding:12px;">No quality checks recorded</td></tr>';
+
+  const dispSection = dispatch
+    ? `<table class="info-table">
+        <tr><td>Dispatch Date</td><td>${dispatch.dispatch_date || '—'}</td></tr>
+        <tr><td>Sales Order</td><td>${dispatch.so_id || '—'}</td></tr>
+        <tr><td>Customer</td><td>${dispatch.customer_id || '—'}</td></tr>
+        <tr><td>Qty Dispatched</td><td>${dispatch.qty_dispatched !== undefined ? dispatch.qty_dispatched : '—'}</td></tr>
+        <tr><td>Vehicle No</td><td>${dispatch.vehicle_no || '—'}</td></tr>
+      </table>`
+    : '<p style="color:#6b7280;font-size:0.9rem;margin:0;">Not yet dispatched</p>';
+
   content.innerHTML = `
     <div class="batch-no">${batch.batch_no}</div>
+
+    <h3 class="section-heading">Production Details</h3>
     <table class="info-table">
       <tr><td>Product</td><td>${batch.product_id || '—'}</td></tr>
       <tr><td>Production Date</td><td>${batch.production_date || '—'}</td></tr>
       <tr><td>Shift</td><td>${batch.shift || '—'}</td></tr>
       <tr><td>Machine</td><td>${batch.machine_id || '—'}</td></tr>
-      <tr><td>QC Status</td><td>${oqcBadge}</td></tr>
-      <tr><td>Dispatched</td><td>${dispatchText}</td></tr>
+      <tr><td>Qty Produced</td><td>${batch.qty_produced !== undefined ? batch.qty_produced : '—'}</td></tr>
+      <tr><td>OQC Status</td><td>${oqcBadge}</td></tr>
     </table>
+
+    <h3 class="section-heading">Quality Checks</h3>
+    <div style="overflow-x:auto;">
+      <table class="info-table" style="font-size:0.82rem;">
+        <thead><tr style="background:#f9fafb;">
+          <th style="padding:8px 10px;text-align:left;font-weight:600;color:#6b7280;border-bottom:1px solid #f0f0f0;">Date</th>
+          <th style="padding:8px 10px;text-align:left;font-weight:600;color:#6b7280;border-bottom:1px solid #f0f0f0;">Type</th>
+          <th style="padding:8px 10px;text-align:left;font-weight:600;color:#6b7280;border-bottom:1px solid #f0f0f0;">Parameter</th>
+          <th style="padding:8px 10px;text-align:left;font-weight:600;color:#6b7280;border-bottom:1px solid #f0f0f0;">Value</th>
+          <th style="padding:8px 10px;text-align:left;font-weight:600;color:#6b7280;border-bottom:1px solid #f0f0f0;">Result</th>
+          <th style="padding:8px 10px;text-align:left;font-weight:600;color:#6b7280;border-bottom:1px solid #f0f0f0;">By</th>
+        </tr></thead>
+        <tbody>${qcRows}</tbody>
+      </table>
+    </div>
+
+    <h3 class="section-heading">Dispatch</h3>
+    ${dispSection}
+
     <div class="qr-wrap">
       <div id="qrcode"></div>
       <div class="qr-label">${batchNo}</div>
