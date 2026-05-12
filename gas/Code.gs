@@ -840,7 +840,7 @@ function saveGRN(data) {
   var fieldError = validateFields(data, ['supplier_id','material','qty_kg','date']);
   if (fieldError) return { success: false, error: fieldError };
 
-  const RM_HEADERS = ['date','grn_id','supplier_id','material','lot_no','qty_kg'];
+  const RM_HEADERS = ['date','grn_id','supplier_id','material','lot_no','qty_kg','iqc_status'];
   const sheet = ensureSheet('RMStock', RM_HEADERS);
   const rows = sheet.getDataRange().getValues();
 
@@ -858,7 +858,8 @@ function saveGRN(data) {
     data.supplier_id,
     data.material,
     lotNo,
-    Number(data.qty_kg)
+    Number(data.qty_kg),
+    'Pending'
   ]);
 
   return { success: true, grn_id: grnId, warning: dupLot ? 'duplicate_lot_no' : null };
@@ -1337,6 +1338,9 @@ function saveNCR(data) {
   if (severity === 'Critical') {
     capaRequired = true;
     capaTriggerReason = 'Critical defect detected (CT002)';
+  } else if (data.disposition === 'CAPA') {
+    capaRequired = true;
+    capaTriggerReason = 'Disposition set to CAPA by inspector';
   } else if (data.disposition === 'Reject') {
     const recentRows = allRows.slice(Math.max(1, allRows.length - 30));
     const rejectCount = recentRows.filter(r => r[7] === 'Reject').length;
@@ -1360,6 +1364,7 @@ function saveNCR(data) {
     'Open',
     capaRequired,
     capaTriggerReason,
+    '',           // capa_id — back-filled below if CAPA auto-created
     data.userId || '',
     today
   ]);
@@ -1887,8 +1892,10 @@ function getDashboardStats() {
     return s ? s.getDataRange().getValues() : [[]];
   }
 
-  const grnRows   = sheetRows('GRN');
-  const openGRNs  = grnRows.slice(1).filter(r => r[9] && r[9] !== 'Closed').length;
+  const grnRows   = sheetRows('RMStock');
+  const grnHeaders = grnRows[0] || [];
+  const grnIqcIdx = grnHeaders.indexOf('iqc_status');
+  const openGRNs  = grnRows.slice(1).filter(r => grnIqcIdx >= 0 ? r[grnIqcIdx] === 'Pending' : r.some(c => c !== '')).length;
 
   const batchRows    = sheetRows('BatchOrders');
   const activeBatches = batchRows.slice(1).filter(r => r[7] === 'Planned' || r[7] === 'InProgress').length;
