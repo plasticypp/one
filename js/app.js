@@ -188,20 +188,19 @@ const App = (() => {
     traceability: 'traceability.html'
   };
 
-  // All modules accessible from the drawer (role-independent visibility for director)
   const ALL_MODULES = [
-    { id: 'production',  label: 'Production',   href: 'production.html' },
-    { id: 'quality',     label: 'Quality',       href: 'quality.html' },
-    { id: 'dispatch',    label: 'Dispatch',      href: 'dispatch.html' },
-    { id: 'grn',         label: 'Inventory / GRN', href: 'grn.html' },
-    { id: 'maintenance', label: 'Maintenance',   href: 'maintenance.html' },
-    { id: 'compliance',  label: 'Compliance',    href: 'compliance.html' },
-    { id: 'calibration', label: 'Calibration',   href: 'calibration.html' },
-    { id: 'ncr',         label: 'NCR / Defects', href: 'ncr.html' },
-    { id: 'kpi',         label: 'KPI Dashboard',        href: 'kpi.html' },
-    { id: 'personnel',   label: 'People & Training',    href: 'people.html' },
-    { id: 'complaints',  label: 'Customer Complaints',  href: 'complaints.html' },
-    { id: 'masters',     label: 'Masters',              href: 'masters.html' },
+    { id: 'production',  label: 'Production',          href: 'production.html',  roles: ['director','qmr','supervisor','operator'] },
+    { id: 'quality',     label: 'Quality',             href: 'quality.html',     roles: ['director','qmr','supervisor'] },
+    { id: 'dispatch',    label: 'Dispatch',            href: 'dispatch.html',    roles: ['director','qmr','supervisor','store'] },
+    { id: 'grn',         label: 'Inventory / GRN',    href: 'grn.html',         roles: ['director','qmr','store'] },
+    { id: 'maintenance', label: 'Maintenance',         href: 'maintenance.html', roles: ['director','qmr','supervisor'] },
+    { id: 'compliance',  label: 'Compliance',          href: 'compliance.html',  roles: ['director','qmr'] },
+    { id: 'calibration', label: 'Calibration',         href: 'calibration.html', roles: ['director','qmr'] },
+    { id: 'ncr',         label: 'NCR / Defects',       href: 'ncr.html',         roles: ['director','qmr','supervisor'] },
+    { id: 'kpi',         label: 'KPI Dashboard',       href: 'kpi.html',         roles: ['director','qmr'] },
+    { id: 'personnel',   label: 'People & Training',   href: 'people.html',      roles: ['director','qmr','hr'] },
+    { id: 'complaints',  label: 'Customer Complaints', href: 'complaints.html',  roles: ['director','qmr'] },
+    { id: 'masters',     label: 'Masters',             href: 'masters.html',     roles: ['director','qmr'] },
   ];
 
   function handleTile(tileId) {
@@ -210,30 +209,32 @@ const App = (() => {
   }
 
   function openDrawer() {
+    const session = Auth.get();
+    const role = session ? session.role : '';
     let drawer = document.getElementById('modules-drawer');
-    if (!drawer) {
-      drawer = document.createElement('div');
-      drawer.id = 'modules-drawer';
-      drawer.className = 'modules-drawer';
-      drawer.innerHTML = `
-        <div class="drawer-overlay"></div>
-        <div class="drawer-panel">
-          <div class="drawer-header">
-            <span class="drawer-title">All Modules</span>
-            <button class="drawer-close" id="drawer-close-btn">✕</button>
-          </div>
-          <nav class="drawer-nav">
-            ${ALL_MODULES.map(m => `
-              <a class="drawer-item" href="${m.href}">
-                <span class="drawer-item-icon">${SVG[m.id] || SVG.kpi}</span>
-                <span>${m.label}</span>
-              </a>`).join('')}
-          </nav>
-        </div>`;
-      document.body.appendChild(drawer);
-      drawer.querySelector('.drawer-overlay').addEventListener('click', closeDrawer);
-      drawer.querySelector('#drawer-close-btn').addEventListener('click', closeDrawer);
-    }
+    if (drawer) drawer.remove();
+    drawer = document.createElement('div');
+    drawer.id = 'modules-drawer';
+    drawer.className = 'modules-drawer';
+    const visible = ALL_MODULES.filter(m => m.roles.includes(role));
+    drawer.innerHTML = `
+      <div class="drawer-overlay"></div>
+      <div class="drawer-panel">
+        <div class="drawer-header">
+          <span class="drawer-title">All Modules</span>
+          <button class="drawer-close" id="drawer-close-btn">✕</button>
+        </div>
+        <nav class="drawer-nav">
+          ${visible.map(m => `
+            <a class="drawer-item" href="${m.href}">
+              <span class="drawer-item-icon">${SVG[m.id] || SVG.kpi}</span>
+              <span>${m.label}</span>
+            </a>`).join('')}
+        </nav>
+      </div>`;
+    document.body.appendChild(drawer);
+    drawer.querySelector('.drawer-overlay').addEventListener('click', closeDrawer);
+    drawer.querySelector('#drawer-close-btn').addEventListener('click', closeDrawer);
     requestAnimationFrame(() => drawer.classList.add('open'));
   }
 

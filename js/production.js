@@ -266,7 +266,7 @@ const Production = (() => {
         <td>${r.planned_qty || ''}</td>
         <td>${r.actual_qty || '—'}</td>
         <td><span class="${chipClass}">${r.status || ''}</span></td>
-        <td>${!isClosed ? `<button class="btn-sm" onclick="event.stopPropagation();Production.closeBatchAction('${r.batch_id}')">Close</button>` : ''}</td>
+        <td>${!isClosed && ['director','supervisor'].includes(session.role) ? `<button class="btn-sm" onclick="event.stopPropagation();Production.closeBatchAction('${r.batch_id}')">Close</button>` : ''}</td>
       `;
       tr.addEventListener('click', (e) => {
         if (e.target.closest('button')) return;

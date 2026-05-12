@@ -132,7 +132,7 @@ const Traceability = (() => {
   }
 
   async function init() {
-    document.getElementById('back-to-app').addEventListener('click', () => { window.location.href = 'index.html'; });
+    document.getElementById('back-to-app').addEventListener('click', () => { window.location.href = 'app.html'; });
     document.getElementById('trace-search-btn').addEventListener('click', search);
     document.getElementById('trace-search').addEventListener('keydown', e => { if (e.key === 'Enter') search(); });
 

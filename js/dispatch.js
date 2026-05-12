@@ -382,6 +382,7 @@ const Dispatch = (() => {
     let valid = true;
     if (!qty || qty <= 0)  { if (eQty)  eQty.textContent  = 'Enter a valid quantity'; valid = false; }
     if (!date)             { if (eDate) eDate.textContent = 'Date is required'; valid = false; }
+    if (!batchNo)          { showToast('Select a batch before dispatching'); valid = false; }
     if (!valid) return;
 
     const so = soCache.find(s => String(s.so_id) === String(dispatchingSOId));

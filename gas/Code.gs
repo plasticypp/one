@@ -225,6 +225,7 @@ function doGet(e) {
     if (action === 'getMachineList')        return respond(getMachineList());
     if (action === 'getOperatorList')       return respond(getOperatorList());
     if (action === 'getPersonnelList')      return respond(getPersonnelList());
+    if (action === 'savePersonnel')         return respond(savePersonnel(data));
     if (action === 'getTrainingLog')        return respond(getTrainingLog(e.parameter));
     if (action === 'getKPILog')             return respond(getKPILog(e.parameter));
     if (action === 'getCustomerComplaints') return respond(getCustomerComplaints(e.parameter));
@@ -2330,6 +2331,54 @@ function getPersonnelList() {
     .map(row => rowToObj(headers, row))
     .filter(r => r.Active !== false && String(r.Active).toLowerCase() !== 'false');
   return { success: true, data };
+}
+
+function savePersonnel(data) {
+  var authError = requireRole(data, ['director','hr']);
+  if (authError) return { success: false, error: authError };
+  var fieldError = validateFields(data, ['name','role','department']);
+  if (fieldError) return { success: false, error: fieldError };
+
+  const sheet = ensureSheet('Personnel', ['PersonID','Name','Username','Role','Department','ReportsTo','Phone','Email','DateJoined','Qualification','Active']);
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+  const idIdx = headers.indexOf('PersonID');
+
+  if (data.PersonID) {
+    // Update existing
+    for (var i = 1; i < rows.length; i++) {
+      if (String(rows[i][idIdx]) === String(data.PersonID)) {
+        const nameIdx  = headers.indexOf('Name');
+        const roleIdx  = headers.indexOf('Role');
+        const deptIdx  = headers.indexOf('Department');
+        const phoneIdx = headers.indexOf('Phone');
+        const qualIdx  = headers.indexOf('Qualification');
+        if (nameIdx  >= 0) sheet.getRange(i+1, nameIdx+1).setValue(data.name);
+        if (roleIdx  >= 0) sheet.getRange(i+1, roleIdx+1).setValue(data.role);
+        if (deptIdx  >= 0) sheet.getRange(i+1, deptIdx+1).setValue(data.department);
+        if (phoneIdx >= 0) sheet.getRange(i+1, phoneIdx+1).setValue(data.phone || '');
+        if (qualIdx  >= 0) sheet.getRange(i+1, qualIdx+1).setValue(data.qualification || '');
+        return { success: true, person_id: data.PersonID };
+      }
+    }
+  }
+
+  // New record
+  const nextId = 'P' + String(rows.length).padStart(3, '0');
+  sheet.appendRow([
+    nextId,
+    data.name,
+    data.username || '',
+    data.role,
+    data.department,
+    data.reports_to || '',
+    data.phone || '',
+    data.email || '',
+    data.date_joined || new Date().toISOString().slice(0,10),
+    data.qualification || '',
+    true
+  ]);
+  return { success: true, person_id: nextId };
 }
 
 function getTrainingLog(params) {

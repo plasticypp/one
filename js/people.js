@@ -3,6 +3,7 @@ const People = (() => {
   let session = null;
   let activeTab = 'personnel';
   let trainingCache = [];
+  let personnelCache = [];
 
   async function init() {
     session = Auth.get();
@@ -27,6 +28,14 @@ const People = (() => {
       renderTraining(trainingCache, e.target.value);
     });
 
+    const canEditPersonnel = ['director','hr'].includes(session.role);
+    if (canEditPersonnel) {
+      document.getElementById('add-personnel-btn').classList.remove('hidden');
+      document.getElementById('add-personnel-btn').addEventListener('click', () => openPersonnelForm(null));
+    }
+    document.getElementById('personnel-form-back').addEventListener('click', closePersonnelForm);
+    document.getElementById('personnel-submit-btn').addEventListener('click', submitPersonnel);
+
     await switchTab('personnel');
   }
 
@@ -41,6 +50,8 @@ const People = (() => {
     document.getElementById('panel-training').classList.toggle('hidden',  tab !== 'training');
     document.getElementById('panel-matrix').classList.toggle('hidden',    tab !== 'matrix');
     document.getElementById('add-training-btn').classList.toggle('hidden', tab !== 'training');
+    const canEditPersonnel = ['director','hr'].includes(session.role);
+    document.getElementById('add-personnel-btn').classList.toggle('hidden', tab !== 'personnel' || !canEditPersonnel);
     if (tab === 'personnel') {
       await loadPersonnel();
     } else if (tab === 'matrix') {
@@ -56,26 +67,88 @@ const People = (() => {
     showSpinner(true);
     try {
       const res = await Api.get('getPersonnelList');
-      renderPersonnel(res && res.success ? res.data : []);
+      personnelCache = res && res.success ? res.data : [];
+      renderPersonnel(personnelCache);
     } finally {
       showSpinner(false);
     }
   }
 
   function renderPersonnel(records) {
+    const canEdit = ['director','hr'].includes(session.role);
+    const thead = document.querySelector('#panel-personnel thead tr');
+    if (thead && canEdit && !thead.querySelector('th.edit-col')) {
+      thead.insertAdjacentHTML('beforeend', '<th class="edit-col"></th>');
+    }
     const tbody = document.getElementById('personnel-tbody');
     if (records.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="td-loading">No personnel records</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="${canEdit ? 6 : 5}" class="td-loading">No personnel records</td></tr>`;
       return;
     }
-    tbody.innerHTML = records.map(r => `
-      <tr>
-        <td>${r.PersonID || r.person_id || '—'}</td>
+    tbody.innerHTML = records.map(r => {
+      const id = r.PersonID || r.person_id || '';
+      return `<tr>
+        <td>${id || '—'}</td>
         <td style="font-weight:500;">${r.Name || r.name || '—'}</td>
         <td>${r.Designation || r.designation || r.Role || r.role || '—'}</td>
         <td>${r.Department || r.department || '—'}</td>
         <td>${r.Phone || r.phone || '—'}</td>
-      </tr>`).join('');
+        ${canEdit ? `<td><button class="btn-sm" data-person-id="${id}">Edit</button></td>` : ''}
+      </tr>`;
+    }).join('');
+    if (canEdit) {
+      tbody.querySelectorAll('button[data-person-id]').forEach(btn => {
+        btn.addEventListener('click', () => openPersonnelForm(btn.dataset.personId));
+      });
+    }
+  }
+
+  function openPersonnelForm(personId) {
+    const r = personId ? personnelCache.find(p => String(p.PersonID || p.person_id) === String(personId)) : null;
+    document.getElementById('pf-person-id').value     = r ? (r.PersonID || r.person_id || '') : '';
+    document.getElementById('pf-name').value          = r ? (r.Name || r.name || '') : '';
+    document.getElementById('pf-role').value          = r ? (r.Role || r.role || '') : '';
+    document.getElementById('pf-department').value    = r ? (r.Department || r.department || '') : '';
+    document.getElementById('pf-phone').value         = r ? (r.Phone || r.phone || '') : '';
+    document.getElementById('pf-qualification').value = r ? (r.Qualification || r.qualification || '') : '';
+    document.getElementById('pf-date-joined').value   = r ? String(r.DateJoined || r.date_joined || '').slice(0,10) : '';
+    document.getElementById('personnel-form-title').textContent = r ? 'Edit Personnel' : 'Add Personnel';
+    document.getElementById('personnel-form-panel').classList.add('slide-in');
+    document.getElementById('people-list-area').classList.add('slide-out');
+  }
+
+  function closePersonnelForm() {
+    document.getElementById('personnel-form-panel').classList.remove('slide-in');
+    document.getElementById('people-list-area').classList.remove('slide-out');
+  }
+
+  async function submitPersonnel() {
+    const name       = document.getElementById('pf-name').value.trim();
+    const role       = document.getElementById('pf-role').value;
+    const department = document.getElementById('pf-department').value;
+    if (!name)       { showToast('Name is required'); return; }
+    if (!role)       { showToast('Select a role'); return; }
+    if (!department) { showToast('Select a department'); return; }
+    showSpinner(true);
+    try {
+      const res = await Api.post('savePersonnel', {
+        PersonID:      document.getElementById('pf-person-id').value || undefined,
+        name, role, department,
+        phone:         document.getElementById('pf-phone').value.trim(),
+        qualification: document.getElementById('pf-qualification').value.trim(),
+        date_joined:   document.getElementById('pf-date-joined').value,
+        userId:        Auth.getUserId()
+      });
+      if (res && res.success) {
+        showToast(document.getElementById('pf-person-id').value ? 'Personnel updated' : 'Personnel added: ' + res.person_id);
+        closePersonnelForm();
+        await loadPersonnel();
+      } else {
+        showToast('Error: ' + (res && res.error || 'save failed'));
+      }
+    } finally {
+      showSpinner(false);
+    }
   }
 
   // ── Training Log ──────────────────────────────────────────────────────────

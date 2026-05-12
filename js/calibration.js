@@ -161,7 +161,11 @@ const Calibration = (() => {
         calibration_date: date, result, certificate_no: certNo, done_by: doneBy, remarks
       });
       if (!res || !res.success) { showToast(res?.error || 'Save failed', 'error'); return; }
-      showToast('Calibration log saved');
+      const inst = instruments.find(i => i.id === instId);
+      const freqMonths = inst ? inst.frequency_months : 12;
+      const nextDue = new Date(date);
+      nextDue.setMonth(nextDue.getMonth() + freqMonths);
+      showToast('Saved — next due ' + nextDue.toISOString().slice(0,10));
       closeForm();
       await loadData();
     } finally {
