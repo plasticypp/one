@@ -256,6 +256,24 @@ const Dispatch = (() => {
     document.getElementById('plan-date').value = new Date().toISOString().slice(0, 10);
     const machineSel = document.getElementById('plan-machine');
     machineSel.innerHTML = '<option value="">— select machine —</option>' + machineOpts;
+
+    // Show BOM RM requirements
+    const bomInfo = document.getElementById('plan-bom-info');
+    const bomText = document.getElementById('plan-bom-text');
+    if (bomInfo) bomInfo.style.display = 'none';
+    if (so.product_id && bomText) {
+      Api.get('getBOMByProduct', { product_id: so.product_id }).then(res => {
+        if (res && res.success && res.data && res.data.rm_items) {
+          const planQty = Number(document.getElementById('plan-qty').value) || 0;
+          const parts = res.data.rm_items.map(rm =>
+            rm.material + ': ' + (planQty ? (planQty * rm.qty_per_unit_kg).toFixed(1) + ' kg' : rm.qty_per_unit_kg + ' kg/unit')
+          );
+          bomText.textContent = parts.join(' | ');
+          if (bomInfo) bomInfo.style.display = '';
+        }
+      }).catch(() => {});
+    }
+
     slideFormIn();
     document.getElementById('main-content').classList.remove('slide-out');
     document.getElementById('form-panel').classList.remove('slide-in');
@@ -316,6 +334,14 @@ const Dispatch = (() => {
     setVal('dispatch-qty',            '');
     setVal('dispatch-invoice',        '');
     setVal('dispatch-vehicle',        '');
+    setVal('dispatch-polybag-qty',    '');
+
+    // Auto-fill polybag_qty from packaging spec
+    if (so.product_id) {
+      Api.get('getPackagingSpec', { product_id: so.product_id }).then(res => {
+        if (res && res.success && res.data) setVal('dispatch-polybag-qty', res.data.polybag_qty || '');
+      }).catch(() => {});
+    }
 
     slideDispatchActionPanelIn();
   }

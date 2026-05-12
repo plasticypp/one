@@ -223,6 +223,8 @@ function doGet(e) {
     if (action === 'getRMStock')            return respond(getRMStock());
     if (action === 'getMaterialList')       return respond(getMaterialList());
     if (action === 'getSuppliers')          return respond(getSuppliers());
+    if (action === 'getBOMByProduct')       return respond(getBOMByProduct(e.parameter));
+    if (action === 'getPackagingSpec')      return respond(getPackagingSpec(e.parameter));
     if (action === 'getMachineList')        return respond(getMachineList());
     if (action === 'getOperatorList')       return respond(getOperatorList());
     if (action === 'getPersonnelList')      return respond(getPersonnelList());
@@ -493,7 +495,7 @@ function deleteRecord(data) {
   // Block SO delete if any dispatch has been made against it
   if (data.sheet === 'SalesOrders' && data.idCol === 'so_id') {
     try {
-      const dispSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('DispatchLog');
+      const dispSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Dispatch') || SpreadsheetApp.getActiveSpreadsheet().getSheetByName('DispatchLog');
       if (dispSheet) {
         const dRows = dispSheet.getDataRange().getValues();
         const dHdrs = dRows[0];
@@ -1692,6 +1694,20 @@ function getSuppliers() {
       return { id: obj.SupplierID, name: obj.Name, category: obj.Category || '' };
     });
   return { success: true, data: data.length ? data : SUPPLIERS_KB };
+}
+
+function getBOMByProduct(params) {
+  const productId = params && params.product_id;
+  const spec = BOM_KB.find(b => b.product_id === productId);
+  if (!spec) return { success: false, error: 'product_not_in_bom' };
+  return { success: true, data: spec };
+}
+
+function getPackagingSpec(params) {
+  const productId = params && params.product_id;
+  const spec = PACKAGING_SPECS_KB.find(p => p.product_id === productId);
+  if (!spec) return { success: false, error: 'product_not_in_packaging_specs' };
+  return { success: true, data: spec };
 }
 
 function getMachineList() {
