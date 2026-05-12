@@ -280,7 +280,7 @@ const Compliance = (() => {
 
   // ── CAPA Form ─────────────────────────────────────────────────────────────
 
-  function openCapaForm() {
+  async function openCapaForm() {
     editingCapaId = null;
     document.getElementById('capa-form-source').value = '';
     document.getElementById('capa-form-description').value = '';
@@ -289,8 +289,17 @@ const Compliance = (() => {
     document.getElementById('capa-form-corrective-action') && (document.getElementById('capa-form-corrective-action').value = '');
     document.getElementById('capa-form-preventive-action') && (document.getElementById('capa-form-preventive-action').value = '');
     document.getElementById('capa-form-ncr-ref') && (document.getElementById('capa-form-ncr-ref').value = '');
-    document.getElementById('capa-form-responsible') && (document.getElementById('capa-form-responsible').value = '');
     document.getElementById('capa-form-target-date').value = '';
+    // Populate responsible dropdown from Personnel
+    const rSel = document.getElementById('capa-form-responsible');
+    if (rSel && rSel.tagName === 'SELECT') {
+      try {
+        const pRes = await Api.get('getPersonnelList');
+        const people = pRes && pRes.success ? pRes.data : [];
+        rSel.innerHTML = '<option value="">— select responsible person —</option>' +
+          people.map(p => `<option value="${p.id}">${p.name} (${p.role || p.id})</option>`).join('');
+      } catch(e) { rSel.innerHTML = '<option value="">— could not load —</option>'; }
+    }
     const titleEl = document.getElementById('capa-form-title') || document.querySelector('#capa-form-panel h2');
     if (titleEl) titleEl.textContent = 'New CAPA';
     document.getElementById('capa-form-panel').classList.add('slide-in');
@@ -387,8 +396,10 @@ const Compliance = (() => {
         UI.showToast('CAPA saved: ' + res.capa_id);
         closeCapaForm();
         await loadCapaList(capaStatusFilter);
+      } else if (res.error && res.error.startsWith('invalid_responsible')) {
+        UI.showToast('Selected person not found in Personnel. Please re-select.');
       } else {
-        UI.showToast('Save failed');
+        UI.showToast('Save failed: ' + (res && res.error));
       }
     } finally {
       UI.showSpinner(false);

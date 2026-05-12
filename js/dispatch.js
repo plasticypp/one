@@ -460,6 +460,10 @@ const Dispatch = (() => {
     if (!confirm('Delete SO ' + soId + '?')) return;
     const res = await Api.post('deleteRecord', { sheet: 'SalesOrders', idCol: 'so_id', idVal: soId, userId: Auth.getUserId() });
     if (res.success) { slideDetailOut(); await loadSOList(); }
+    else if (res.error && res.error.startsWith('so_has_dispatches')) {
+      const qty = res.error.split(':')[1] || '';
+      UI.showToast('Cannot delete — ' + qty + ' units already dispatched against this SO.');
+    }
     else UI.showToast('Delete failed: ' + res.error);
   }
 

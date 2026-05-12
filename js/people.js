@@ -190,13 +190,15 @@ const People = (() => {
   // ── Training Form ─────────────────────────────────────────────────────────
 
   async function openTrainingForm() {
-    const kbRes = await Api.get('getTrainingPlanKB');
+    const [kbRes, pRes] = await Promise.all([Api.get('getTrainingPlanKB'), Api.get('getPersonnelList')]);
     const kb = kbRes && kbRes.success ? kbRes.data : [];
     const topicOpts = kb.map(t => `<option value="${t.topic}">${t.topic} (${t.category})</option>`).join('');
     document.getElementById('tf-topic').innerHTML = '<option value="">— select or type —</option>' + topicOpts;
     document.getElementById('tf-date').value = new Date().toISOString().slice(0, 10);
     document.getElementById('tf-trainer').value = '';
-    document.getElementById('tf-participants').value = '';
+    const pSel = document.getElementById('tf-participants');
+    const personnel = pRes && pRes.success ? pRes.data : [];
+    pSel.innerHTML = personnel.map(p => `<option value="${p.id}">${p.name} (${p.role || p.department || p.id})</option>`).join('') || '<option value="" disabled>No personnel found</option>';
     document.getElementById('tf-method').value = '';
     document.getElementById('tf-score').value = '';
     document.getElementById('tf-remarks').value = '';
@@ -224,7 +226,7 @@ const People = (() => {
         topic,
         date,
         trainer_id:   trainer,
-        participants: document.getElementById('tf-participants').value.trim(),
+        participants: Array.from(document.getElementById('tf-participants').selectedOptions).map(o => o.value).join(','),
         method:       document.getElementById('tf-method').value.trim(),
         eval_score:   document.getElementById('tf-score').value,
         status:       document.getElementById('tf-status').value,
@@ -277,14 +279,14 @@ const People = (() => {
 
       // Unique topics (columns)
       const topics = [...new Set(logs.map(l => l.topic).filter(Boolean))].sort();
-      // Build lookup: topic → Set of participant tokens
+      // Build lookup: topic → Set of participant person_ids
       const topicParticipants = {};
       logs.forEach(l => {
         if (!l.topic || l.status !== 'Completed') return;
-        if (!topicParticipants[l.topic]) topicParticipants[l.topic] = [];
+        if (!topicParticipants[l.topic]) topicParticipants[l.topic] = new Set();
         (l.participants || '').split(',').forEach(p => {
-          const token = p.trim().toLowerCase();
-          if (token) topicParticipants[l.topic].push(token);
+          const token = p.trim();
+          if (token) topicParticipants[l.topic].add(token);
         });
       });
 
@@ -302,9 +304,9 @@ const People = (() => {
         const id = (p.id || '').toLowerCase();
         html += `<tr><td style="white-space:nowrap;">${escStr(p.name || p.id)}</td>`;
         topics.forEach(t => {
-          const participants = topicParticipants[t] || [];
-          // Match: participant token contains person's name OR id (not reversed)
-          const trained = participants.some(tok => tok.includes(name) || (id && tok.includes(id)));
+          const participants = topicParticipants[t] || new Set();
+          // Exact person_id match; fall back to name-includes for legacy string-participant records
+          const trained = participants.has(p.id) || [...participants].some(tok => tok.toLowerCase().includes(name) && name.length > 2);
           html += trained
             ? '<td style="text-align:center;color:var(--color-success)">✓</td>'
             : '<td style="text-align:center;color:var(--color-muted)">—</td>';

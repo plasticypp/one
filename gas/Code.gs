@@ -457,10 +457,22 @@ function updateRecord(data) {
   if (idIdx < 0) return { success: false, error: 'id_col_not_found: ' + data.idCol };
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][idIdx]) === String(data.idVal)) {
+      const oldValues = {};
       Object.entries(data.fields).forEach(([col, val]) => {
         const colIdx = headers.indexOf(col);
-        if (colIdx >= 0) sheet.getRange(i+1, colIdx+1).setValue(val);
+        if (colIdx >= 0) {
+          oldValues[col] = rows[i][colIdx];
+          sheet.getRange(i+1, colIdx+1).setValue(val);
+        }
       });
+      // Write audit trail for GRN qty edits
+      if (data.sheet === 'RMStock') {
+        const auditSheet = ensureSheet('GRN_AuditLog', ['timestamp','grn_id','field','old_value','new_value','changed_by']);
+        const now = new Date().toISOString();
+        Object.entries(data.fields).forEach(([col, val]) => {
+          auditSheet.appendRow([now, data.idVal, col, oldValues[col] !== undefined ? oldValues[col] : '', val, data.userId || '']);
+        });
+      }
       return { success: true };
     }
   }
@@ -477,6 +489,26 @@ function deleteRecord(data) {
   const statusIdx = headers.indexOf('Status');
   const activeIdx = headers.indexOf('Active');
   if (idIdx < 0) return { success: false, error: 'id_col_not_found' };
+
+  // Block SO delete if any dispatch has been made against it
+  if (data.sheet === 'SalesOrders' && data.idCol === 'so_id') {
+    try {
+      const dispSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('DispatchLog');
+      if (dispSheet) {
+        const dRows = dispSheet.getDataRange().getValues();
+        const dHdrs = dRows[0];
+        const dSoIdx = dHdrs.indexOf('so_id');
+        const dQtyIdx = dHdrs.indexOf('qty_dispatched');
+        if (dSoIdx >= 0) {
+          const dispatched = dRows.slice(1)
+            .filter(r => String(r[dSoIdx]) === String(data.idVal))
+            .reduce((sum, r) => sum + (Number(r[dQtyIdx]) || 0), 0);
+          if (dispatched > 0) return { success: false, error: 'so_has_dispatches:' + dispatched };
+        }
+      }
+    } catch(e) {}
+  }
+
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][idIdx]) === String(data.idVal)) {
       if (statusIdx >= 0)      sheet.getRange(i+1, statusIdx+1).setValue('Deleted');
@@ -934,6 +966,32 @@ function resolveBreakdown(data) {
       if (sparesIndex !== -1) sheet.getRange(i+1, sparesIndex+1).setValue(data.spares_used || '');
       var downtimeIndex = headers.indexOf('downtime_hrs');
       if (downtimeIndex !== -1) sheet.getRange(i+1, downtimeIndex+1).setValue(Number(data.downtime_hrs) || 0);
+
+      // Push PM next-due date forward by the downtime to avoid false-overdue flags
+      const downtimeMin = Number(data.downtime_min) || Number(data.downtime_hrs) * 60 || 0;
+      const machineIdx = headers.indexOf('MachineID') >= 0 ? headers.indexOf('MachineID') : headers.indexOf('machine_id');
+      const machineId = machineIdx >= 0 ? String(rows[i][machineIdx]) : '';
+      if (machineId && downtimeMin > 0) {
+        try {
+          const pmSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('PM_Schedule');
+          if (pmSheet) {
+            const pmRows = pmSheet.getDataRange().getValues();
+            const pmHdrs = pmRows[0];
+            const pmMachIdx = pmHdrs.indexOf('MachineID') >= 0 ? pmHdrs.indexOf('MachineID') : pmHdrs.indexOf('machine_id');
+            const pmDueIdx  = pmHdrs.indexOf('NextDue');
+            if (pmMachIdx >= 0 && pmDueIdx >= 0) {
+              pmRows.slice(1).forEach(function(pmRow, ri) {
+                if (String(pmRow[pmMachIdx]) === machineId && pmRow[pmDueIdx]) {
+                  const due = new Date(pmRow[pmDueIdx]);
+                  due.setMinutes(due.getMinutes() + downtimeMin);
+                  pmSheet.getRange(ri + 2, pmDueIdx + 1).setValue(Utilities.formatDate(due, Session.getScriptTimeZone(), 'yyyy-MM-dd'));
+                }
+              });
+            }
+          }
+        } catch(e) {}
+      }
+
       return { success: true };
     }
   }
@@ -1236,6 +1294,24 @@ function saveNCR(data) {
   if (fieldError) return { success: false, error: fieldError };
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // Validate qty_affected does not exceed batch actual_qty
+  const batchSheet = ss.getSheetByName('BatchOrders');
+  if (batchSheet) {
+    const bRows = batchSheet.getDataRange().getValues();
+    const bHdrs = bRows[0];
+    const bIdIdx = bHdrs.indexOf('batch_id');
+    const bQtyIdx = bHdrs.indexOf('actual_qty');
+    if (bIdIdx >= 0 && bQtyIdx >= 0) {
+      const bRow = bRows.slice(1).find(r => String(r[bIdIdx]) === String(data.batch_id));
+      if (bRow && bRow[bQtyIdx]) {
+        const actualQty = Number(bRow[bQtyIdx]);
+        if (actualQty > 0 && Number(data.qty_affected) > actualQty) {
+          return { success: false, error: 'qty_affected_exceeds_batch: max ' + actualQty };
+        }
+      }
+    }
+  }
   var ncrSheet = ss.getSheetByName('NCR_Log');
   if (!ncrSheet) {
     ncrSheet = ss.insertSheet('NCR_Log');
@@ -1747,6 +1823,20 @@ function saveCalibrationLog(data) {
     data.done_by,
     data.remarks || ''
   ]);
+
+  // On calibration failure, write a quality alert flag so QMR is aware instrument is suspect
+  if (data.result === 'Fail') {
+    const flagSheet = ensureSheet('Quality_Alerts', ['timestamp','source','ref_id','description','status','raised_by']);
+    flagSheet.appendRow([
+      new Date().toISOString(),
+      'Calibration',
+      data.inst_id,
+      'Instrument ' + data.inst_name + ' failed calibration on ' + data.calibration_date + ' — results suspect until recalibrated',
+      'Open',
+      data.done_by || data.userId || ''
+    ]);
+  }
+
   _cacheInvalidate('dashboard_stats');
   return { success: true };
 }
@@ -2035,6 +2125,20 @@ function saveCapa(data) {
 
   var fieldError = validateFields(data, ['source','description','target_date']);
   if (fieldError) return { success: false, error: fieldError };
+
+  // Validate responsible_id against Personnel if provided
+  if (data.responsible_id) {
+    const pSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Personnel');
+    if (pSheet) {
+      const pRows = pSheet.getDataRange().getValues();
+      const pHdrs = pRows[0];
+      const pIdIdx = pHdrs.indexOf('PersonID') >= 0 ? pHdrs.indexOf('PersonID') : pHdrs.indexOf('person_id');
+      if (pIdIdx >= 0) {
+        const found = pRows.slice(1).some(r => String(r[pIdIdx]) === String(data.responsible_id));
+        if (!found) return { success: false, error: 'invalid_responsible: ' + data.responsible_id };
+      }
+    }
+  }
 
   const sheet = getSheet('CAPA_Register');
   const rows = sheet.getDataRange().getValues();

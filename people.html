@@ -175,8 +175,11 @@
         <input type="text" id="tf-trainer" placeholder="Trainer name / external agency">
       </div>
       <div class="field-group">
-        <label>Participants (names / count)</label>
-        <input type="text" id="tf-participants" placeholder="e.g. All operators (6)">
+        <label>Participants</label>
+        <select id="tf-participants" multiple size="5" style="width:100%;min-height:80px;">
+          <option value="" disabled>Loading personnel…</option>
+        </select>
+        <small style="color:var(--color-muted)">Hold Ctrl / Cmd to select multiple</small>
       </div>
       <div class="field-group">
         <label>Method</label>
