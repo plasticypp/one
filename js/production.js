@@ -375,6 +375,14 @@ const Production = (() => {
     if (!actualQty || actualQty <= 0) { showToast('Enter actual quantity'); return; }
     showSpinner(true);
     try {
+      const logCheck = await Api.get('getProductionLog', { batch_id: closingBatchId });
+      if (logCheck.success && (!logCheck.data || logCheck.data.length === 0)) {
+        showSpinner(false);
+        if (!confirm('No parameter logs found for this batch. Close anyway?')) return;
+        showSpinner(true);
+      }
+    } catch (_) {}
+    try {
       const res = await Api.post('closeBatch', {
         batch_id:   closingBatchId,
         actual_qty: actualQty,

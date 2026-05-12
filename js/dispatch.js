@@ -213,6 +213,11 @@ const Dispatch = (() => {
       return;
     }
 
+    if (invoice_no && soCache.some(s => s.invoice_no && s.invoice_no.trim() === invoice_no)) {
+      showToast('Invoice no already exists — check for duplicate SO');
+      return;
+    }
+
     showSpinner(true);
     try {
       const res = await Api.post('saveSO', {
