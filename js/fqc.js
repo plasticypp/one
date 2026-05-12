@@ -110,8 +110,15 @@ const FQC = (() => {
     document.getElementById('fqc-labelling').value = 'OK';
     document.getElementById('fqc-packaging').value = 'OK';
     document.getElementById('fqc-leak-test').value = 'Pass';
+    document.getElementById('fqc-drop-base').value = 'Pass';
+    document.getElementById('fqc-drop-side').value = 'Pass';
     document.getElementById('fqc-drop-test').value = 'Pass';
+    document.getElementById('fqc-top-load').value = 'Pass';
+    document.getElementById('fqc-brim-u1').value = '';
+    document.getElementById('fqc-brim-u2').value = '';
+    document.getElementById('fqc-brim-result').value = 'Pass';
     document.getElementById('fqc-torque-test').value = 'Pass';
+    document.getElementById('fqc-mfi-check').value = 'NA';
     document.getElementById('fqc-nc-units').value = '0';
     document.getElementById('fqc-result').value = '';
     document.getElementById('fqc-remarks').value = '';
@@ -151,8 +158,15 @@ const FQC = (() => {
       labelling:      document.getElementById('fqc-labelling').value,
       packaging:      document.getElementById('fqc-packaging').value,
       leak_test:      document.getElementById('fqc-leak-test').value,
+      drop_base:      document.getElementById('fqc-drop-base').value,
+      drop_side:      document.getElementById('fqc-drop-side').value,
       drop_test:      document.getElementById('fqc-drop-test').value,
+      top_load:       document.getElementById('fqc-top-load').value,
+      brim_u1:        document.getElementById('fqc-brim-u1').value,
+      brim_u2:        document.getElementById('fqc-brim-u2').value,
+      brim_result:    document.getElementById('fqc-brim-result').value,
       torque_test:    document.getElementById('fqc-torque-test').value,
+      mfi_check:      document.getElementById('fqc-mfi-check').value,
       nc_units:       Number(document.getElementById('fqc-nc-units').value) || 0,
       result,
       inspector_id:   inspector,

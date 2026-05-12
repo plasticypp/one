@@ -1085,7 +1085,8 @@ function saveBatch(data) {
   var fieldError = validateFields(data, ['product_id','machine_id','planned_qty','batch_date']);
   if (fieldError) return { success: false, error: fieldError };
 
-  const sheet = getSheet('BatchOrders');
+  const BATCH_HEADERS = ['batch_id','date','product_id','planned_qty','actual_qty','machine_id','operator_id','status','start_time','end_time','shift','rm_lot','rejections','rejection_reason','downtime_min','downtime_reason'];
+  const sheet = ensureSheet('BatchOrders', BATCH_HEADERS);
   const rows = sheet.getDataRange().getValues();
   const rowCount = rows.length;
   const batchId = 'BO' + String(rowCount).padStart(3, '0');
@@ -1100,7 +1101,9 @@ function saveBatch(data) {
     data.operator_id || '',
     'Planned',
     data.start_time || '',
-    ''
+    '',
+    data.shift || 'A',
+    data.rm_lot || ''
   ]);
 
   // Seed BatchTraceability so dispatch gate can find this batch
@@ -1184,6 +1187,16 @@ function closeBatch(data) {
       sheet.getRange(i + 1, 5).setValue(actualQty);
       sheet.getRange(i + 1, 8).setValue('Closed');
       sheet.getRange(i + 1, 10).setValue(new Date().toISOString());
+      // Write rejection and downtime — find columns by header name so schema changes don't break this
+      const hdrRow = rows[0];
+      const setCol = (colName, val) => {
+        const idx = hdrRow.indexOf(colName);
+        if (idx >= 0) sheet.getRange(i + 1, idx + 1).setValue(val);
+      };
+      setCol('rejections', Number(data.rejections) || 0);
+      setCol('rejection_reason', data.rejection_reason || '');
+      setCol('downtime_min', Number(data.downtime_min) || 0);
+      setCol('downtime_reason', data.downtime_reason || '');
       const productId = rows[i][2];
       deductBOMStock(productId, actualQty);
       addFinishedGoods(data.batch_id, productId, actualQty);
@@ -3122,7 +3135,7 @@ function getIQCList(params) {
 
 // ── IPC — In-Process Check ────────────────────────────────────────────────────
 
-const IPC_HEADERS = ['ipc_id','date','shift','batch_id','product_id','machine_id','sample_size','height','diameter','neck_dia','wall_thick','tare_wt','flash','sink_marks','colour','surface','leak_test','result','checked_by','remarks','created_at'];
+const IPC_HEADERS = ['ipc_id','date','shift','batch_id','product_id','machine_id','mould_no','check_type','sample_size','wt_s1','wt_s2','wt_s3','wt_s4','wt_s5','tare_wt','wt_0','wt_45','wt_90','wt_135','wt_180','wt_225','wt_270','wt_315','wall_thick','height','diameter','neck_dia','flash','sink_marks','colour','contamination','short_shot','warpage','base_pinch','thread','surface','leak_s1','leak_s2','cap_fitment','result','checked_by','remarks','created_at'];
 
 function saveIPC(data) {
   var authError = requireRole(data, ['director','qmr','supervisor','operator']);
@@ -3153,9 +3166,15 @@ function saveIPC(data) {
 
   sheet.appendRow([
     ipcId, data.date || today, data.shift || 'A', data.batch_id, productId, data.machine_id || '',
-    data.sample_size || '', data.height || '', data.diameter || '', data.neck_dia || '',
-    data.wall_thick || '', data.tare_wt || '', data.flash || '', data.sink_marks || '',
-    data.colour || '', data.surface || '', data.leak_test || '',
+    data.mould_no || '', data.check_type || '', data.sample_size || '',
+    data.wt_s1 || '', data.wt_s2 || '', data.wt_s3 || '', data.wt_s4 || '', data.wt_s5 || '',
+    data.tare_wt || '',
+    data.wt_0 || '', data.wt_45 || '', data.wt_90 || '', data.wt_135 || '',
+    data.wt_180 || '', data.wt_225 || '', data.wt_270 || '', data.wt_315 || '',
+    data.wall_thick || '', data.height || '', data.diameter || '', data.neck_dia || '',
+    data.flash || '', data.sink_marks || '', data.colour || '', data.contamination || '',
+    data.short_shot || '', data.warpage || '', data.base_pinch || '', data.thread || '',
+    data.surface || '', data.leak_s1 || '', data.leak_s2 || '', data.cap_fitment || '',
     data.result, data.checked_by, data.remarks || '', today
   ]);
   return { success: true, ipc_id: ipcId };
@@ -3174,7 +3193,7 @@ function getIPCList(params) {
 
 // ── FQC — Final Quality Check & Release ──────────────────────────────────────
 
-const FQC_HEADERS = ['fqc_id','date','batch_id','product_id','customer','total_qty','aql_level','sample_size','height','diameter','neck_dia','wall_thick','capacity','flash','contamination','colour_finish','labelling','packaging','leak_test','drop_test','torque_test','nc_units','result','inspector_id','released_by','remarks','created_at'];
+const FQC_HEADERS = ['fqc_id','date','batch_id','product_id','customer','total_qty','aql_level','sample_size','height','diameter','neck_dia','wall_thick','capacity','flash','contamination','colour_finish','labelling','packaging','leak_test','drop_base','drop_side','drop_test','top_load','brim_u1','brim_u2','brim_result','torque_test','mfi_check','nc_units','result','inspector_id','released_by','remarks','created_at'];
 
 function saveFQC(data) {
   var authError = requireRole(data, ['director','qmr','supervisor']);
@@ -3207,7 +3226,9 @@ function saveFQC(data) {
     Number(data.total_qty) || 0, data.aql_level || 'AQL 2.5', data.sample_size || '',
     data.height || '', data.diameter || '', data.neck_dia || '', data.wall_thick || '', data.capacity || '',
     data.flash || '', data.contamination || '', data.colour_finish || '', data.labelling || '',
-    data.packaging || '', data.leak_test || '', data.drop_test || '', data.torque_test || '',
+    data.packaging || '', data.leak_test || '', data.drop_base || '', data.drop_side || '',
+    data.drop_test || '', data.top_load || '', data.brim_u1 || '', data.brim_u2 || '',
+    data.brim_result || '', data.torque_test || '', data.mfi_check || '',
     Number(data.nc_units) || 0, data.result, data.inspector_id, data.released_by || '',
     data.remarks || '', today
   ]);
@@ -3372,4 +3393,56 @@ function seedFullPMSchedule() {
 
 function _cacheInvalidate(key) {
   _cacheDel(key);
+}
+
+// ── Schema Migration (run once from Apps Script editor) ──────────────────────
+
+/**
+ * Inserts missing columns into NCR_Log and IQC_Records sheets so that
+ * existing rows align with the new headers used by saveNCR / saveIQCResult.
+ *
+ * Safe to run multiple times — skips columns that already exist.
+ */
+function migrateSchemas() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const results = [];
+
+  // ── NCR_Log: target 18-col schema ──────────────────────────────────────────
+  const NCR_TARGET = ['ncr_id','date','batch_id','stage','department','source_nc','defect_type','severity','qty_affected','disposition','detected_by','remarks','status','capa_required','capa_trigger_reason','capa_id','created_by','created_at'];
+  results.push(_migrateSheet(ss, 'NCR_Log', NCR_TARGET));
+
+  // ── IQC_Records: target 23-col schema ──────────────────────────────────────
+  const IQC_TARGET = ['iqc_id','grn_id','lot_no','material','supplier_id','invoice_no','grade_type','bag_count','bag_condition','labelling_ok','contamination','colour_match','insp_date','inspector_id','mfi_result','density_result','bulk_density','visual_result','coa_ok','decision','remarks','released_by','released_at'];
+  results.push(_migrateSheet(ss, 'IQC_Records', IQC_TARGET));
+
+  // ── CAPA_Register: target 18-col schema ────────────────────────────────────
+  const CAPA_TARGET = ['capa_id','date','source','ncr_ref','description','containment_action','root_cause','root_cause_statement','corrective_action','preventive_action','responsible_id','target_date','verification_method','verification_date','lessons_learned','status','closed_date','effectiveness'];
+  results.push(_migrateSheet(ss, 'CAPA_Register', CAPA_TARGET));
+
+  results.forEach(r => Logger.log(r));
+  return results;
+}
+
+function _migrateSheet(ss, sheetName, targetHeaders) {
+  const sheet = ss.getSheetByName(sheetName);
+  if (!sheet) return sheetName + ': sheet not found — skipped';
+
+  const currentHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const added = [];
+
+  targetHeaders.forEach((col, targetIdx) => {
+    const existingIdx = currentHeaders.indexOf(col);
+    if (existingIdx !== -1) return; // already present
+
+    // Insert at position targetIdx+1 (1-based), shifting right
+    const insertAt = targetIdx + 1;
+    sheet.insertColumnBefore(insertAt);
+    sheet.getRange(1, insertAt).setValue(col);
+    // Keep currentHeaders in sync for subsequent iterations
+    currentHeaders.splice(targetIdx, 0, col);
+    added.push(col + ' @col' + insertAt);
+  });
+
+  if (added.length === 0) return sheetName + ': already up-to-date';
+  return sheetName + ': inserted ' + added.length + ' column(s) — ' + added.join(', ');
 }

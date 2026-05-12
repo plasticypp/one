@@ -160,16 +160,59 @@
 
       <p class="field-group" style="font-weight:600;color:var(--color-text);margin:var(--space-3) 0 var(--space-1);">Functional Tests</p>
       <div class="field-group">
-        <label>Leak Test</label>
+        <label>Hydrostatic Leak Test (0.5 bar / 60 sec)</label>
         <select id="fqc-leak-test">
-          <option value="Pass">Pass</option>
+          <option value="Pass">Pass — all 3 units</option>
           <option value="Fail">Fail</option>
           <option value="NA">N/A</option>
         </select>
       </div>
       <div class="field-group">
-        <label>Drop Test</label>
+        <label>Drop Test — Base Drop (5 units)</label>
+        <select id="fqc-drop-base">
+          <option value="Pass">Pass — all</option>
+          <option value="Partial">Partial — some failed</option>
+          <option value="Fail">Fail</option>
+          <option value="NA">N/A</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Drop Test — Side Drop (5 units)</label>
+        <select id="fqc-drop-side">
+          <option value="Pass">Pass — all</option>
+          <option value="Partial">Partial — some failed</option>
+          <option value="Fail">Fail</option>
+          <option value="NA">N/A</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Drop Test — 45° Drop (5 units)</label>
         <select id="fqc-drop-test">
+          <option value="Pass">Pass — all</option>
+          <option value="Partial">Partial — some failed</option>
+          <option value="Fail">Fail</option>
+          <option value="NA">N/A</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Top Load Test (3 units × 4× filled wt, 60 sec)</label>
+        <select id="fqc-top-load">
+          <option value="Pass">Pass — all</option>
+          <option value="Fail">Fail</option>
+          <option value="NA">N/A</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Brim Fill Capacity — Unit 1 (mL)</label>
+        <input type="number" id="fqc-brim-u1" step="1" placeholder="Measured volume">
+      </div>
+      <div class="field-group">
+        <label>Brim Fill Capacity — Unit 2 (mL)</label>
+        <input type="number" id="fqc-brim-u2" step="1" placeholder="Measured volume">
+      </div>
+      <div class="field-group">
+        <label>Brim Fill — Within ±5% of Nominal?</label>
+        <select id="fqc-brim-result">
           <option value="Pass">Pass</option>
           <option value="Fail">Fail</option>
           <option value="NA">N/A</option>
@@ -181,6 +224,14 @@
           <option value="Pass">Pass</option>
           <option value="Fail">Fail</option>
           <option value="NA">N/A</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>MFI Check (if regrind &gt; 10%)</label>
+        <select id="fqc-mfi-check">
+          <option value="NA">N/A — no regrind</option>
+          <option value="Pass">Pass — within spec</option>
+          <option value="Fail">Fail — out of spec</option>
         </select>
       </div>
 

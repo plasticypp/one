@@ -305,7 +305,7 @@
         const res = await Api.post('updateRecord', {
           sheet: 'BatchOrders', idCol: 'batch_id', idVal: editingBatchId,
           userId: Auth.getUserId(),
-          fields: { product_id: productId, machine_id: machineId, operator_id: operatorId, planned_qty: Number(plannedQty), start_time: startTime }
+          fields: { product_id: productId, machine_id: machineId, operator_id: operatorId, shift: document.getElementById('field-shift').value, rm_lot: document.getElementById('field-rm-lot').value, planned_qty: Number(plannedQty), start_time: startTime }
         });
         if (res.success) {
           editingBatchId = null;
@@ -329,6 +329,8 @@
         product_id:  productId,
         machine_id:  machineId,
         operator_id: operatorId,
+        shift:       document.getElementById('field-shift').value,
+        rm_lot:      document.getElementById('field-rm-lot').value,
         planned_qty: Number(plannedQty),
         start_time:  startTime,
         userId:      Auth.getUserId()
@@ -354,6 +356,10 @@
     document.getElementById('close-batch-id-display').value = batchId;
     document.getElementById('close-planned-qty').value = batch.planned_qty || '';
     document.getElementById('close-actual-qty').value = '';
+    document.getElementById('close-rejections').value = '0';
+    document.getElementById('close-rejection-reason').value = '';
+    document.getElementById('close-downtime-min').value = '0';
+    document.getElementById('close-downtime-reason').value = '';
     document.getElementById('close-end-time').value = '';
     document.getElementById('close-notes').value = '';
     const warn = document.getElementById('close-qc-warning');
@@ -376,12 +382,16 @@
     UI.showSpinner(true);
     try {
       const res = await Api.post('closeBatch', {
-        batch_id:   closingBatchId,
-        actual_qty: actualQty,
-        end_time:   document.getElementById('close-end-time').value,
-        notes:      document.getElementById('close-notes').value,
-        override:   session.role === 'director' ? 'true' : 'false',
-        userId:     Auth.getUserId()
+        batch_id:         closingBatchId,
+        actual_qty:       actualQty,
+        rejections:       Number(document.getElementById('close-rejections').value) || 0,
+        rejection_reason: document.getElementById('close-rejection-reason').value,
+        downtime_min:     Number(document.getElementById('close-downtime-min').value) || 0,
+        downtime_reason:  document.getElementById('close-downtime-reason').value,
+        end_time:         document.getElementById('close-end-time').value,
+        notes:            document.getElementById('close-notes').value,
+        override:         session.role === 'director' ? 'true' : 'false',
+        userId:           Auth.getUserId()
       });
       if (res.success) {
         UI.showToast('Batch ' + closingBatchId + ' closed');

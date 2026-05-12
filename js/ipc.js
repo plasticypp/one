@@ -26,6 +26,14 @@ const IPC = (() => {
     document.getElementById('ipc-form-back').addEventListener('click', closeForm);
     document.getElementById('btn-save-ipc').addEventListener('click', submitIPC);
 
+    // Auto-calculate averages
+    ['ipc-wt-s1','ipc-wt-s2','ipc-wt-s3','ipc-wt-s4','ipc-wt-s5'].forEach(id => {
+      document.getElementById(id).addEventListener('input', calcWeightAvg);
+    });
+    ['ipc-wt0','ipc-wt45','ipc-wt90','ipc-wt135','ipc-wt180','ipc-wt225','ipc-wt270','ipc-wt315'].forEach(id => {
+      document.getElementById(id).addEventListener('input', calcWallAvg);
+    });
+
     await Promise.all([loadBatches(), loadPersonnel()]);
     await loadIPCList();
   }
@@ -94,21 +102,44 @@ const IPC = (() => {
     }).join('');
   }
 
+  function calcWeightAvg() {
+    const vals = ['ipc-wt-s1','ipc-wt-s2','ipc-wt-s3','ipc-wt-s4','ipc-wt-s5']
+      .map(id => parseFloat(document.getElementById(id).value)).filter(v => !isNaN(v));
+    document.getElementById('ipc-tare-wt').value = vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : '';
+  }
+
+  function calcWallAvg() {
+    const vals = ['ipc-wt0','ipc-wt45','ipc-wt90','ipc-wt135','ipc-wt180','ipc-wt225','ipc-wt270','ipc-wt315']
+      .map(id => parseFloat(document.getElementById(id).value)).filter(v => !isNaN(v));
+    document.getElementById('ipc-wall-thick').value = vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(3) : '';
+  }
+
   function openForm() {
     document.getElementById('ipc-date').value = new Date().toISOString().slice(0,10);
     document.getElementById('ipc-shift').value = 'A';
     document.getElementById('ipc-batch').value = '';
     document.getElementById('ipc-machine').value = '';
+    document.getElementById('ipc-mould-no').value = '';
+    document.getElementById('ipc-check-type').value = 'First-Off';
     document.getElementById('ipc-sample-size').value = '5';
+    ['ipc-wt-s1','ipc-wt-s2','ipc-wt-s3','ipc-wt-s4','ipc-wt-s5'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('ipc-tare-wt').value = '';
+    ['ipc-wt0','ipc-wt45','ipc-wt90','ipc-wt135','ipc-wt180','ipc-wt225','ipc-wt270','ipc-wt315'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('ipc-wall-thick').value = '';
     document.getElementById('ipc-height').value = '';
     document.getElementById('ipc-diameter').value = '';
     document.getElementById('ipc-neck-dia').value = '';
-    document.getElementById('ipc-wall-thick').value = '';
-    document.getElementById('ipc-tare-wt').value = '';
     document.getElementById('ipc-flash').value = 'OK';
     document.getElementById('ipc-sink-marks').value = 'OK';
     document.getElementById('ipc-colour').value = 'OK';
+    document.getElementById('ipc-contamination').value = 'OK';
+    document.getElementById('ipc-short-shot').value = 'OK';
+    document.getElementById('ipc-warpage').value = 'OK';
+    document.getElementById('ipc-base-pinch').value = 'OK';
+    document.getElementById('ipc-thread').value = 'OK';
     document.getElementById('ipc-surface').value = 'OK';
+    document.getElementById('ipc-leak-s1').value = 'Pass';
+    document.getElementById('ipc-leak-s2').value = 'Pass';
     document.getElementById('ipc-leak-test').value = 'Pass';
     document.getElementById('ipc-result').value = '';
     document.getElementById('ipc-remarks').value = '';
@@ -129,25 +160,47 @@ const IPC = (() => {
       return;
     }
     const payload = {
-      userId:      Auth.getUserId(),
-      date:        document.getElementById('ipc-date').value,
-      shift:       document.getElementById('ipc-shift').value,
-      batch_id:    batchId,
-      machine_id:  document.getElementById('ipc-machine').value,
-      sample_size: document.getElementById('ipc-sample-size').value,
-      height:      document.getElementById('ipc-height').value,
-      diameter:    document.getElementById('ipc-diameter').value,
-      neck_dia:    document.getElementById('ipc-neck-dia').value,
-      wall_thick:  document.getElementById('ipc-wall-thick').value,
-      tare_wt:     document.getElementById('ipc-tare-wt').value,
-      flash:       document.getElementById('ipc-flash').value,
-      sink_marks:  document.getElementById('ipc-sink-marks').value,
-      colour:      document.getElementById('ipc-colour').value,
-      surface:     document.getElementById('ipc-surface').value,
-      leak_test:   document.getElementById('ipc-leak-test').value,
+      userId:       Auth.getUserId(),
+      date:         document.getElementById('ipc-date').value,
+      shift:        document.getElementById('ipc-shift').value,
+      batch_id:     batchId,
+      machine_id:   document.getElementById('ipc-machine').value,
+      mould_no:     document.getElementById('ipc-mould-no').value,
+      check_type:   document.getElementById('ipc-check-type').value,
+      sample_size:  document.getElementById('ipc-sample-size').value,
+      wt_s1:        document.getElementById('ipc-wt-s1').value,
+      wt_s2:        document.getElementById('ipc-wt-s2').value,
+      wt_s3:        document.getElementById('ipc-wt-s3').value,
+      wt_s4:        document.getElementById('ipc-wt-s4').value,
+      wt_s5:        document.getElementById('ipc-wt-s5').value,
+      tare_wt:      document.getElementById('ipc-tare-wt').value,
+      wt_0:         document.getElementById('ipc-wt0').value,
+      wt_45:        document.getElementById('ipc-wt45').value,
+      wt_90:        document.getElementById('ipc-wt90').value,
+      wt_135:       document.getElementById('ipc-wt135').value,
+      wt_180:       document.getElementById('ipc-wt180').value,
+      wt_225:       document.getElementById('ipc-wt225').value,
+      wt_270:       document.getElementById('ipc-wt270').value,
+      wt_315:       document.getElementById('ipc-wt315').value,
+      wall_thick:   document.getElementById('ipc-wall-thick').value,
+      height:       document.getElementById('ipc-height').value,
+      diameter:     document.getElementById('ipc-diameter').value,
+      neck_dia:     document.getElementById('ipc-neck-dia').value,
+      flash:        document.getElementById('ipc-flash').value,
+      sink_marks:   document.getElementById('ipc-sink-marks').value,
+      colour:       document.getElementById('ipc-colour').value,
+      contamination:document.getElementById('ipc-contamination').value,
+      short_shot:   document.getElementById('ipc-short-shot').value,
+      warpage:      document.getElementById('ipc-warpage').value,
+      base_pinch:   document.getElementById('ipc-base-pinch').value,
+      thread:       document.getElementById('ipc-thread').value,
+      surface:      document.getElementById('ipc-surface').value,
+      leak_s1:      document.getElementById('ipc-leak-s1').value,
+      leak_s2:      document.getElementById('ipc-leak-s2').value,
+      cap_fitment:  document.getElementById('ipc-leak-test').value,
       result,
-      checked_by:  checkedBy,
-      remarks:     document.getElementById('ipc-remarks').value
+      checked_by:   checkedBy,
+      remarks:      document.getElementById('ipc-remarks').value
     };
     UI.showSpinner(true);
     try {

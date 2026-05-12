@@ -76,8 +76,46 @@
         <input type="text" id="ipc-machine" placeholder="e.g. M01">
       </div>
       <div class="field-group">
+        <label>Mould No</label>
+        <input type="text" id="ipc-mould-no" placeholder="e.g. MLD-001">
+      </div>
+      <div class="field-group">
+        <label>Check Type</label>
+        <select id="ipc-check-type">
+          <option value="First-Off">First-Off</option>
+          <option value="Patrol">Patrol</option>
+          <option value="Last-Off">Last-Off</option>
+        </select>
+      </div>
+      <div class="field-group">
         <label>Sample Size</label>
         <input type="number" id="ipc-sample-size" value="5" min="1">
+      </div>
+
+      <p class="field-group" style="font-weight:600;color:var(--color-text);margin:var(--space-3) 0 var(--space-1);">Weight Check — 5 Samples (g)</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 0 8px;">
+        <div class="field-group" style="margin:0"><label>S1</label><input type="number" id="ipc-wt-s1" step="0.1"></div>
+        <div class="field-group" style="margin:0"><label>S2</label><input type="number" id="ipc-wt-s2" step="0.1"></div>
+        <div class="field-group" style="margin:0"><label>S3</label><input type="number" id="ipc-wt-s3" step="0.1"></div>
+        <div class="field-group" style="margin:0"><label>S4</label><input type="number" id="ipc-wt-s4" step="0.1"></div>
+        <div class="field-group" style="margin:0"><label>S5</label><input type="number" id="ipc-wt-s5" step="0.1"></div>
+        <div class="field-group" style="margin:0"><label>Avg (auto)</label><input type="number" id="ipc-tare-wt" step="0.1" readonly style="background:var(--color-bg-muted)"></div>
+      </div>
+
+      <p class="field-group" style="font-weight:600;color:var(--color-text);margin:var(--space-3) 0 var(--space-1);">Wall Thickness — 8 Points (mm)</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 0 8px;">
+        <div class="field-group" style="margin:0"><label>0°</label><input type="number" id="ipc-wt0" step="0.01"></div>
+        <div class="field-group" style="margin:0"><label>45°</label><input type="number" id="ipc-wt45" step="0.01"></div>
+        <div class="field-group" style="margin:0"><label>90°</label><input type="number" id="ipc-wt90" step="0.01"></div>
+        <div class="field-group" style="margin:0"><label>135°</label><input type="number" id="ipc-wt135" step="0.01"></div>
+        <div class="field-group" style="margin:0"><label>180°</label><input type="number" id="ipc-wt180" step="0.01"></div>
+        <div class="field-group" style="margin:0"><label>225°</label><input type="number" id="ipc-wt225" step="0.01"></div>
+        <div class="field-group" style="margin:0"><label>270°</label><input type="number" id="ipc-wt270" step="0.01"></div>
+        <div class="field-group" style="margin:0"><label>315°</label><input type="number" id="ipc-wt315" step="0.01"></div>
+      </div>
+      <div class="field-group">
+        <label>Wall Thickness — Avg (auto, mm)</label>
+        <input type="number" id="ipc-wall-thick" step="0.01" readonly style="background:var(--color-bg-muted)">
       </div>
 
       <p class="field-group" style="font-weight:600;color:var(--color-text);margin:var(--space-3) 0 var(--space-1);">Dimensional Checks</p>
@@ -93,18 +131,8 @@
         <label>Neck Diameter — Avg (mm)</label>
         <input type="number" id="ipc-neck-dia" step="0.1" placeholder="Measured average">
       </div>
-      <div class="field-group">
-        <label>Wall Thickness — Avg (mm)</label>
-        <input type="number" id="ipc-wall-thick" step="0.01" placeholder="Measured average">
-      </div>
 
-      <p class="field-group" style="font-weight:600;color:var(--color-text);margin:var(--space-3) 0 var(--space-1);">Weight Check</p>
-      <div class="field-group">
-        <label>Tare Weight — Avg (g)</label>
-        <input type="number" id="ipc-tare-wt" step="0.1" placeholder="Empty bottle/can weight">
-      </div>
-
-      <p class="field-group" style="font-weight:600;color:var(--color-text);margin:var(--space-3) 0 var(--space-1);">Visual Inspection</p>
+      <p class="field-group" style="font-weight:600;color:var(--color-text);margin:var(--space-3) 0 var(--space-1);">Visual Inspection (9 checks)</p>
       <div class="field-group">
         <label>Flash / Burrs</label>
         <select id="ipc-flash">
@@ -130,6 +158,44 @@
         </select>
       </div>
       <div class="field-group">
+        <label>Contamination / Black Specks</label>
+        <select id="ipc-contamination">
+          <option value="OK">None found</option>
+          <option value="Minor">Minor</option>
+          <option value="Fail">Fail</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Short Shot</label>
+        <select id="ipc-short-shot">
+          <option value="OK">OK — complete fill</option>
+          <option value="Fail">Fail — incomplete</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Warpage / Distortion</label>
+        <select id="ipc-warpage">
+          <option value="OK">OK — no warpage</option>
+          <option value="Minor">Minor</option>
+          <option value="Fail">Fail</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Base Pinch-Off</label>
+        <select id="ipc-base-pinch">
+          <option value="OK">OK — clean weld</option>
+          <option value="Fail">Fail — weak / open</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Thread / Neck Finish</label>
+        <select id="ipc-thread">
+          <option value="OK">OK</option>
+          <option value="Minor">Minor</option>
+          <option value="Fail">Fail</option>
+        </select>
+      </div>
+      <div class="field-group">
         <label>Surface Finish</label>
         <select id="ipc-surface">
           <option value="OK">OK — smooth</option>
@@ -140,10 +206,26 @@
 
       <p class="field-group" style="font-weight:600;color:var(--color-text);margin:var(--space-3) 0 var(--space-1);">Functional Tests</p>
       <div class="field-group">
-        <label>Leak Test (fill with water)</label>
+        <label>Leak Test — Sample 1</label>
+        <select id="ipc-leak-s1">
+          <option value="Pass">Pass</option>
+          <option value="Fail">Fail</option>
+          <option value="NA">N/A</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Leak Test — Sample 2</label>
+        <select id="ipc-leak-s2">
+          <option value="Pass">Pass</option>
+          <option value="Fail">Fail</option>
+          <option value="NA">N/A</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Cap Fitment</label>
         <select id="ipc-leak-test">
-          <option value="Pass">Pass — no leak</option>
-          <option value="Fail">Fail — leaking</option>
+          <option value="Pass">Pass — fits correctly</option>
+          <option value="Fail">Fail — loose / tight</option>
           <option value="NA">N/A</option>
         </select>
       </div>
