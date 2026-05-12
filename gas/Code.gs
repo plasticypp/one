@@ -1215,7 +1215,7 @@ function getDefectCatalogue() {
 }
 
 function saveNCR(data) {
-  var authError = requireRole(data, ['director','qmr','supervisor','quality_inspector']);
+  var authError = requireRole(data, ['director','qmr','supervisor','operator']);
   if (authError) return { success: false, error: authError };
 
   var fieldError = validateFields(data, ['batch_id','defect_type','qty_affected','disposition']);
@@ -1278,8 +1278,18 @@ function saveNCR(data) {
     try {
       const capaSheet = getSheet('CAPA_Register');
       const capaRows = capaSheet.getDataRange().getValues();
-      capaId = 'CAPA' + String(capaRows.length).padStart(4, '0');
       const capaHeaders = capaRows[0];
+      const capaIdColIdx = capaHeaders.indexOf('capa_id');
+      let maxCapaNum = 0;
+      if (capaIdColIdx >= 0) {
+        for (let i = 1; i < capaRows.length; i++) {
+          const m = String(capaRows[i][capaIdColIdx]).match(/CAPA(\d+)/);
+          if (m) maxCapaNum = Math.max(maxCapaNum, parseInt(m[1], 10));
+        }
+      } else {
+        maxCapaNum = capaRows.length - 1;
+      }
+      capaId = 'CAPA' + String(maxCapaNum + 1).padStart(4, '0');
       const is13col = capaHeaders.length >= 13;
       if (is13col) {
         capaSheet.appendRow([capaId, today, 'NCR', ncrId, data.remarks || data.defect_type || '', '', '', '', data.userId || '', '', 'Open', '', '']);
@@ -1287,14 +1297,15 @@ function saveNCR(data) {
         capaSheet.appendRow([capaId, today, 'NCR', data.remarks || data.defect_type || '', '', '', '', 'Open']);
       }
       // Write capa_id back to NCR row
-      const ncrHeaders = ncrSheet.getDataRange().getValues()[0];
-      // find last appended row
       const ncrAllRows = ncrSheet.getDataRange().getValues();
       const ncrIdIdx2 = ncrAllRows[0].indexOf('ncr_id');
-      for (let i = 1; i < ncrAllRows.length; i++) {
-        if (String(ncrAllRows[i][ncrIdIdx2]) === String(ncrId)) {
-          // no capa_id column in NCR schema — just log; front-end gets it in response
-          break;
+      const capaIdNcrIdx = ncrAllRows[0].indexOf('capa_id');
+      if (capaIdNcrIdx >= 0) {
+        for (let i = 1; i < ncrAllRows.length; i++) {
+          if (String(ncrAllRows[i][ncrIdIdx2]) === String(ncrId)) {
+            ncrSheet.getRange(i + 1, capaIdNcrIdx + 1).setValue(capaId);
+            break;
+          }
         }
       }
     } catch(e) { Logger.log('CAPA auto-create failed: ' + e.message); }
@@ -1558,7 +1569,7 @@ function getMachineList() {
   const typeIdx = headers.indexOf('Type');
   const statusIdx = headers.indexOf('Status');
   const data = rows.slice(1)
-    .filter(r => r[0] && (typeIdx < 0 || r[typeIdx] === 'Machine') && (statusIdx < 0 || r[statusIdx] !== 'Inactive'))
+    .filter(r => r[0] && (typeIdx < 0 || !r[typeIdx] || String(r[typeIdx]).toLowerCase().includes('machine')) && (statusIdx < 0 || String(r[statusIdx]).toLowerCase() !== 'inactive'))
     .map(r => ({ id: r[0], name: r[headers.indexOf('Name') >= 0 ? headers.indexOf('Name') : 1] }));
   return { success: true, data };
 }
