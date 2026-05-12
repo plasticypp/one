@@ -851,8 +851,15 @@ function saveGRN(data) {
   var fieldError = validateFields(data, ['supplier_id','material','qty_kg','date']);
   if (fieldError) return { success: false, error: fieldError };
 
-  // Approved supplier gate
-  const approvedIds = SUPPLIERS_KB.map(s => s.id);
+  // Approved supplier gate — check Suppliers sheet, fall back to KB
+  const suppSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Suppliers');
+  let approvedIds = SUPPLIERS_KB.map(s => s.id);
+  if (suppSheet) {
+    const suppRows = suppSheet.getDataRange().getValues();
+    if (suppRows.length > 1) {
+      approvedIds = suppRows.slice(1).filter(r => r[0]).map(r => String(r[0]));
+    }
+  }
   if (!approvedIds.includes(String(data.supplier_id))) {
     return { success: false, error: 'unapproved_supplier' };
   }
