@@ -140,7 +140,7 @@
       const productName  = (productCache.find(p => String(p.id) === String(r.product_id)) || {}).name  || r.product_id;
       const remaining    = (r.qty_ordered || 0) - (r.qty_dispatched || 0);
       const canDispatch  = r.status !== 'Dispatched';
-      const canPlanBatch = r.status === 'Pending' && !r.batch_id;
+      const canPlanBatch = r.status !== 'Dispatched';
       const tr = document.createElement('tr');
       tr.style.cursor = 'pointer';
       tr.innerHTML = `
@@ -154,7 +154,7 @@
         <td>${statusChip(r.status)}</td>
         <td style="white-space:nowrap;">
           ${canPlanBatch ? `<button class="btn-sm" style="background:#0288d1;color:#fff;margin-right:4px;" onclick="event.stopPropagation();Dispatch.openPlanBatchPanel('${r.so_id}')">Plan Batch</button>` : ''}
-          ${canDispatch ? `<button class="btn-dispatch" onclick="event.stopPropagation();Dispatch.dispatchAction('${r.so_id}','${r.product_id}')">Dispatch</button>` : '—'}
+          ${canDispatch ? `<button class="btn-dispatch" onclick="event.stopPropagation();Dispatch.dispatchAction('${r.so_id}')">Dispatch</button>` : '—'}
         </td>
       `;
       tr.addEventListener('click', (e) => {
@@ -322,8 +322,9 @@
     dispatchingSOId = soId;
     const customerName = (customerCache.find(c => String(c.id) === String(so.customer_id)) || {}).name || so.customer_id;
     const productName  = (productCache.find(p => String(p.id) === String(so.product_id))   || {}).name || so.product_id;
+    const remaining    = (so.qty_ordered || 0) - (so.qty_dispatched || 0);
 
-    // Populate new dispatch-action-panel fields
+    // Populate dispatch-action-panel fields
     const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
     setVal('dispatch-so-id',          soId);
     setVal('dispatch-so-display',     soId);
@@ -331,10 +332,18 @@
     setVal('dispatch-product-display',  productName);
     setVal('dispatch-so-qty-display', so.qty_ordered || '');
     setVal('dispatch-date',           new Date().toISOString().slice(0, 10));
-    setVal('dispatch-qty',            '');
-    setVal('dispatch-invoice',        '');
+    setVal('dispatch-qty',            remaining > 0 ? remaining : '');
+    setVal('dispatch-invoice',        so.invoice_no || '');
     setVal('dispatch-vehicle',        '');
     setVal('dispatch-polybag-qty',    '');
+
+    // Show override checkbox only for director
+    const overrideRow = document.getElementById('dispatch-override-row');
+    if (overrideRow) {
+      overrideRow.style.display = session.role === 'director' ? '' : 'none';
+      const overrideCb = document.getElementById('dispatch-override');
+      if (overrideCb) overrideCb.checked = false;
+    }
 
     // Auto-fill polybag_qty from packaging spec
     if (so.product_id) {
@@ -387,6 +396,7 @@
     const driverName = document.getElementById('dispatch-driver-name')?.value?.trim() || '';
     const batchNo    = document.getElementById('dispatch-batch-no')?.value?.trim() || '';
     const polybagQty = Number(document.getElementById('dispatch-polybag-qty')?.value) || 0;
+    const override   = document.getElementById('dispatch-override')?.checked ? 'true' : 'false';
 
     const eQty  = document.getElementById('err-dispatch-qty');
     const eDate = document.getElementById('err-dispatch-date');
@@ -412,6 +422,7 @@
         driver_name:   driverName,
         batch_no:      batchNo,
         polybag_qty:   polybagQty,
+        override,
         dispatched_by: session.username || session.name || '',
         userId:        Auth.getUserId()
       });

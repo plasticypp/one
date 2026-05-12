@@ -1600,9 +1600,24 @@ function getOQCBatchList() {
   const rows = sheet.getDataRange().getValues();
   if (rows.length < 2) return { success: true, data: [] };
   const headers = rows[0];
-  const data = rows.slice(1)
-    .map(r => rowToObj(headers, r))
-    .filter(r => r.oqc_status === 'OK' && !r.dispatch_id);
+  const batches = rows.slice(1).map(r => rowToObj(headers, r));
+
+  // Build set of OQC-cleared batch numbers from OQC_Records sheet
+  const oqcCleared = new Set();
+  const oqcSheet = ss.getSheetByName('OQC_Records');
+  if (oqcSheet) {
+    const oqcRows = oqcSheet.getDataRange().getValues();
+    const oqcHeaders = oqcRows[0];
+    const batchNoIdx = oqcHeaders.indexOf('BatchNo');
+    const decisionIdx = oqcHeaders.indexOf('Decision');
+    oqcRows.slice(1).forEach(r => {
+      if (String(r[decisionIdx]).toUpperCase() === 'OK') oqcCleared.add(String(r[batchNoIdx]));
+    });
+  }
+
+  const data = batches.filter(r =>
+    !r.dispatch_id && (r.oqc_status === 'OK' || oqcCleared.has(String(r.batch_no)))
+  );
   return { success: true, data };
 }
 
@@ -2316,16 +2331,55 @@ function saveDispatch(data) {
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  // Enforce OQC clearance via BatchTraceability
+  // Enforce OQC clearance — check BatchTraceability first, fall back to OQC_Records sheet
   const btSheet = ss.getSheetByName('BatchTraceability');
   if (btSheet) {
     const btRows = btSheet.getDataRange().getValues();
     const btHeaders = btRows[0];
     const batchRow = btRows.slice(1).map(r => rowToObj(btHeaders, r))
       .find(r => String(r.batch_no) === String(data.batch_no));
-    if (!batchRow) return { success: false, error: 'batch_not_found' };
-    if (batchRow.oqc_status !== 'OK') return { success: false, error: 'batch_not_oqc_cleared' };
-    if (batchRow.dispatch_id) return { success: false, error: 'batch_already_dispatched' };
+    if (batchRow && batchRow.dispatch_id) return { success: false, error: 'batch_already_dispatched' };
+    if (batchRow && batchRow.oqc_status === 'OK') {
+      // cleared in BatchTraceability — proceed
+    } else {
+      // Check OQC_Records as fallback
+      const oqcSheet = ss.getSheetByName('OQC_Records');
+      let oqcCleared = false;
+      if (oqcSheet) {
+        const oqcRows = oqcSheet.getDataRange().getValues();
+        const oqcHeaders = oqcRows[0];
+        const batchNoIdx = oqcHeaders.indexOf('BatchNo');
+        const decisionIdx = oqcHeaders.indexOf('Decision');
+        oqcCleared = oqcRows.slice(1).some(r =>
+          String(r[batchNoIdx]) === String(data.batch_no) && String(r[decisionIdx]).toUpperCase() === 'OK'
+        );
+        // Back-fill oqc_status in BatchTraceability if found
+        if (oqcCleared && batchRow) {
+          const oqcStatusIdx = btHeaders.indexOf('oqc_status');
+          if (oqcStatusIdx >= 0) {
+            const btAllRows = btSheet.getDataRange().getValues();
+            const batchNoColIdx = btHeaders.indexOf('batch_no');
+            for (let i = 1; i < btAllRows.length; i++) {
+              if (String(btAllRows[i][batchNoColIdx]) === String(data.batch_no)) {
+                btSheet.getRange(i + 1, oqcStatusIdx + 1).setValue('OK');
+                break;
+              }
+            }
+          }
+        }
+      }
+      if (!oqcCleared) {
+        // Director can override with explicit flag
+        if (data.override === 'true') {
+          var roleCheck = requireRole(data, ['director']);
+          if (roleCheck) return { success: false, error: 'batch_not_oqc_cleared' };
+          // override allowed — proceed with warning in response
+        } else {
+          if (!batchRow) return { success: false, error: 'batch_not_found' };
+          return { success: false, error: 'batch_not_oqc_cleared' };
+        }
+      }
+    }
   }
 
   // Check available FG stock before writing anything

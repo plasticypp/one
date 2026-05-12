@@ -184,6 +184,12 @@
         <label>Polybag Qty</label>
         <input type="number" id="dispatch-polybag-qty" placeholder="e.g. 6" min="0">
       </div>
+      <div class="field-group" id="dispatch-override-row" style="display:none;">
+        <label style="color:var(--color-error,#c62828);font-weight:600;">Director Override</label>
+        <label style="display:flex;align-items:center;gap:8px;font-weight:400;">
+          <input type="checkbox" id="dispatch-override"> Skip OQC clearance check
+        </label>
+      </div>
     </div>
     <div class="form-actions">
       <button class="btn btn-primary btn-full" onclick="submitDispatchAction()">Confirm Dispatch</button>
