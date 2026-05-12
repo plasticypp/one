@@ -2081,6 +2081,35 @@ function ensureSheet(name, headers) {
 
 // ── One-Time Setup ───────────────────────────────────────────────────────────
 
+// Run once from Apps Script editor to fully reset Users sheet with correct PIN hashes.
+// Default PIN for all users: 1234
+function resetUsers() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('Users');
+  if (!sheet) {
+    sheet = ss.insertSheet('Users');
+  } else {
+    sheet.clearContents();
+  }
+  const headers = ['UserID','Name','Username','PINHash','Role','Language','Active','FailCount','LockUntil'];
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  sheet.setFrozenRows(1);
+  sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
+
+  const pin1234 = hashPin('1234');
+  const users = [
+    ['P001','Tushar Patil',  'director',  pin1234,'director',  'en',true,0,''],
+    ['P002','PL Pradhan',    'qmr',       pin1234,'qmr',       'en',true,0,''],
+    ['P003','Mahesh Sawant', 'supervisor',pin1234,'supervisor','en',true,0,''],
+    ['P004','Suresh Kamble', 'operator',  pin1234,'operator',  'en',true,0,''],
+    ['P005','Anjali Desai',  'store',     pin1234,'store',     'en',true,0,''],
+    ['P006','Ramesh More',   'operator2', pin1234,'operator',  'en',true,0,'']
+  ];
+  users.forEach(r => sheet.appendRow(r));
+  Logger.log('Users sheet reset — ' + users.length + ' users written with PIN 1234');
+  return { success: true, count: users.length };
+}
+
 // Run once from Apps Script editor to hash and store initial PINs.
 function setupPins(pins) {
   const sheet = getSheet('Users');
