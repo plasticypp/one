@@ -403,8 +403,16 @@
     document.getElementById('iqc-grn-id').value = grnId;
     document.getElementById('iqc-lot-no').value = lotNo;
     document.getElementById('iqc-lot-display').value = grnId + ' / ' + lotNo;
+    document.getElementById('iqc-invoice-no').value = '';
+    document.getElementById('iqc-grade-type').value = '';
+    document.getElementById('iqc-bag-count').value = '';
+    document.getElementById('iqc-bag-condition').value = '';
+    document.getElementById('iqc-labelling').value = 'Yes';
+    document.getElementById('iqc-contamination').value = 'None';
+    document.getElementById('iqc-colour-match').value = '';
     document.getElementById('iqc-mfi').value = '';
     document.getElementById('iqc-density').value = '';
+    document.getElementById('iqc-bulk-density').value = '';
     document.getElementById('iqc-visual').value = '';
     document.getElementById('iqc-coa').value = 'Yes';
     document.getElementById('iqc-decision').value = '';
@@ -420,8 +428,16 @@
       lot_no:         document.getElementById('iqc-lot-no').value,
       insp_date:      new Date().toISOString().slice(0, 10),
       inspector_id:   session.id,
+      invoice_no:     document.getElementById('iqc-invoice-no').value,
+      grade_type:     document.getElementById('iqc-grade-type').value,
+      bag_count:      document.getElementById('iqc-bag-count').value,
+      bag_condition:  document.getElementById('iqc-bag-condition').value,
+      labelling_ok:   document.getElementById('iqc-labelling').value,
+      contamination:  document.getElementById('iqc-contamination').value,
+      colour_match:   document.getElementById('iqc-colour-match').value,
       mfi_result:     document.getElementById('iqc-mfi').value,
       density_result: document.getElementById('iqc-density').value,
+      bulk_density:   document.getElementById('iqc-bulk-density').value,
       visual_result:  document.getElementById('iqc-visual').value,
       coa_ok:         document.getElementById('iqc-coa').value,
       decision,

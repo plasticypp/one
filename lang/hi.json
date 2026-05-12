@@ -36,6 +36,8 @@
   "home.tile.personnel": "स्टाफ रिकॉर्ड",
   "home.tile.complaints": "ग्राहक शिकायतें",
   "home.tile.traceability": "ट्रेसेबिलिटी",
+  "home.tile.ipc": "इन-प्रोसेस चेक",
+  "home.tile.fqc": "अंतिम QC / रिलीज़",
   "profile.title": "मेरी प्रोफ़ाइल",
   "profile.role": "रोल",
   "profile.language": "भाषा",

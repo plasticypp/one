@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#EA580C">
+  <title>YPP ERP — Final QC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/masters.css">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-flex">
+      <button class="back-btn" id="back-to-app">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="header-title">Final QC &amp; Release</span>
+    </div>
+    <div class="header-actions">
+      <button class="lang-toggle" id="lang-toggle">EN</button>
+    </div>
+  </header>
+
+  <div class="filter-bar" style="margin-top:56px;">
+    <select id="filter-fqc-result">
+      <option value="">All Results</option>
+      <option value="Pass">Pass</option>
+      <option value="Fail">Fail</option>
+      <option value="Hold">Hold</option>
+    </select>
+    <span class="filter-spacer"></span>
+    <button class="btn btn-primary btn-sm" id="btn-new-fqc">+ New FQC</button>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>FQC ID</th><th>Date</th><th>Batch</th><th>Product</th>
+          <th>Qty (units)</th><th>AQL</th><th>Result</th><th>Release By</th>
+        </tr>
+      </thead>
+      <tbody id="fqc-tbody">
+        <tr><td colspan="8" class="text-center text-muted" style="padding:var(--space-8);">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- FQC Form Panel -->
+  <div class="form-panel" id="fqc-form-panel">
+    <div class="form-header">
+      <button class="back-btn" id="fqc-form-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <span class="form-title">Final Inspection &amp; Release</span>
+    </div>
+    <div class="form-body">
+
+      <p class="field-group" style="font-weight:600;color:var(--color-text);margin:0 0 var(--space-1);">Batch / Lot Details</p>
+      <div class="field-group">
+        <label>Date *</label>
+        <input type="date" id="fqc-date">
+      </div>
+      <div class="field-group">
+        <label>Batch No *</label>
+        <select id="fqc-batch"><option value="">— select batch —</option></select>
+      </div>
+      <div class="field-group">
+        <label>Customer / Dispatch Destination</label>
+        <input type="text" id="fqc-customer" placeholder="Customer name or destination">
+      </div>
+      <div class="field-group">
+        <label>Total Batch Qty (units) *</label>
+        <input type="number" id="fqc-total-qty" min="1">
+      </div>
+
+      <p class="field-group" style="font-weight:600;color:var(--color-text);margin:var(--space-3) 0 var(--space-1);">Sampling (AQL Level II)</p>
+      <div class="field-group">
+        <label>AQL Level</label>
+        <select id="fqc-aql-level">
+          <option value="AQL 1.0">AQL 1.0</option>
+          <option value="AQL 2.5" selected>AQL 2.5</option>
+          <option value="AQL 4.0">AQL 4.0</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Sample Size Selected</label>
+        <input type="number" id="fqc-sample-size" min="1">
+      </div>
+
+      <p class="field-group" style="font-weight:600;color:var(--color-text);margin:var(--space-3) 0 var(--space-1);">Dimensional Checks</p>
+      <div class="field-group">
+        <label>Height — Avg (mm)</label>
+        <input type="number" id="fqc-height" step="0.1" placeholder="Measured average">
+      </div>
+      <div class="field-group">
+        <label>Body Diameter — Avg (mm)</label>
+        <input type="number" id="fqc-diameter" step="0.1">
+      </div>
+      <div class="field-group">
+        <label>Neck Finish Diameter — Avg (mm)</label>
+        <input type="number" id="fqc-neck-dia" step="0.1">
+      </div>
+      <div class="field-group">
+        <label>Wall Thickness — Avg (mm)</label>
+        <input type="number" id="fqc-wall-thick" step="0.01">
+      </div>
+      <div class="field-group">
+        <label>Capacity — Avg (mL or L)</label>
+        <input type="number" id="fqc-capacity" step="0.1">
+      </div>
+
+      <p class="field-group" style="font-weight:600;color:var(--color-text);margin:var(--space-3) 0 var(--space-1);">Visual Inspection</p>
+      <div class="field-group">
+        <label>Flash / Burrs</label>
+        <select id="fqc-flash">
+          <option value="OK">OK</option>
+          <option value="Minor">Minor</option>
+          <option value="Fail">Fail</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Contamination / Black Specks</label>
+        <select id="fqc-contamination">
+          <option value="OK">None found</option>
+          <option value="Minor">Minor</option>
+          <option value="Fail">Fail</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Colour &amp; Surface Finish</label>
+        <select id="fqc-colour-finish">
+          <option value="OK">OK — uniform, good finish</option>
+          <option value="Minor variation">Minor variation</option>
+          <option value="Fail">Fail</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Labelling (alignment, adhesion, legibility)</label>
+        <select id="fqc-labelling">
+          <option value="OK">OK</option>
+          <option value="Minor">Minor issue</option>
+          <option value="Fail">Fail</option>
+          <option value="NA">N/A — no label</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Packaging Condition (seal, stacking)</label>
+        <select id="fqc-packaging">
+          <option value="OK">OK</option>
+          <option value="Minor">Minor issue</option>
+          <option value="Fail">Fail</option>
+        </select>
+      </div>
+
+      <p class="field-group" style="font-weight:600;color:var(--color-text);margin:var(--space-3) 0 var(--space-1);">Functional Tests</p>
+      <div class="field-group">
+        <label>Leak Test</label>
+        <select id="fqc-leak-test">
+          <option value="Pass">Pass</option>
+          <option value="Fail">Fail</option>
+          <option value="NA">N/A</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Drop Test</label>
+        <select id="fqc-drop-test">
+          <option value="Pass">Pass</option>
+          <option value="Fail">Fail</option>
+          <option value="NA">N/A</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Cap Torque Test</label>
+        <select id="fqc-torque-test">
+          <option value="Pass">Pass</option>
+          <option value="Fail">Fail</option>
+          <option value="NA">N/A</option>
+        </select>
+      </div>
+
+      <p class="field-group" style="font-weight:600;color:var(--color-text);margin:var(--space-3) 0 var(--space-1);">Release Decision</p>
+      <div class="field-group">
+        <label>No. of Non-Conforming Units Found</label>
+        <input type="number" id="fqc-nc-units" value="0" min="0">
+      </div>
+      <div class="field-group">
+        <label>Overall Result *</label>
+        <select id="fqc-result">
+          <option value="">— select —</option>
+          <option value="Pass">Pass — Released for dispatch</option>
+          <option value="Fail">Fail — Hold / reject</option>
+          <option value="Hold">Hold — Pending re-inspection</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Inspected By *</label>
+        <select id="fqc-inspector"><option value="">— select —</option></select>
+      </div>
+      <div class="field-group">
+        <label>Authorised / Released By</label>
+        <select id="fqc-released-by"><option value="">— select —</option></select>
+      </div>
+      <div class="field-group">
+        <label>Remarks</label>
+        <textarea id="fqc-remarks" rows="2" placeholder="Optional notes"></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary btn-full" id="btn-save-fqc">Save FQC Record</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <div class="spinner-overlay hidden" id="spinner"><div class="spinner"></div></div>
+
+  <script src="js/api.js" defer></script>
+  <script src="js/ui.js" defer></script>
+  <script src="js/auth.js" defer></script>
+  <script src="js/lang.js" defer></script>
+  <script src="js/fqc.js" defer></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      (async () => {
+        await Api.init();
+        await FQC.init();
+      })();
+    });
+  </script>
+</body>
+</html>

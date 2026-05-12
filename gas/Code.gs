@@ -212,6 +212,8 @@ function doGet(e) {
       if (action === 'saveCustomerComplaint') return respond(saveCustomerComplaint(data));
       if (action === 'closeCustomerComplaint')return respond(closeCustomerComplaint(data));
       if (action === 'saveCalibrationLog')    return respond(saveCalibrationLog(data));
+      if (action === 'saveIPC')               return respond(saveIPC(data));
+      if (action === 'saveFQC')               return respond(saveFQC(data));
     }
 
     if (action === 'getQualityParams') return respond(getQualityParams(e.parameter));
@@ -242,6 +244,8 @@ function doGet(e) {
     if (action === 'getProductionLog')            return respond(getProductionLog(e.parameter));
     if (action === 'getBatchTraceabilitySearch')  return respond(getBatchTraceabilitySearch(e.parameter));
     if (action === 'getIQCList')                  return respond(getIQCList(e.parameter));
+    if (action === 'getIPCList')                  return respond(getIPCList(e.parameter));
+    if (action === 'getFQCList')                  return respond(getFQCList(e.parameter));
     if (action === 'getSupplierScorecard')        return respond(getSupplierScorecard());
 
     return respond({ success: false, error: 'unknown_action' });
@@ -1361,7 +1365,7 @@ function saveNCR(data) {
   var ncrSheet = ss.getSheetByName('NCR_Log');
   if (!ncrSheet) {
     ncrSheet = ss.insertSheet('NCR_Log');
-    const hdrs = ['ncr_id','date','batch_id','stage','defect_type','severity','qty_affected','disposition','detected_by','remarks','status','capa_required','capa_trigger_reason','capa_id','created_by','created_at'];
+    const hdrs = ['ncr_id','date','batch_id','stage','department','source_nc','defect_type','severity','qty_affected','disposition','detected_by','remarks','status','capa_required','capa_trigger_reason','capa_id','created_by','created_at'];
     ncrSheet.getRange(1,1,1,hdrs.length).setValues([hdrs]);
     ncrSheet.setFrozenRows(1);
   }
@@ -1398,6 +1402,8 @@ function saveNCR(data) {
     data.date || today,
     data.batch_id,
     data.stage || '',
+    data.department || '',
+    data.source_nc || '',
     data.defect_type,
     severity,
     Number(data.qty_affected),
@@ -1459,7 +1465,7 @@ function setupNCRLog() {
   let sheet = ss.getSheetByName('NCR_Log');
   if (sheet) { Logger.log('NCR_Log already exists'); return; }
   sheet = ss.insertSheet('NCR_Log');
-  const hdrs = ['ncr_id','date','batch_id','stage','defect_type','severity','qty_affected','disposition','detected_by','remarks','status','capa_required','capa_trigger_reason','capa_id','created_by','created_at'];
+  const hdrs = ['ncr_id','date','batch_id','stage','department','source_nc','defect_type','severity','qty_affected','disposition','detected_by','remarks','status','capa_required','capa_trigger_reason','capa_id','created_by','created_at'];
   sheet.getRange(1,1,1,hdrs.length).setValues([hdrs]);
   sheet.setFrozenRows(1);
   Logger.log('NCR_Log sheet created');
@@ -2235,41 +2241,31 @@ function saveCapa(data) {
     }
   }
 
-  const sheet = getSheet('CAPA_Register');
+  const CAPA_HEADERS = ['capa_id','date','source','ncr_ref','description','containment_action','root_cause','root_cause_statement','corrective_action','preventive_action','responsible_id','target_date','verification_method','verification_date','lessons_learned','status','closed_date','effectiveness'];
+  const sheet = ensureSheet('CAPA_Register', CAPA_HEADERS);
   const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
   const capa_id = 'CAPA' + String(rows.length).padStart(4, '0');
   const today = new Date().toISOString().slice(0, 10);
-  // Support both old 8-col schema and new 13-col skeleton schema
-  const is13col = headers.length >= 13;
-  if (is13col) {
-    sheet.appendRow([
-      capa_id,
-      today,
-      data.source || '',
-      data.ncr_ref || '',
-      data.description || '',
-      data.root_cause || '',
-      data.corrective_action || data.action || '',
-      data.preventive_action || '',
-      data.responsible_id || '',
-      data.target_date || '',
-      'Open',
-      '',
-      ''
-    ]);
-  } else {
-    sheet.appendRow([
-      capa_id,
-      today,
-      data.source || '',
-      data.description || '',
-      data.root_cause || '',
-      data.corrective_action || data.action || '',
-      data.target_date || '',
-      'Open'
-    ]);
-  }
+  sheet.appendRow([
+    capa_id,
+    today,
+    data.source || '',
+    data.ncr_ref || '',
+    data.description || '',
+    data.containment_action || '',
+    data.root_cause || '',
+    data.root_cause_statement || '',
+    data.corrective_action || data.action || '',
+    data.preventive_action || '',
+    data.responsible_id || '',
+    data.target_date || '',
+    data.verification_method || '',
+    data.verification_date || '',
+    data.lessons_learned || '',
+    'Open',
+    '',
+    ''
+  ]);
   return { success: true, capa_id, responsible_warn: responsibleWarn };
 }
 
@@ -3041,7 +3037,7 @@ function getBatchTraceabilitySearch(params) {
 
 // ── IQC Hold / Release ────────────────────────────────────────────────────────
 
-const IQC_HEADERS = ['iqc_id','grn_id','lot_no','material','supplier_id','insp_date','inspector_id','mfi_result','density_result','visual_result','coa_ok','decision','remarks','released_by','released_at'];
+const IQC_HEADERS = ['iqc_id','grn_id','lot_no','material','supplier_id','invoice_no','grade_type','bag_count','bag_condition','labelling_ok','contamination','colour_match','insp_date','inspector_id','mfi_result','density_result','bulk_density','visual_result','coa_ok','decision','remarks','released_by','released_at'];
 
 function saveIQCResult(data) {
   var authError = requireRole(data, ['director','qmr','supervisor']);
@@ -3061,8 +3057,16 @@ function saveIQCResult(data) {
     if (String(rows[i][grnIdx]) === String(data.grn_id)) {
       // Update existing
       const set = (col, val) => { const idx = headers.indexOf(col); if (idx >= 0) sheet.getRange(i+1, idx+1).setValue(val); };
+      set('invoice_no', data.invoice_no || '');
+      set('grade_type', data.grade_type || '');
+      set('bag_count', data.bag_count || '');
+      set('bag_condition', data.bag_condition || '');
+      set('labelling_ok', data.labelling_ok || '');
+      set('contamination', data.contamination || '');
+      set('colour_match', data.colour_match || '');
       set('mfi_result', data.mfi_result || '');
       set('density_result', data.density_result || '');
+      set('bulk_density', data.bulk_density || '');
       set('visual_result', data.visual_result || '');
       set('coa_ok', data.coa_ok || '');
       set('decision', data.decision);
@@ -3077,8 +3081,10 @@ function saveIQCResult(data) {
 
   sheet.appendRow([
     iqcId, data.grn_id, data.lot_no, data.material || '', data.supplier_id || '',
+    data.invoice_no || '', data.grade_type || '', data.bag_count || '', data.bag_condition || '',
+    data.labelling_ok || '', data.contamination || '', data.colour_match || '',
     today, data.inspector_id || data.userId || '', data.mfi_result || '', data.density_result || '',
-    data.visual_result || '', data.coa_ok || '', data.decision, data.remarks || '', '', ''
+    data.bulk_density || '', data.visual_result || '', data.coa_ok || '', data.decision, data.remarks || '', '', ''
   ]);
   _updateRMStockIQCStatus(data.lot_no, data.decision);
   return { success: true, iqc_id: iqcId };
@@ -3111,6 +3117,112 @@ function getIQCList(params) {
   const headers = rows[0];
   let data = rows.slice(1).map(r => rowToObj(headers, r));
   if (params && params.decision) data = data.filter(r => r.decision === params.decision);
+  return { success: true, data };
+}
+
+// ── IPC — In-Process Check ────────────────────────────────────────────────────
+
+const IPC_HEADERS = ['ipc_id','date','shift','batch_id','product_id','machine_id','sample_size','height','diameter','neck_dia','wall_thick','tare_wt','flash','sink_marks','colour','surface','leak_test','result','checked_by','remarks','created_at'];
+
+function saveIPC(data) {
+  var authError = requireRole(data, ['director','qmr','supervisor','operator']);
+  if (authError) return { success: false, error: authError };
+  var fieldError = validateFields(data, ['batch_id','result','checked_by']);
+  if (fieldError) return { success: false, error: fieldError };
+
+  const sheet = ensureSheet('IPC_Records', IPC_HEADERS);
+  const rows = sheet.getDataRange().getValues();
+  const ipcId = 'IPC' + String(rows.length).padStart(4, '0');
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Look up product_id from batch
+  let productId = data.product_id || '';
+  if (!productId) {
+    const bSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('BatchOrders');
+    if (bSheet) {
+      const bRows = bSheet.getDataRange().getValues();
+      const bHdrs = bRows[0];
+      const bIdIdx = bHdrs.indexOf('batch_id');
+      const bPIdx  = bHdrs.indexOf('product_id');
+      if (bIdIdx >= 0 && bPIdx >= 0) {
+        const bRow = bRows.slice(1).find(r => String(r[bIdIdx]) === String(data.batch_id));
+        if (bRow) productId = bRow[bPIdx];
+      }
+    }
+  }
+
+  sheet.appendRow([
+    ipcId, data.date || today, data.shift || 'A', data.batch_id, productId, data.machine_id || '',
+    data.sample_size || '', data.height || '', data.diameter || '', data.neck_dia || '',
+    data.wall_thick || '', data.tare_wt || '', data.flash || '', data.sink_marks || '',
+    data.colour || '', data.surface || '', data.leak_test || '',
+    data.result, data.checked_by, data.remarks || '', today
+  ]);
+  return { success: true, ipc_id: ipcId };
+}
+
+function getIPCList(params) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('IPC_Records');
+  if (!sheet) return { success: true, data: [] };
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length < 2) return { success: true, data: [] };
+  const headers = rows[0];
+  let data = rows.slice(1).map(r => rowToObj(headers, r));
+  if (params && params.batch_id) data = data.filter(r => r.batch_id === params.batch_id);
+  return { success: true, data };
+}
+
+// ── FQC — Final Quality Check & Release ──────────────────────────────────────
+
+const FQC_HEADERS = ['fqc_id','date','batch_id','product_id','customer','total_qty','aql_level','sample_size','height','diameter','neck_dia','wall_thick','capacity','flash','contamination','colour_finish','labelling','packaging','leak_test','drop_test','torque_test','nc_units','result','inspector_id','released_by','remarks','created_at'];
+
+function saveFQC(data) {
+  var authError = requireRole(data, ['director','qmr','supervisor']);
+  if (authError) return { success: false, error: authError };
+  var fieldError = validateFields(data, ['batch_id','result','inspector_id']);
+  if (fieldError) return { success: false, error: fieldError };
+
+  const sheet = ensureSheet('FQC_Records', FQC_HEADERS);
+  const rows = sheet.getDataRange().getValues();
+  const fqcId = 'FQC' + String(rows.length).padStart(4, '0');
+  const today = new Date().toISOString().slice(0, 10);
+
+  let productId = data.product_id || '';
+  if (!productId) {
+    const bSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('BatchOrders');
+    if (bSheet) {
+      const bRows = bSheet.getDataRange().getValues();
+      const bHdrs = bRows[0];
+      const bIdIdx = bHdrs.indexOf('batch_id');
+      const bPIdx  = bHdrs.indexOf('product_id');
+      if (bIdIdx >= 0 && bPIdx >= 0) {
+        const bRow = bRows.slice(1).find(r => String(r[bIdIdx]) === String(data.batch_id));
+        if (bRow) productId = bRow[bPIdx];
+      }
+    }
+  }
+
+  sheet.appendRow([
+    fqcId, data.date || today, data.batch_id, productId, data.customer || '',
+    Number(data.total_qty) || 0, data.aql_level || 'AQL 2.5', data.sample_size || '',
+    data.height || '', data.diameter || '', data.neck_dia || '', data.wall_thick || '', data.capacity || '',
+    data.flash || '', data.contamination || '', data.colour_finish || '', data.labelling || '',
+    data.packaging || '', data.leak_test || '', data.drop_test || '', data.torque_test || '',
+    Number(data.nc_units) || 0, data.result, data.inspector_id, data.released_by || '',
+    data.remarks || '', today
+  ]);
+
+  return { success: true, fqc_id: fqcId };
+}
+
+function getFQCList(params) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('FQC_Records');
+  if (!sheet) return { success: true, data: [] };
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length < 2) return { success: true, data: [] };
+  const headers = rows[0];
+  let data = rows.slice(1).map(r => rowToObj(headers, r));
+  if (params && params.result) data = data.filter(r => r.result === params.result);
   return { success: true, data };
 }
 

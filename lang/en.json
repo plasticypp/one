@@ -36,6 +36,8 @@
   "home.tile.personnel": "Personnel Records",
   "home.tile.complaints": "Customer Complaints",
   "home.tile.traceability": "Traceability",
+  "home.tile.ipc": "In-Process Check",
+  "home.tile.fqc": "Final QC / Release",
   "profile.title": "My Profile",
   "profile.role": "Role",
   "profile.language": "Language",

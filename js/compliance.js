@@ -240,9 +240,14 @@
       <div class="detail-row"><span>Source</span><strong>${r.Source || r.source || '—'}</strong></div>
       <div class="detail-row"><span>NCR Ref</span><strong>${r.NCRRef || '—'}</strong></div>
       <div class="detail-row"><span>Description</span><strong>${r.ProblemDesc || r.description || '—'}</strong></div>
-      <div class="detail-row"><span>Root Cause</span><strong>${r.RootCause || r.root_cause || '—'}</strong></div>
-      <div class="detail-row"><span>Corrective Action</span><strong>${r.CorrectiveAction || r.action || '—'}</strong></div>
-      <div class="detail-row"><span>Preventive Action</span><strong>${r.PreventiveAction || '—'}</strong></div>
+      <div class="detail-row"><span>Containment</span><strong>${r.containment_action || '—'}</strong></div>
+      <div class="detail-row"><span>Root Cause (5-Why)</span><strong>${r.RootCause || r.root_cause || '—'}</strong></div>
+      <div class="detail-row"><span>Root Cause Statement</span><strong>${r.root_cause_statement || '—'}</strong></div>
+      <div class="detail-row"><span>Corrective Action</span><strong>${r.CorrectiveAction || r.corrective_action || r.action || '—'}</strong></div>
+      <div class="detail-row"><span>Preventive Action</span><strong>${r.PreventiveAction || r.preventive_action || '—'}</strong></div>
+      <div class="detail-row"><span>Verification Method</span><strong>${r.verification_method || '—'}</strong></div>
+      <div class="detail-row"><span>Verification Due</span><strong>${(r.verification_date || '—').toString().slice(0,10)}</strong></div>
+      <div class="detail-row"><span>Lessons Learned</span><strong>${r.lessons_learned || '—'}</strong></div>
       <div class="detail-row"><span>Responsible</span><strong>${r.ResponsibleID || '—'}</strong></div>
       <div class="detail-row"><span>Target Date</span><strong>${(r.TargetDate || r.target_date || '—').toString().slice(0,10)}</strong></div>
       <div class="detail-row"><span>Status</span><strong>${status}</strong></div>
@@ -284,12 +289,17 @@
     editingCapaId = null;
     document.getElementById('capa-form-source').value = '';
     document.getElementById('capa-form-description').value = '';
+    document.getElementById('capa-form-containment') && (document.getElementById('capa-form-containment').value = '');
     document.getElementById('capa-form-root-cause').value = '';
+    document.getElementById('capa-form-root-cause-statement') && (document.getElementById('capa-form-root-cause-statement').value = '');
     document.getElementById('capa-form-action').value = '';
     document.getElementById('capa-form-corrective-action') && (document.getElementById('capa-form-corrective-action').value = '');
     document.getElementById('capa-form-preventive-action') && (document.getElementById('capa-form-preventive-action').value = '');
     document.getElementById('capa-form-ncr-ref') && (document.getElementById('capa-form-ncr-ref').value = '');
     document.getElementById('capa-form-target-date').value = '';
+    document.getElementById('capa-form-verification-method') && (document.getElementById('capa-form-verification-method').value = '');
+    document.getElementById('capa-form-verification-date') && (document.getElementById('capa-form-verification-date').value = '');
+    document.getElementById('capa-form-lessons') && (document.getElementById('capa-form-lessons').value = '');
     // Populate responsible dropdown from Personnel
     const rSel = document.getElementById('capa-form-responsible');
     if (rSel && rSel.tagName === 'SELECT') {
@@ -319,15 +329,20 @@
     if (!capa) return;
     editingCapaId = capaId;
     const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
-    setVal('capa-form-source',      capa.Source      || capa.source      || '');
-    setVal('capa-form-description', capa.ProblemDesc || capa.description || '');
-    setVal('capa-form-root-cause',  capa.RootCause   || capa.root_cause  || '');
-    setVal('capa-form-action',      capa.CorrectiveAction || capa.action || '');
-    setVal('capa-form-corrective-action', capa.CorrectiveAction || capa.action || '');
-    setVal('capa-form-preventive-action', capa.PreventiveAction || '');
-    setVal('capa-form-ncr-ref',     capa.NCRRef      || '');
-    setVal('capa-form-responsible', capa.ResponsibleID || '');
-    setVal('capa-form-target-date', (capa.TargetDate || capa.target_date || '').toString().slice(0, 10));
+    setVal('capa-form-source',               capa.Source      || capa.source      || '');
+    setVal('capa-form-description',          capa.ProblemDesc || capa.description || '');
+    setVal('capa-form-containment',          capa.containment_action || '');
+    setVal('capa-form-root-cause',           capa.RootCause   || capa.root_cause  || '');
+    setVal('capa-form-root-cause-statement', capa.root_cause_statement || '');
+    setVal('capa-form-action',               capa.CorrectiveAction || capa.action || '');
+    setVal('capa-form-corrective-action',    capa.CorrectiveAction || capa.action || '');
+    setVal('capa-form-preventive-action',    capa.PreventiveAction || '');
+    setVal('capa-form-ncr-ref',              capa.NCRRef      || '');
+    setVal('capa-form-responsible',          capa.ResponsibleID || '');
+    setVal('capa-form-target-date',          (capa.TargetDate || capa.target_date || '').toString().slice(0, 10));
+    setVal('capa-form-verification-method',  capa.verification_method || '');
+    setVal('capa-form-verification-date',    (capa.verification_date || '').toString().slice(0, 10));
+    setVal('capa-form-lessons',              capa.lessons_learned || '');
     const titleEl = document.getElementById('capa-form-title') || document.querySelector('#capa-form-panel h2');
     if (titleEl) titleEl.textContent = 'Edit CAPA';
     document.getElementById('capa-form-panel').classList.add('slide-in');
@@ -361,12 +376,17 @@
           fields: {
             source,
             description,
-            root_cause:        document.getElementById('capa-form-root-cause').value,
-            corrective_action: (document.getElementById('capa-form-corrective-action') || {}).value || document.getElementById('capa-form-action').value,
-            preventive_action: (document.getElementById('capa-form-preventive-action') || {}).value || '',
-            ncr_ref:           (document.getElementById('capa-form-ncr-ref') || {}).value || '',
-            responsible_id:    (document.getElementById('capa-form-responsible') || {}).value || '',
-            target_date:       document.getElementById('capa-form-target-date').value
+            containment_action:   (document.getElementById('capa-form-containment') || {}).value || '',
+            root_cause:           document.getElementById('capa-form-root-cause').value,
+            root_cause_statement: (document.getElementById('capa-form-root-cause-statement') || {}).value || '',
+            corrective_action:    (document.getElementById('capa-form-corrective-action') || {}).value || document.getElementById('capa-form-action').value,
+            preventive_action:    (document.getElementById('capa-form-preventive-action') || {}).value || '',
+            ncr_ref:              (document.getElementById('capa-form-ncr-ref') || {}).value || '',
+            responsible_id:       (document.getElementById('capa-form-responsible') || {}).value || '',
+            target_date:          document.getElementById('capa-form-target-date').value,
+            verification_method:  (document.getElementById('capa-form-verification-method') || {}).value || '',
+            verification_date:    (document.getElementById('capa-form-verification-date') || {}).value || '',
+            lessons_learned:      (document.getElementById('capa-form-lessons') || {}).value || ''
           }
         });
         if (res && res.success) {
@@ -382,12 +402,17 @@
     const data = {
       source,
       description,
+      containment_action:   (document.getElementById('capa-form-containment') || {}).value || '',
       root_cause:           document.getElementById('capa-form-root-cause').value,
+      root_cause_statement: (document.getElementById('capa-form-root-cause-statement') || {}).value || '',
       corrective_action:    (document.getElementById('capa-form-corrective-action') || {}).value || document.getElementById('capa-form-action').value,
       preventive_action:    (document.getElementById('capa-form-preventive-action') || {}).value || '',
       ncr_ref:              (document.getElementById('capa-form-ncr-ref') || {}).value || '',
       responsible_id:       (document.getElementById('capa-form-responsible') || {}).value || '',
-      target_date:          document.getElementById('capa-form-target-date').value
+      target_date:          document.getElementById('capa-form-target-date').value,
+      verification_method:  (document.getElementById('capa-form-verification-method') || {}).value || '',
+      verification_date:    (document.getElementById('capa-form-verification-date') || {}).value || '',
+      lessons_learned:      (document.getElementById('capa-form-lessons') || {}).value || ''
     };
     UI.showSpinner(true);
     try {

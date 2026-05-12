@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#EA580C">
+  <title>YPP ERP — In-Process Check</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/masters.css">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-flex">
+      <button class="back-btn" id="back-to-app">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="header-title">In-Process Check (IPC)</span>
+    </div>
+    <div class="header-actions">
+      <button class="lang-toggle" id="lang-toggle">EN</button>
+    </div>
+  </header>
+
+  <div class="filter-bar" style="margin-top:56px;">
+    <select id="filter-ipc-batch"><option value="">All Batches</option></select>
+    <span class="filter-spacer"></span>
+    <button class="btn btn-primary btn-sm" id="btn-new-ipc">+ New Check</button>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>IPC ID</th><th>Date</th><th>Batch</th><th>Shift</th>
+          <th>Product</th><th>Wt (g)</th><th>Height (mm)</th><th>Result</th><th>Inspector</th>
+        </tr>
+      </thead>
+      <tbody id="ipc-tbody">
+        <tr><td colspan="9" class="text-center text-muted" style="padding:var(--space-8);">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- IPC Form Panel -->
+  <div class="form-panel" id="ipc-form-panel">
+    <div class="form-header">
+      <button class="back-btn" id="ipc-form-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <span class="form-title">In-Process Inspection</span>
+    </div>
+    <div class="form-body">
+      <div class="field-group">
+        <label>Date *</label>
+        <input type="date" id="ipc-date">
+      </div>
+      <div class="field-group">
+        <label>Shift *</label>
+        <select id="ipc-shift">
+          <option value="A">A (06:00–14:00)</option>
+          <option value="B">B (14:00–22:00)</option>
+          <option value="C">C (22:00–06:00)</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Batch No *</label>
+        <select id="ipc-batch"><option value="">— select batch —</option></select>
+      </div>
+      <div class="field-group">
+        <label>Machine No</label>
+        <input type="text" id="ipc-machine" placeholder="e.g. M01">
+      </div>
+      <div class="field-group">
+        <label>Sample Size</label>
+        <input type="number" id="ipc-sample-size" value="5" min="1">
+      </div>
+
+      <p class="field-group" style="font-weight:600;color:var(--color-text);margin:var(--space-3) 0 var(--space-1);">Dimensional Checks</p>
+      <div class="field-group">
+        <label>Height — Avg (mm)</label>
+        <input type="number" id="ipc-height" step="0.1" placeholder="Measured average">
+      </div>
+      <div class="field-group">
+        <label>Body Diameter — Avg (mm)</label>
+        <input type="number" id="ipc-diameter" step="0.1" placeholder="Measured average">
+      </div>
+      <div class="field-group">
+        <label>Neck Diameter — Avg (mm)</label>
+        <input type="number" id="ipc-neck-dia" step="0.1" placeholder="Measured average">
+      </div>
+      <div class="field-group">
+        <label>Wall Thickness — Avg (mm)</label>
+        <input type="number" id="ipc-wall-thick" step="0.01" placeholder="Measured average">
+      </div>
+
+      <p class="field-group" style="font-weight:600;color:var(--color-text);margin:var(--space-3) 0 var(--space-1);">Weight Check</p>
+      <div class="field-group">
+        <label>Tare Weight — Avg (g)</label>
+        <input type="number" id="ipc-tare-wt" step="0.1" placeholder="Empty bottle/can weight">
+      </div>
+
+      <p class="field-group" style="font-weight:600;color:var(--color-text);margin:var(--space-3) 0 var(--space-1);">Visual Inspection</p>
+      <div class="field-group">
+        <label>Flash / Burrs</label>
+        <select id="ipc-flash">
+          <option value="OK">OK — none</option>
+          <option value="Minor">Minor — trimmed</option>
+          <option value="Fail">Fail — excessive</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Sink Marks / Voids</label>
+        <select id="ipc-sink-marks">
+          <option value="OK">OK — none</option>
+          <option value="Minor">Minor</option>
+          <option value="Fail">Fail</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Colour Consistency</label>
+        <select id="ipc-colour">
+          <option value="OK">OK — uniform</option>
+          <option value="Slight variation">Slight variation</option>
+          <option value="Fail">Fail — off-colour</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Surface Finish</label>
+        <select id="ipc-surface">
+          <option value="OK">OK — smooth</option>
+          <option value="Minor">Minor scratches/marks</option>
+          <option value="Fail">Fail</option>
+        </select>
+      </div>
+
+      <p class="field-group" style="font-weight:600;color:var(--color-text);margin:var(--space-3) 0 var(--space-1);">Functional Tests</p>
+      <div class="field-group">
+        <label>Leak Test (fill with water)</label>
+        <select id="ipc-leak-test">
+          <option value="Pass">Pass — no leak</option>
+          <option value="Fail">Fail — leaking</option>
+          <option value="NA">N/A</option>
+        </select>
+      </div>
+
+      <p class="field-group" style="font-weight:600;color:var(--color-text);margin:var(--space-3) 0 var(--space-1);">Overall Result</p>
+      <div class="field-group">
+        <label>Overall Result *</label>
+        <select id="ipc-result">
+          <option value="">— select —</option>
+          <option value="Pass">Pass</option>
+          <option value="Fail">Fail</option>
+          <option value="Conditional">Conditional — rework required</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Checked By *</label>
+        <select id="ipc-checked-by"><option value="">— select —</option></select>
+      </div>
+      <div class="field-group">
+        <label>Remarks</label>
+        <textarea id="ipc-remarks" rows="2" placeholder="Optional notes"></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary btn-full" id="btn-save-ipc">Save IPC Record</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <div class="spinner-overlay hidden" id="spinner"><div class="spinner"></div></div>
+
+  <script src="js/api.js" defer></script>
+  <script src="js/ui.js" defer></script>
+  <script src="js/auth.js" defer></script>
+  <script src="js/lang.js" defer></script>
+  <script src="js/ipc.js" defer></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      (async () => {
+        await Api.init();
+        await IPC.init();
+      })();
+    });
+  </script>
+</body>
+</html>

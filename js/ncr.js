@@ -148,6 +148,8 @@
     document.getElementById('field-ncr-qty').value = '';
     document.getElementById('field-ncr-remarks').value = '';
     document.getElementById('field-ncr-severity').value = '';
+    document.getElementById('field-ncr-department').value = '';
+    document.getElementById('field-ncr-source').value = '';
     if (session.id) document.getElementById('field-ncr-detected-by').value = session.id;
     document.getElementById('field-ncr-defect').value = '';
 
@@ -167,6 +169,8 @@
   async function submitNCR() {
     const batchId     = document.getElementById('field-ncr-batch').value.trim();
     const stage       = document.getElementById('field-ncr-stage').value;
+    const department  = document.getElementById('field-ncr-department').value;
+    const sourceNC    = document.getElementById('field-ncr-source').value;
     const defectType  = document.getElementById('field-ncr-defect').value.trim();
     const severity    = document.getElementById('field-ncr-severity').value.trim();
     const qty         = document.getElementById('field-ncr-qty').value;
@@ -183,7 +187,7 @@
     if (editingNcrId) {
       UI.showSpinner(true);
       try {
-        const fields = { date, batch_id: batchId, stage, defect_type: defectType, severity, qty_affected: Number(qty), disposition, detected_by: detectedBy, remarks };
+        const fields = { date, batch_id: batchId, stage, department, source_nc: sourceNC, defect_type: defectType, severity, qty_affected: Number(qty), disposition, detected_by: detectedBy, remarks };
         const res = await Api.post('updateRecord', {
           sheet: 'NCR_Log', idCol: 'ncr_id', idVal: editingNcrId,
           userId: Auth.getUserId(), fields
@@ -197,7 +201,8 @@
     UI.showSpinner(true);
     try {
       const res = await Api.post('saveNCR', {
-        date, batch_id: batchId, stage, defect_type: defectType, severity,
+        date, batch_id: batchId, stage, department, source_nc: sourceNC,
+        defect_type: defectType, severity,
         qty_affected: Number(qty), disposition, detected_by: detectedBy,
         remarks, userId: Auth.getUserId()
       });
@@ -231,6 +236,8 @@
       <div class="detail-row"><span>Date</span><strong>${fv(r.date)}</strong></div>
       <div class="detail-row"><span>Batch</span><strong>${fv(r.batch_id)}</strong></div>
       <div class="detail-row"><span>Stage</span><strong>${fv(r.stage)}</strong></div>
+      <div class="detail-row"><span>Department</span><strong>${fv(r.department)}</strong></div>
+      <div class="detail-row"><span>Source of NC</span><strong>${fv(r.source_nc)}</strong></div>
       <div class="detail-row"><span>Defect Type</span><strong>${fv(r.defect_type)}</strong></div>
       <div class="detail-row"><span>Severity</span><strong>${fv(r.severity)}</strong></div>
       <div class="detail-row"><span>Qty Affected</span><strong>${fv(r.qty_affected)}</strong></div>
@@ -257,6 +264,8 @@
     document.getElementById('field-ncr-date').value = r.date ? String(r.date).slice(0, 10) : '';
     document.getElementById('field-ncr-batch').value = r.batch_id || '';
     document.getElementById('field-ncr-stage').value = r.stage || 'IPC';
+    document.getElementById('field-ncr-department').value = r.department || '';
+    document.getElementById('field-ncr-source').value = r.source_nc || '';
     document.getElementById('field-ncr-defect').value = r.defect_type || '';
     document.getElementById('field-ncr-severity').value = r.severity || '';
     document.getElementById('field-ncr-qty').value = r.qty_affected ?? '';
