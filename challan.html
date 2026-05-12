@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dispatch Challan — YPP ERP</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Barlow', Arial, sans-serif; font-size: 13px; color: #111; background: #fff; padding: 24px; }
+    .challan-wrap { max-width: 720px; margin: 0 auto; border: 2px solid #111; padding: 20px; }
+    .letterhead { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #111; padding-bottom: 12px; margin-bottom: 12px; }
+    .company-name { font-size: 22px; font-weight: 700; letter-spacing: .02em; }
+    .company-sub { font-size: 11px; color: #444; margin-top: 2px; }
+    .challan-title { text-align: right; }
+    .challan-title h2 { font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+    .challan-title .challan-no { font-size: 13px; color: #555; margin-top: 4px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+    .info-block label { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: #666; display: block; margin-bottom: 2px; }
+    .info-block .val { font-size: 13px; font-weight: 500; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { border: 1px solid #999; padding: 7px 10px; text-align: left; font-size: 12px; }
+    th { background: #f5f5f5; font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: .05em; }
+    .sig-row { display: flex; justify-content: space-between; margin-top: 40px; }
+    .sig-block { text-align: center; width: 30%; }
+    .sig-line { border-top: 1px solid #555; padding-top: 4px; font-size: 11px; color: #555; }
+    .print-btn { display: block; text-align: center; margin: 20px auto 0; padding: 10px 32px; background: #EA580C; color: #fff; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .loading { text-align: center; padding: 60px; color: #777; font-size: 16px; }
+    .error { text-align: center; padding: 60px; color: #c62828; font-size: 15px; }
+    @media print {
+      body { padding: 0; }
+      .challan-wrap { border: none; }
+      .print-btn { display: none; }
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap">
+</head>
+<body>
+  <div class="challan-wrap" id="challan-wrap">
+    <div class="loading" id="loading">Loading challan…</div>
+  </div>
+
+  <script src="js/api.js" defer></script>
+  <script src="js/auth.js" defer></script>
+  <script>
+  window.addEventListener('DOMContentLoaded', async () => {
+    await Api.init();
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    if (!id) { document.getElementById('loading').className = 'error'; document.getElementById('loading').textContent = 'No challan ID specified.'; return; }
+    try {
+      const res = await Api.get('getChallan', { id });
+      if (!res.success) { document.getElementById('loading').className = 'error'; document.getElementById('loading').textContent = 'Challan not found: ' + (res.error || ''); return; }
+      renderChallan(res.data);
+    } catch (err) {
+      document.getElementById('loading').className = 'error';
+      document.getElementById('loading').textContent = 'Failed to load challan.';
+    }
+  });
+
+  function renderChallan(d) {
+    const wrap = document.getElementById('challan-wrap');
+    wrap.innerHTML = `
+      <div class="letterhead">
+        <div>
+          <div class="company-name">Yash Poly Plast</div>
+          <div class="company-sub">Plot No. 12, Turbhe Industrial Area, Navi Mumbai — 400705<br>GSTIN: 27XXXXX0000X1Z5</div>
+        </div>
+        <div class="challan-title">
+          <h2>Dispatch Challan</h2>
+          <div class="challan-no">${esc(d.dispatch_id)}</div>
+          <div class="challan-no">Date: ${esc(d.dispatch_date)}</div>
+        </div>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-block"><label>Customer</label><div class="val">${esc(d.customer_name)}</div></div>
+        <div class="info-block"><label>Address</label><div class="val">${esc(d.customer_address || '—')}</div></div>
+        <div class="info-block"><label>Customer GSTIN</label><div class="val">${esc(d.customer_gstin || '—')}</div></div>
+        <div class="info-block"><label>Sales Order</label><div class="val">${esc(d.so_id)}</div></div>
+        <div class="info-block"><label>Invoice No</label><div class="val">${esc(d.invoice_no || '—')}</div></div>
+        <div class="info-block"><label>Vehicle / LR No</label><div class="val">${esc(d.vehicle_no || '—')}</div></div>
+        <div class="info-block"><label>Driver</label><div class="val">${esc(d.driver_name || '—')}</div></div>
+        <div class="info-block"><label>Authorised By</label><div class="val">${esc(d.dispatched_by)}</div></div>
+      </div>
+
+      <table>
+        <thead><tr><th>#</th><th>Product</th><th>Batch No</th><th>Qty Dispatched</th><th>Unit</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>${esc(d.product_name)}</td>
+            <td>${esc(d.batch_no)}</td>
+            <td><strong>${esc(String(d.qty))}</strong></td>
+            <td>${esc(d.unit)}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="sig-row">
+        <div class="sig-block"><div class="sig-line">Driver Signature</div></div>
+        <div class="sig-block"><div class="sig-line">Transporter Seal</div></div>
+        <div class="sig-block"><div class="sig-line">Authorised Signatory</div></div>
+      </div>
+
+      <button class="print-btn" onclick="window.print()">Print Challan</button>
+    `;
+  }
+
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  </script>
+</body>
+</html>

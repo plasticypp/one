@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YPP ERP — OQC Check</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/matrix.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-flex">
+      <button class="back-btn" onclick="history.back()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span class="header-title">OQC Check</span>
+    </div>
+    <div class="header-actions">
+      <span class="batch-badge" id="batch-badge"></span>
+    </div>
+  </header>
+
+  <div class="matrix-meta" id="matrix-meta"></div>
+
+  <div class="matrix-scroll">
+    <div id="matrix-area" class="matrix-area">
+      <div style="padding:40px;text-align:center;color:#777;">Loading parameters…</div>
+    </div>
+  </div>
+
+  <div class="matrix-footer">
+    <button class="btn btn-secondary" id="btn-add-period">&#9654; Start Period</button>
+    <button class="btn btn-primary" id="btn-submit-session">Submit &amp; Close Session</button>
+  </div>
+
+  <div class="spinner-overlay hidden" id="spinner"><div class="spinner"></div></div>
+  <div class="toast" id="toast"></div>
+
+  <script src="js/api.js" defer></script>
+  <script src="js/ui.js" defer></script>
+  <script src="js/auth.js" defer></script>
+  <script src="js/matrix.js" defer></script>
+  <script>
+  window.addEventListener('DOMContentLoaded', async () => {
+    const p = new URLSearchParams(window.location.search);
+    const batch = p.get('batch') || '';
+    const product_id = p.get('product_id') || 'ALL';
+
+    document.getElementById('batch-badge').textContent = batch;
+    document.getElementById('matrix-meta').textContent = 'Stage: OQC';
+
+    await Matrix.init({ stage: 'OQC', batch, product_id }, () => {
+      window.location.href = 'dispatch.html';
+    });
+  });
+  </script>
+</body>
+</html>

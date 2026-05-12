@@ -1,0 +1,40 @@
+.matrix-scroll { overflow-x: auto; padding: 0 16px 100px; }
+.matrix-area { min-width: 100%; }
+.matrix-meta { padding: 8px 16px; font-size: 12px; color: var(--color-text-muted, #666); background: var(--color-surface-alt, #f8f8f8); border-bottom: 1px solid var(--color-border, #e5e7eb); }
+.batch-badge { font-size: 12px; font-weight: 600; background: var(--color-primary-100, #fff7ed); color: var(--color-primary, #EA580C); padding: 3px 10px; border-radius: 20px; }
+
+.matrix-table { border-collapse: collapse; font-size: 12px; min-width: 100%; }
+.matrix-table th, .matrix-table td { border: 1px solid var(--color-border, #e5e7eb); padding: 0; }
+.matrix-table th { background: var(--color-surface-alt, #f8f8f8); font-weight: 600; text-align: center; padding: 6px 8px; font-size: 11px; }
+
+.param-col { text-align: left !important; min-width: 140px; padding: 6px 10px !important; }
+.period-col { min-width: 100px; text-align: center; }
+.add-col { min-width: 40px; }
+.period-no { font-size: 11px; font-weight: 700; }
+.period-time { font-size: 10px; color: #666; }
+.period-dur { font-size: 10px; color: #888; }
+
+.section-label { background: #f0f0f0; font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: #666; padding: 4px 10px !important; }
+
+.param-label { padding: 6px 10px; vertical-align: top; }
+.param-name { font-weight: 500; font-size: 12px; }
+.param-unit { font-size: 10px; color: #888; }
+.param-spec { font-size: 10px; color: #666; font-style: italic; }
+
+.matrix-cell { padding: 6px 8px; text-align: center; vertical-align: top; transition: background .15s; }
+.matrix-cell.cell-ok { background: #e8f5e9; }
+.matrix-cell.cell-oos { background: #ffebee; }
+
+.cell-input { width: 70px; padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; text-align: center; }
+.cell-input:focus { outline: none; border-color: var(--color-primary, #EA580C); }
+
+.pf-btn { padding: 4px 10px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; font-weight: 600; cursor: pointer; background: #f5f5f5; color: #333; min-width: 56px; }
+.pf-btn.pf-pass { background: #e8f5e9; border-color: #4caf50; color: #2e7d32; }
+.pf-btn.pf-fail { background: #ffebee; border-color: #e53935; color: #c62828; }
+.pf-btn:disabled { opacity: .6; cursor: default; }
+
+.action-wrap { margin-top: 4px; }
+.action-input { width: 90px; padding: 3px 5px; border: 1px solid #e53935; border-radius: 3px; font-size: 10px; background: #fff3e0; }
+
+.matrix-footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 16px; background: #fff; border-top: 1px solid var(--color-border, #e5e7eb); display: flex; gap: 10px; z-index: 100; }
+.matrix-footer .btn { flex: 1; }

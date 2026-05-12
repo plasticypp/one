@@ -1,45 +1,30 @@
-﻿const Dispatch = (() => {
+const Dispatch = (() => {
 
-  // ── State ─────────────────────────────────────────────────────────────────
-
+  // ── State ──────────────────────────────────────────────────────────────────
   let session = null;
-  let customerCache = [];
-  let productCache = [];
-  let machineCache = [];
-  let inspectorCache = [];
   let soCache = [];
-  let dispatchingSOId = null;
-  let editingSOId = null;
-  let planningSOId = null;
-  let activeTab = 'so';
+  let batchCache = [];
+  let selectedSO = null;    // SO object
+  let selectedBatch = null; // batch object
+  let activeLeftTab = 'orders';
 
-  // ── Init ──────────────────────────────────────────────────────────────────
-
+  // ── Init ───────────────────────────────────────────────────────────────────
   async function init() {
     session = Auth.get();
     if (!session) { Auth.requireLogin(); return; }
     await Lang.init(session.lang);
-
     setupHeader();
-    renderTabs();
-    await loadDropdowns();
-    await loadSOList();
+    setupLeftTabs();
+    setupStrip();
+    setupFilters();
+    await Promise.all([loadSOList(), loadBatches(), loadLog()]);
   }
 
-  // ── Header ────────────────────────────────────────────────────────────────
-
+  // ── Header ─────────────────────────────────────────────────────────────────
   function setupHeader() {
     document.getElementById('back-to-app').addEventListener('click', () => {
       window.location.href = 'app.html';
     });
-    document.getElementById('form-back').addEventListener('click', () => {
-      editingSOId = null;
-      slideFormOut();
-    });
-    const dispatchActionBackBtn = document.getElementById('dispatch-action-back-btn');
-    if (dispatchActionBackBtn) dispatchActionBackBtn.addEventListener('click', slideDispatchActionPanelOut);
-    document.getElementById('detail-back').addEventListener('click', slideDetailOut);
-    document.getElementById('btn-new-so').addEventListener('click', () => openSOForm());
     const langBtn = document.getElementById('lang-toggle');
     langBtn.textContent = Lang.getCurrent().toUpperCase();
     langBtn.addEventListener('click', async () => {
@@ -49,644 +34,284 @@
     });
   }
 
-  // ── Tabs ──────────────────────────────────────────────────────────────────
-
-  function renderTabs() {
-    document.querySelectorAll('.sub-tab').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.tab === activeTab);
-      btn.addEventListener('click', async () => {
-        activeTab = btn.dataset.tab;
-        renderTabs();
-        document.getElementById('tab-so').classList.toggle('hidden', activeTab !== 'so');
-        document.getElementById('tab-log').classList.toggle('hidden', activeTab !== 'log');
-        if (activeTab === 'log') await loadDispatchLog();
-        if (activeTab === 'so') await loadSOList();
+  // ── Left tab switching ─────────────────────────────────────────────────────
+  function setupLeftTabs() {
+    document.querySelectorAll('.dp-left-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeLeftTab = btn.dataset.ltab;
+        document.querySelectorAll('.dp-left-tab').forEach(b => b.classList.toggle('active', b === btn));
+        document.getElementById('ltab-orders').classList.toggle('hidden', activeLeftTab !== 'orders');
+        document.getElementById('ltab-log').classList.toggle('hidden', activeLeftTab !== 'log');
+        if (activeLeftTab === 'log') loadLog();
       });
     });
-    document.getElementById('tab-so').classList.toggle('hidden', activeTab !== 'so');
-    document.getElementById('tab-log').classList.toggle('hidden', activeTab !== 'log');
   }
 
-  // ── Dropdowns ─────────────────────────────────────────────────────────────
-
-  async function loadDropdowns() {
-    const [cRes, pRes, mRes, iRes] = await Promise.all([
-      Api.get('getMasterDropdown', { entity: 'Customers' }),
-      Api.get('getMasterDropdown', { entity: 'Products' }),
-      Api.get('getMachineList'),
-      Api.get('getMasterDropdown', { entity: 'Personnel' })
-    ]);
-    customerCache  = cRes.success ? cRes.data : [];
-    productCache   = pRes.success ? pRes.data : [];
-    machineCache   = mRes.success ? mRes.data : [];
-    inspectorCache = iRes.success ? iRes.data : [];
-    populateFormDropdowns();
+  // ── Filter wiring ──────────────────────────────────────────────────────────
+  function setupFilters() {
+    document.getElementById('filter-so-status').addEventListener('change', loadSOList);
+    document.getElementById('filter-batch-product').addEventListener('change', renderBatches);
+    document.getElementById('search-batch').addEventListener('input', renderBatches);
   }
 
-  function populateFormDropdowns() {
-    const cSel = document.getElementById('field-customer');
-    cSel.innerHTML = '<option value="">— select —</option>';
-    customerCache.forEach(c => {
-      const o = document.createElement('option');
-      o.value = c.id;
-      o.textContent = c.name;
-      cSel.appendChild(o);
-    });
-
-    const pSel = document.getElementById('field-product');
-    pSel.innerHTML = '<option value="">— select —</option>';
-    productCache.forEach(p => {
-      const o = document.createElement('option');
-      o.value = p.id;
-      o.textContent = p.name;
-      pSel.appendChild(o);
-    });
-  }
-
-  // ── SO List ───────────────────────────────────────────────────────────────
-
-  async function loadSOList(status) {
+  // ── Sales Orders (left panel) ──────────────────────────────────────────────
+  async function loadSOList() {
+    const status = document.getElementById('filter-so-status').value;
     UI.showSpinner(true);
     try {
-      const filterStatus = status || document.getElementById('filter-status').value;
-      const params = {};
-      if (filterStatus && filterStatus !== 'all') params.status = filterStatus;
-      const res = await Api.get('getSOList', params);
-      const rows = res.success ? res.data : [];
-      soCache = rows;
-      renderSOTable(rows);
+      const res = await Api.get('getSOList', { status });
+      soCache = res.success ? res.data : [];
+    } catch (e) {
+      soCache = [];
     } finally {
       UI.showSpinner(false);
     }
+    renderSOList();
   }
 
-  function statusChip(status) {
-    const colors = { Pending: 'var(--color-warning)', Partial: 'var(--color-warning)', Dispatched: 'var(--color-success)' };
-    const bg     = { Pending: 'var(--color-warning-bg, #fff3e0)', Partial: 'var(--color-warning-bg, #fbe9e7)', Dispatched: 'var(--color-success-bg, #e8f5e9)' };
-    const color  = colors[status] || 'var(--color-text-muted)';
-    const bgCol  = bg[status]     || 'var(--color-surface)';
-    return `<span style="background:${bgCol};color:${color};padding:3px 10px;border-radius:12px;font-size:0.8rem;font-weight:600;">${status}</span>`;
-  }
-
-  function renderSOTable(rows) {
-    const tbody = document.getElementById('so-tbody');
-    tbody.innerHTML = '';
-
-    if (rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="9" class="td-loading">No records</td></tr>';
+  function renderSOList() {
+    const el = document.getElementById('so-list');
+    if (!soCache.length) {
+      el.innerHTML = '<div style="padding:20px;text-align:center;color:#999;font-size:13px;">No pending orders.</div>';
       return;
     }
-
-    rows.forEach(r => {
-      const customerName = (customerCache.find(c => String(c.id) === String(r.customer_id)) || {}).name || r.customer_id;
-      const productName  = (productCache.find(p => String(p.id) === String(r.product_id)) || {}).name  || r.product_id;
-      const remaining    = (r.qty_ordered || 0) - (r.qty_dispatched || 0);
-      const canDispatch  = r.status !== 'Dispatched';
-      const canPlanBatch = r.status !== 'Dispatched';
-      const tr = document.createElement('tr');
-      tr.style.cursor = 'pointer';
-      tr.innerHTML = `
-        <td>${r.so_id || ''}</td>
-        <td>${String(r.date || "").slice(0,10)}</td>
-        <td>${customerName}</td>
-        <td>${productName}</td>
-        <td>${r.qty_ordered || 0}</td>
-        <td>${r.qty_dispatched || 0}</td>
-        <td>${remaining}</td>
-        <td>${statusChip(r.status)}</td>
-        <td style="white-space:nowrap;">
-          ${canPlanBatch ? `<button class="btn-sm" style="background:#0288d1;color:#fff;margin-right:4px;" onclick="event.stopPropagation();Dispatch.openPlanBatchPanel('${r.so_id}')">Plan Batch</button>` : ''}
-          ${canDispatch ? `<button class="btn-dispatch" onclick="event.stopPropagation();Dispatch.dispatchAction('${r.so_id}')">Dispatch</button>` : '—'}
-        </td>
-      `;
-      tr.addEventListener('click', (e) => {
-        if (e.target.closest('button')) return;
-        openSODetail(r.so_id);
-      });
-      tbody.appendChild(tr);
+    el.innerHTML = '';
+    soCache.forEach(so => {
+      const age = so.date ? Math.floor((Date.now() - new Date(so.date)) / 86400000) : '—';
+      const card = document.createElement('div');
+      card.className = 'so-card' + (selectedSO && selectedSO.so_id === so.so_id ? ' selected' : '');
+      card.innerHTML = `
+        <div class="so-card-id">${esc(so.so_id)}</div>
+        <div class="so-card-customer">${esc(so.customer_name || so.customer_id)}</div>
+        <div class="so-card-product">${esc(so.product_name || so.product_id)}</div>
+        <div class="so-card-meta">
+          <span>Remaining: <strong>${esc(String(so.qty_remaining ?? so.qty_ordered))}</strong> pcs</span>
+          <span>Age: <strong>${age}d</strong></span>
+          <span class="status-chip ${so.status === 'Partial' ? 'status-hold' : 'status-pending'}">${esc(so.status)}</span>
+        </div>`;
+      card.addEventListener('click', () => selectSO(so));
+      el.appendChild(card);
     });
   }
 
-  // ── SO Form ───────────────────────────────────────────────────────────────
-
-  function openSOForm() {
-    editingSOId = null;
-    const today = new Date().toISOString().slice(0, 10);
-    document.getElementById('field-date').value = today;
-    document.getElementById('field-qty-ordered').value = '';
-    document.getElementById('field-invoice').value = '';
-    populateFormDropdowns();
-    document.getElementById('form-title').textContent = 'New Sales Order';
-    slideFormIn();
+  function selectSO(so) {
+    if (selectedSO && selectedSO.so_id === so.so_id) {
+      // Deselect
+      selectedSO = null;
+    } else {
+      selectedSO = so;
+    }
+    renderSOList();
+    renderBatches();
+    updateStrip();
   }
 
-  async function submitSO() {
-    const customer_id  = document.getElementById('field-customer').value;
-    const product_id   = document.getElementById('field-product').value;
-    const qty_ordered  = document.getElementById('field-qty-ordered').value;
-    const invoice_no   = document.getElementById('field-invoice').value.trim();
-    const date         = document.getElementById('field-date').value;
-
-    if (editingSOId) {
-      if (!customer_id || !product_id || !qty_ordered) {
-        UI.showToast('Customer, Product and Qty are required');
-        return;
+  // ── FG Batches (right panel) ───────────────────────────────────────────────
+  async function loadBatches() {
+    try {
+      const res = await Api.get('getFGBatches');
+      batchCache = res.success ? res.data : [];
+    } catch (e) {
+      batchCache = [];
+    }
+    // Populate product filter
+    const prodSel = document.getElementById('filter-batch-product');
+    const seen = new Set();
+    prodSel.innerHTML = '<option value="">All Products</option>';
+    batchCache.forEach(b => {
+      if (!seen.has(b.product_id)) {
+        seen.add(b.product_id);
+        const o = document.createElement('option');
+        o.value = b.product_id;
+        o.textContent = b.product_name || b.product_id;
+        prodSel.appendChild(o);
       }
-      UI.showSpinner(true);
-      try {
-        const res = await Api.post('updateRecord', {
-          sheet: 'SalesOrders', idCol: 'so_id', idVal: editingSOId,
-          userId: Auth.getUserId(),
-          fields: { customer_id, product_id, qty_ordered: Number(qty_ordered), date, invoice_no }
-        });
-        if (res.success) {
-          editingSOId = null;
-          slideFormOut();
-          await loadSOList();
-        } else {
-          UI.showToast('Update failed: ' + res.error);
-        }
-      } finally { UI.showSpinner(false); }
+    });
+    renderBatches();
+  }
+
+  function renderBatches() {
+    const el = document.getElementById('batch-list');
+    const prodFilter = document.getElementById('filter-batch-product').value;
+    const search = document.getElementById('search-batch').value.toLowerCase();
+
+    let batches = batchCache;
+    if (prodFilter) batches = batches.filter(b => b.product_id === prodFilter);
+    if (search) batches = batches.filter(b => b.batch_no.toLowerCase().includes(search));
+
+    if (!batches.length) {
+      el.innerHTML = '<div class="dp-right-empty">No OQC-cleared batches available.<br>Check production module.</div>';
       return;
     }
 
-    if (!customer_id || !product_id || !qty_ordered) {
-      UI.showToast('Customer, Product and Qty are required');
-      return;
-    }
+    el.innerHTML = '';
+    batches.forEach(b => {
+      const isSelected = selectedBatch && selectedBatch.batch_no === b.batch_no;
+      const matchesSO = selectedSO && b.product_id === selectedSO.product_id;
+      const isDimmed = selectedSO && !matchesSO;
 
-    if (invoice_no && soCache.some(s => s.invoice_no && s.invoice_no.trim() === invoice_no)) {
-      UI.showToast('Invoice no already exists — check for duplicate SO');
-      return;
-    }
+      const card = document.createElement('div');
+      card.className = ['batch-card',
+        isSelected ? 'selected' : '',
+        isDimmed   ? 'dimmed'   : '',
+        !isSelected && matchesSO ? 'match' : ''
+      ].filter(Boolean).join(' ');
 
-    UI.showSpinner(true);
-    try {
-      const res = await Api.post('saveSO', {
-        date,
-        customer_id,
-        product_id,
-        qty_ordered: Number(qty_ordered),
-        invoice_no,
-        userId:      Auth.getUserId()
-      });
-      if (res.success) {
-        UI.showToast('SO saved — ' + (res.so_id || ''));
-        slideFormOut();
-        await loadSOList();
-      } else {
-        UI.showToast('Error: ' + (res.error || 'save failed'));
+      card.innerHTML = `
+        <div class="batch-card-no">${esc(b.batch_no)}</div>
+        <div class="batch-card-product">${esc(b.product_name || b.product_id)}</div>
+        <div class="batch-card-qty">${esc(String(b.qty))} <span>pcs</span></div>
+        <div class="oqc-badge">✓ OQC Cleared</div>
+        <div class="batch-card-meta">
+          <span>${esc(b.machine_id || '—')}</span>
+          <span>${b.age_days != null ? b.age_days + 'd ago' : ''}</span>
+          <span>${esc(b.production_date || '')}</span>
+        </div>`;
+      card.addEventListener('click', () => selectBatch(b));
+      el.appendChild(card);
+    });
+  }
+
+  function selectBatch(b) {
+    if (selectedBatch && selectedBatch.batch_no === b.batch_no) {
+      selectedBatch = null;
+    } else {
+      selectedBatch = b;
+    }
+    renderBatches();
+    updateStrip();
+  }
+
+  // ── Dispatch strip ─────────────────────────────────────────────────────────
+  function setupStrip() {
+    document.getElementById('strip-cancel').addEventListener('click', () => {
+      selectedSO = null;
+      selectedBatch = null;
+      renderSOList();
+      renderBatches();
+      updateStrip();
+    });
+    document.getElementById('btn-confirm-dispatch').addEventListener('click', confirmDispatch);
+    // Default date to today
+    document.getElementById('strip-date').value = new Date().toISOString().slice(0, 10);
+  }
+
+  function updateStrip() {
+    const strip = document.getElementById('dispatch-strip');
+    const summary = document.getElementById('strip-summary');
+    if (selectedSO && selectedBatch) {
+      strip.classList.add('visible');
+      const maxQty = Math.min(
+        Number(selectedSO.qty_remaining ?? selectedSO.qty_ordered) || 0,
+        Number(selectedBatch.qty) || 0
+      );
+      summary.innerHTML = `
+        <strong>${esc(selectedSO.so_id)}</strong> · ${esc(selectedSO.customer_name || selectedSO.customer_id)} · ${esc(selectedSO.product_name || selectedSO.product_id)}<br>
+        Batch: <strong>${esc(selectedBatch.batch_no)}</strong> · Available: <strong>${esc(String(selectedBatch.qty))}</strong> pcs · Max dispatch: <strong>${maxQty}</strong> pcs`;
+      document.getElementById('strip-qty').max = maxQty;
+      if (!document.getElementById('strip-qty').value) {
+        document.getElementById('strip-qty').value = maxQty;
       }
-    } finally {
-      UI.showSpinner(false);
+    } else {
+      strip.classList.remove('visible');
+      document.getElementById('strip-error').textContent = '';
     }
   }
 
-  // ── Plan Batch Panel ──────────────────────────────────────────────────────
+  async function confirmDispatch() {
+    const errEl = document.getElementById('strip-error');
+    errEl.textContent = '';
 
-  function openPlanBatchPanel(soId) {
-    planningSOId = soId;
-    const so = soCache.find(s => String(s.so_id) === String(soId));
-    if (!so) return;
-    const productName = (productCache.find(p => String(p.id) === String(so.product_id)) || {}).name || so.product_id;
-    const machineOpts = machineCache.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
-    const panel = document.getElementById('plan-batch-panel');
-    if (!panel) return;
-    document.getElementById('plan-so-display').value = soId;
-    document.getElementById('plan-product-display').value = productName;
-    document.getElementById('plan-qty').value = (so.qty_ordered || '') - (so.qty_dispatched || 0);
-    document.getElementById('plan-date').value = new Date().toISOString().slice(0, 10);
-    const machineSel = document.getElementById('plan-machine');
-    machineSel.innerHTML = '<option value="">— select machine —</option>' + machineOpts;
+    const qty = Number(document.getElementById('strip-qty').value);
+    const date = document.getElementById('strip-date').value;
+    const maxQty = Math.min(
+      Number(selectedSO.qty_remaining ?? selectedSO.qty_ordered) || 0,
+      Number(selectedBatch.qty) || 0
+    );
 
-    // Show BOM RM requirements
-    const bomInfo = document.getElementById('plan-bom-info');
-    const bomText = document.getElementById('plan-bom-text');
-    if (bomInfo) bomInfo.style.display = 'none';
-    if (so.product_id && bomText) {
-      Api.get('getBOMByProduct', { product_id: so.product_id }).then(res => {
-        if (res && res.success && res.data && res.data.rm_items) {
-          const planQty = Number(document.getElementById('plan-qty').value) || 0;
-          const parts = res.data.rm_items.map(rm =>
-            rm.material + ': ' + (planQty ? (planQty * rm.qty_per_unit_kg).toFixed(1) + ' kg' : rm.qty_per_unit_kg + ' kg/unit')
-          );
-          bomText.textContent = parts.join(' | ');
-          if (bomInfo) bomInfo.style.display = '';
-        }
-      }).catch(() => {});
-    }
+    if (!qty || qty <= 0) { errEl.textContent = 'Enter a valid dispatch qty.'; return; }
+    if (qty > maxQty) { errEl.textContent = `Qty exceeds available (${maxQty} pcs).`; return; }
+    if (!date) { errEl.textContent = 'Select a dispatch date.'; return; }
 
-    slideFormIn();
-    document.getElementById('main-content').classList.remove('slide-out');
-    document.getElementById('form-panel').classList.remove('slide-in');
-    panel.classList.add('slide-in');
-    document.getElementById('main-content').classList.add('slide-out');
-  }
+    const payload = {
+      so_id:        selectedSO.so_id,
+      batch_no:     selectedBatch.batch_no,
+      product_id:   selectedSO.product_id,
+      qty:          qty,
+      dispatch_date: date,
+      vehicle_no:   document.getElementById('strip-vehicle').value.trim(),
+      driver_name:  document.getElementById('strip-driver').value.trim(),
+      invoice_no:   document.getElementById('strip-invoice').value.trim(),
+      dispatched_by: session.id,
+      userId:       session.id
+    };
 
-  function slidePlanBatchPanelOut() {
-    document.getElementById('main-content').classList.remove('slide-out');
-    document.getElementById('plan-batch-panel').classList.remove('slide-in');
-    planningSOId = null;
-  }
-
-  async function submitPlanBatch() {
-    const machineId  = document.getElementById('plan-machine').value;
-    const plannedQty = document.getElementById('plan-qty').value;
-    const date       = document.getElementById('plan-date').value;
-    if (!machineId) { UI.showToast('Select a machine'); return; }
-    if (!plannedQty || Number(plannedQty) <= 0) { UI.showToast('Enter planned quantity'); return; }
-    const so = soCache.find(s => String(s.so_id) === String(planningSOId));
     UI.showSpinner(true);
     try {
-      const res = await Api.post('planBatchFromSO', {
-        so_id:       planningSOId,
-        product_id:  so ? so.product_id : '',
-        planned_qty: Number(plannedQty),
-        machine_id:  machineId,
-        date,
-        userId:      Auth.getUserId()
-      });
+      const res = await Api.post('saveDispatch', payload);
       if (res.success) {
-        UI.showToast('Batch ' + res.batch_id + ' planned — go to Production');
-        slidePlanBatchPanelOut();
-        await loadSOList();
-      } else {
-        UI.showToast('Error: ' + (res.error || 'plan failed'));
-      }
-    } finally { UI.showSpinner(false); }
-  }
-
-  // ── Dispatch Action Panel ─────────────────────────────────────────────────
-
-  function dispatchAction(soId) {
-    const so = soCache.find(s => String(s.so_id) === String(soId));
-    if (!so) return;
-    dispatchingSOId = soId;
-    const customerName = (customerCache.find(c => String(c.id) === String(so.customer_id)) || {}).name || so.customer_id;
-    const productName  = (productCache.find(p => String(p.id) === String(so.product_id))   || {}).name || so.product_id;
-    const remaining    = (so.qty_ordered || 0) - (so.qty_dispatched || 0);
-
-    // Populate dispatch-action-panel fields
-    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
-    setVal('dispatch-so-id',          soId);
-    setVal('dispatch-so-display',     soId);
-    setVal('dispatch-customer-display', customerName);
-    setVal('dispatch-product-display',  productName);
-    setVal('dispatch-so-qty-display', so.qty_ordered || '');
-    setVal('dispatch-date',           new Date().toISOString().slice(0, 10));
-    setVal('dispatch-qty',            remaining > 0 ? remaining : '');
-    setVal('dispatch-invoice',        so.invoice_no || '');
-    setVal('dispatch-vehicle',        '');
-    setVal('dispatch-polybag-qty',    '');
-
-    // Show override checkbox only for director
-    const overrideRow = document.getElementById('dispatch-override-row');
-    if (overrideRow) {
-      overrideRow.style.display = session.role === 'director' ? '' : 'none';
-      const overrideCb = document.getElementById('dispatch-override');
-      if (overrideCb) overrideCb.checked = false;
-    }
-
-    // Auto-fill polybag_qty from packaging spec
-    if (so.product_id) {
-      Api.get('getPackagingSpec', { product_id: so.product_id }).then(res => {
-        if (res && res.success && res.data) setVal('dispatch-polybag-qty', res.data.polybag_qty || '');
-      }).catch(() => {});
-    }
-
-    slideDispatchActionPanelIn();
-  }
-
-  function closeDispatchActionPanel() {
-    slideDispatchActionPanelOut();
-  }
-
-  async function loadOQCBatches() {
-    const res = await Api.get('getOQCBatchList');
-    return res.success ? res.data : [];
-  }
-
-  async function openBatchSelectPanel() {
-    const tbody = document.getElementById('batch-select-tbody');
-    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Loading…</td></tr>';
-    document.getElementById('batch-select-panel').classList.add('slide-in');
-    const so = soCache.find(s => String(s.so_id) === String(dispatchingSOId));
-    const batches = await loadOQCBatches();
-    const filtered = so ? batches.filter(b => !b.product_id || b.product_id === so.product_id) : batches;
-    tbody.innerHTML = filtered.length
-      ? filtered.map(b => `
-          <tr>
-            <td style="font-weight:600;">${b.batch_no}</td>
-            <td>${b.product_id || '—'}</td>
-            <td>${b.production_date || '—'}</td>
-            <td><button class="btn btn-sm btn-primary" onclick="Dispatch.selectBatch('${b.batch_no}')">Select</button></td>
-          </tr>`).join('')
-      : '<tr><td colspan="4" class="text-center text-muted" style="padding:16px;">No OQC-cleared batches available</td></tr>';
-  }
-
-  function selectBatch(batchNo) {
-    const el = document.getElementById('dispatch-batch-no');
-    if (el) el.value = batchNo;
-    document.getElementById('batch-select-panel').classList.remove('slide-in');
-  }
-
-  async function submitDispatchAction() {
-    const qty        = Number(document.getElementById('dispatch-qty').value);
-    const invoice    = document.getElementById('dispatch-invoice').value.trim();
-    const date       = document.getElementById('dispatch-date').value;
-    const vehicle    = document.getElementById('dispatch-vehicle').value.trim();
-    const driverName = document.getElementById('dispatch-driver-name')?.value?.trim() || '';
-    const batchNo    = document.getElementById('dispatch-batch-no')?.value?.trim() || '';
-    const polybagQty = Number(document.getElementById('dispatch-polybag-qty')?.value) || 0;
-    const override   = document.getElementById('dispatch-override')?.checked ? 'true' : 'false';
-
-    const eQty  = document.getElementById('err-dispatch-qty');
-    const eDate = document.getElementById('err-dispatch-date');
-    if (eQty)  eQty.textContent  = '';
-    if (eDate) eDate.textContent = '';
-
-    let valid = true;
-    if (!qty || qty <= 0)  { if (eQty)  eQty.textContent  = 'Enter a valid quantity'; valid = false; }
-    if (!date)             { if (eDate) eDate.textContent = 'Date is required'; valid = false; }
-    if (!batchNo)          { UI.showToast('Select a batch before dispatching'); valid = false; }
-    if (!valid) return;
-
-    const so = soCache.find(s => String(s.so_id) === String(dispatchingSOId));
-    UI.showSpinner(true);
-    try {
-      const res = await Api.post('saveDispatch', {
-        so_id:         dispatchingSOId,
-        product_id:    so ? so.product_id : '',
-        qty,
-        dispatch_date: date,
-        invoice_no:    invoice,
-        vehicle_no:    vehicle,
-        driver_name:   driverName,
-        batch_no:      batchNo,
-        polybag_qty:   polybagQty,
-        override,
-        dispatched_by: session.username || session.name || '',
-        userId:        Auth.getUserId()
-      });
-      if (res.success) {
-        UI.showToast('Dispatched — ' + (res.dispatch_id || ''));
-        dispatchingSOId = null;
-        slideDispatchActionPanelOut();
-        await loadSOList();
-        if (activeTab === 'log') await loadDispatchLog();
-        // Open QR label print page
-        if (res.label_url) {
-          const printUrl = res.label_url + '&print=1';
-          window.open(printUrl, '_blank');
-        }
+        UI.showToast('Dispatched — ' + res.dispatch_id);
+        // Open challan in new tab
+        window.open('challan.html?id=' + encodeURIComponent(res.dispatch_id), '_blank');
+        // Reset state
+        selectedSO = null;
+        selectedBatch = null;
+        document.getElementById('strip-qty').value = '';
+        document.getElementById('strip-vehicle').value = '';
+        document.getElementById('strip-driver').value = '';
+        document.getElementById('strip-invoice').value = '';
+        updateStrip();
+        await Promise.all([loadSOList(), loadBatches()]);
       } else {
         const msgs = {
-          batch_not_oqc_cleared:    'Batch not OQC cleared',
-          batch_already_dispatched: 'Batch already dispatched',
-          batch_not_found:          'Batch not found',
-          insufficient_stock:       'Insufficient FG stock for this product'
+          batch_not_oqc_cleared: 'Batch not OQC-cleared. Perform OQC first.',
+          batch_already_dispatched: 'This batch has already been dispatched.',
+          batch_not_found: 'Batch not found in system.',
+          batch_not_in_fg_stock: 'Batch not found in Finished Goods stock.',
+          insufficient_stock: 'Insufficient stock in this batch.',
+          invalid_qty: 'Invalid quantity.',
+          missing_fields: 'Required fields missing.'
         };
-        UI.showToast(msgs[res.error] || ('Error: ' + res.error));
+        errEl.textContent = msgs[res.error] || ('Error: ' + (res.error || 'unknown'));
       }
-    } finally { UI.showSpinner(false); }
-  }
-
-
-  // ── Detail Panel ──────────────────────────────────────────────────────────
-
-  function openSODetail(soId) {
-    const r = soCache.find(s => String(s.so_id) === String(soId));
-    if (!r) return;
-    const customerName = (customerCache.find(c => String(c.id) === String(r.customer_id)) || {}).name || r.customer_id;
-    const productName  = (productCache.find(p => String(p.id) === String(r.product_id))   || {}).name || r.product_id;
-    const remaining    = (r.qty_ordered || 0) - (r.qty_dispatched || 0);
-    document.getElementById('detail-title').textContent = 'SO Detail';
-    document.getElementById('detail-body').innerHTML = `
-      <div class="detail-row"><span>SO ID</span><strong>${r.so_id}</strong></div>
-      <div class="detail-row"><span>Date</span><strong>${String(r.date || "").slice(0,10) || "—"}</strong></div>
-      <div class="detail-row"><span>Customer</span><strong>${customerName}</strong></div>
-      <div class="detail-row"><span>Product</span><strong>${productName}</strong></div>
-      <div class="detail-row"><span>Qty Ordered</span><strong>${r.qty_ordered}</strong></div>
-      <div class="detail-row"><span>Qty Dispatched</span><strong>${r.qty_dispatched || 0}</strong></div>
-      <div class="detail-row"><span>Remaining</span><strong>${remaining}</strong></div>
-      <div class="detail-row"><span>Status</span><strong>${r.status}</strong></div>
-      <div class="detail-row"><span>Invoice No</span><strong>${r.invoice_no || '—'}</strong></div>
-    `;
-    const canEdit = ['director','store'].includes(session.role) && r.status !== 'Dispatched';
-    document.getElementById('detail-actions').innerHTML = canEdit
-      ? `<button class="btn-primary" onclick="Dispatch.editSO('${soId}')">Edit</button>
-         <button class="btn-deactivate" onclick="Dispatch.deleteSO('${soId}')">Delete</button>`
-      : '';
-    slideDetailIn();
-  }
-
-  function editSO(soId) {
-    const r = soCache.find(s => String(s.so_id) === String(soId));
-    if (!r) return;
-    editingSOId = soId;
-    slideDetailOut();
-    populateFormDropdowns();
-    document.getElementById('field-date').value = r.date || '';
-    document.getElementById('field-customer').value = r.customer_id || '';
-    document.getElementById('field-product').value = r.product_id || '';
-    document.getElementById('field-qty-ordered').value = r.qty_ordered || '';
-    document.getElementById('field-invoice').value = r.invoice_no || '';
-    document.getElementById('form-title').textContent = 'Edit Sales Order';
-    slideFormIn();
-  }
-
-  async function deleteSO(soId) {
-    if (!confirm('Delete SO ' + soId + '?')) return;
-    const res = await Api.post('deleteRecord', { sheet: 'SalesOrders', idCol: 'so_id', idVal: soId, userId: Auth.getUserId() });
-    if (res.success) { slideDetailOut(); await loadSOList(); }
-    else if (res.error && res.error.startsWith('so_has_dispatches')) {
-      const qty = res.error.split(':')[1] || '';
-      UI.showToast('Cannot delete — ' + qty + ' units already dispatched against this SO.');
+    } catch (e) {
+      errEl.textContent = 'Network error — try again.';
+    } finally {
+      UI.showSpinner(false);
     }
-    else UI.showToast('Delete failed: ' + res.error);
   }
 
-  // ── Dispatch Log ──────────────────────────────────────────────────────────
-
-  async function loadDispatchLog() {
-    UI.showSpinner(true);
+  // ── Dispatch log (left panel log tab) ─────────────────────────────────────
+  async function loadLog() {
     try {
       const res = await Api.get('getDispatchList', {});
       const rows = res.success ? res.data : [];
-      renderDispatchTable(rows);
-    } finally {
-      UI.showSpinner(false);
-    }
-  }
-
-  function renderDispatchTable(rows) {
-    const tbody = document.getElementById('dispatch-tbody');
-    tbody.innerHTML = '';
-
-    if (rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="td-loading">No records</td></tr>';
-      return;
-    }
-
-    rows.forEach(r => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${r.dispatch_id || ''}</td>
-        <td>${r.so_id || ''}</td>
-        <td>${String(r.dispatch_date || "").slice(0,10)}</td>
-        <td>${r.qty || ''}</td>
-        <td>${r.vehicle_no || ''}</td>
-        <td>${r.driver_name || ''}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
-  // ── Slide Transitions ─────────────────────────────────────────────────────
-
-  function slideFormIn() {
-    document.getElementById('main-content').classList.add('slide-out');
-    document.getElementById('form-panel').classList.add('slide-in');
-  }
-
-  function slideFormOut() {
-    document.getElementById('main-content').classList.remove('slide-out');
-    document.getElementById('form-panel').classList.remove('slide-in');
-    editingSOId = null;
-  }
-
-  function slideDispatchActionPanelIn() {
-    document.getElementById('main-content').classList.add('slide-out');
-    document.getElementById('dispatch-action-panel').classList.add('slide-in');
-  }
-
-  function slideDispatchActionPanelOut() {
-    document.getElementById('main-content').classList.remove('slide-out');
-    document.getElementById('dispatch-action-panel').classList.remove('slide-in');
-    dispatchingSOId = null;
-  }
-
-  function slideDetailIn() {
-    document.getElementById('main-content').classList.add('slide-out');
-    document.getElementById('detail-panel').classList.add('slide-in');
-  }
-
-  function slideDetailOut() {
-    document.getElementById('main-content').classList.remove('slide-out');
-    document.getElementById('detail-panel').classList.remove('slide-in');
-  }
-
-  function openOQCFromDispatch() {
-    const batchNo = (document.getElementById('dispatch-batch-no')?.value || '').trim();
-    if (!batchNo) { UI.showToast('Select a batch first'); return; }
-    openOQCPanel(batchNo);
-  }
-
-  // ── OQC Inspection Panel ──────────────────────────────────────────────────
-
-  function openOQCPanel(batchNo) {
-    const el = id => document.getElementById(id);
-    el('oqc-batch-no').value    = batchNo;
-    el('oqc-batch-display').value = batchNo;
-    el('oqc-insp-date').value   = new Date().toISOString().slice(0, 10);
-    el('oqc-visual-result').value = '';
-    el('oqc-visual-defects').value = '';
-    el('oqc-dim-height').value  = 'Pass';
-    el('oqc-dim-od').value      = 'Pass';
-    el('oqc-dim-neck').value    = 'Pass';
-    el('oqc-leak-test').value   = 'Pass';
-    el('oqc-drop-test').value   = 'Pass';
-    el('oqc-cap-fitment').value = 'Pass';
-    el('oqc-aql-defects').value = '0';
-    el('oqc-aql-pass').value    = 'Pass';
-    el('oqc-decision').value    = 'OK';
-    el('oqc-hold-reason').value = '';
-    el('oqc-hold-reason-row').style.display = 'none';
-    el('oqc-remarks').value     = '';
-    el('oqc-sample-size').value = '';
-
-    // Populate inspector dropdown
-    const sel = el('oqc-inspector');
-    sel.innerHTML = '<option value="">— select —</option>';
-    inspectorCache.forEach(p => {
-      const o = document.createElement('option');
-      o.value = p.id;
-      o.textContent = p.name;
-      sel.appendChild(o);
-    });
-
-    // Toggle hold-reason on decision change
-    el('oqc-decision').onchange = function() {
-      el('oqc-hold-reason-row').style.display = this.value === 'HOLD' ? '' : 'none';
-    };
-
-    document.getElementById('oqc-panel').classList.add('slide-in');
-    document.getElementById('main-content').classList.add('slide-out');
-  }
-
-  function closeOQCPanel() {
-    document.getElementById('oqc-panel').classList.remove('slide-in');
-    document.getElementById('main-content').classList.remove('slide-out');
-  }
-
-  async function submitOQC() {
-    const g = id => document.getElementById(id).value;
-    const batchNo     = g('oqc-batch-no');
-    const inspectorId = g('oqc-inspector');
-    const sampleSize  = g('oqc-sample-size');
-    const visualResult = g('oqc-visual-result');
-    const decision    = g('oqc-decision');
-    const holdReason  = g('oqc-hold-reason');
-
-    if (!inspectorId)  { UI.showToast('Select QA inspector'); return; }
-    if (!sampleSize)   { UI.showToast('Enter sample size'); return; }
-    if (!visualResult) { UI.showToast('Select visual result'); return; }
-    if (decision === 'HOLD' && !holdReason.trim()) { UI.showToast('Enter hold reason'); return; }
-
-    UI.showSpinner(true);
-    try {
-      const res = await Api.post('saveOQC', {
-        batch_no:           batchNo,
-        insp_date:          g('oqc-insp-date'),
-        inspector_id:       inspectorId,
-        sample_size:        Number(sampleSize),
-        visual_result:      visualResult,
-        visual_defects:     g('oqc-visual-defects'),
-        dim_height_ok:      g('oqc-dim-height'),
-        dim_od_ok:          g('oqc-dim-od'),
-        dim_neck_ok:        g('oqc-dim-neck'),
-        leak_test:          g('oqc-leak-test'),
-        drop_test:          g('oqc-drop-test'),
-        cap_fitment:        g('oqc-cap-fitment'),
-        aql_defects_found:  Number(g('oqc-aql-defects')),
-        aql_pass:           g('oqc-aql-pass'),
-        decision,
-        hold_reason:        holdReason,
-        remarks:            g('oqc-remarks'),
-        userId:             Auth.getUserId()
-      });
-      if (res.success) {
-        UI.showToast('OQC saved — ' + res.oqc_id + ' (' + res.decision + ')');
-        closeOQCPanel();
-        if (res.decision === 'OK') {
-          // Re-open dispatch action panel — batch is now cleared
-          slideDispatchActionPanelIn();
-        } else {
-          UI.showToast('Batch placed on HOLD — dispatch blocked');
-          dispatchingSOId = null;
-        }
-      } else {
-        UI.showToast('OQC save failed: ' + (res.error || 'unknown'));
+      const tbody = document.getElementById('log-tbody');
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="padding:20px;text-align:center;color:#999;">No dispatches yet.</td></tr>';
+        return;
       }
-    } finally { UI.showSpinner(false); }
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td style="font-weight:600;">${esc(r.dispatch_id)}</td>
+          <td class="text-muted">${String(r.dispatch_date || '').slice(0,10)}</td>
+          <td>${esc(r.customer_name || r.so_id)}</td>
+          <td><strong>${esc(String(r.qty))}</strong></td>
+          <td><button class="btn btn-sm reprint-btn" onclick="Dispatch.reprintChallan('${esc(r.dispatch_id)}')">Reprint</button></td>
+        </tr>`).join('');
+    } catch (e) {
+      document.getElementById('log-tbody').innerHTML = '<tr><td colspan="5" style="padding:20px;text-align:center;color:#c62828;">Failed to load log.</td></tr>';
+    }
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  function reprintChallan(dispatchId) {
+    window.open('challan.html?id=' + encodeURIComponent(dispatchId), '_blank');
+  }
 
-  return { init, loadSOList, submitSO, dispatchAction, submitDispatchAction, closeDispatchActionPanel, editSO, deleteSO, openBatchSelectPanel, selectBatch, openPlanBatchPanel, slidePlanBatchPanelOut, submitPlanBatch, openOQCPanel, openOQCFromDispatch, closeOQCPanel, submitOQC };
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  return { init, reprintChallan };
 })();
-
-// Global shims for inline onclick handlers
-function submitDispatchAction() { Dispatch.submitDispatchAction(); }
-function closeDispatchActionPanel() { Dispatch.closeDispatchActionPanel(); }
-function submitPlanBatch() { Dispatch.submitPlanBatch(); }

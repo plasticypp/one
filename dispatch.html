@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -10,393 +10,281 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap">
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/masters.css">
+  <style>
+    /* ── Two-column layout ─────────────────────────────────────────────────── */
+    #dispatch-body {
+      display: flex;
+      height: calc(100vh - 56px - 48px); /* header + tab bar */
+      overflow: hidden;
+    }
+
+    /* Left panel */
+    .dp-left {
+      width: 340px;
+      min-width: 280px;
+      border-right: 1px solid var(--color-border, #e5e7eb);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .dp-left-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--color-border, #e5e7eb);
+    }
+    .dp-left-tab {
+      flex: 1;
+      padding: 10px 0;
+      font-size: 13px;
+      font-weight: 600;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      color: var(--color-text-muted, #6b7280);
+    }
+    .dp-left-tab.active {
+      color: var(--color-primary, #EA580C);
+      border-bottom-color: var(--color-primary, #EA580C);
+    }
+    .dp-left-filter {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--color-border, #e5e7eb);
+    }
+    .dp-left-filter select {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid var(--color-border, #e5e7eb);
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .dp-left-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    /* SO cards */
+    .so-card {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--color-border, #e5e7eb);
+      cursor: pointer;
+      transition: background .12s;
+    }
+    .so-card:hover { background: var(--color-surface-alt, #f9fafb); }
+    .so-card.selected { background: #fff7ed; border-left: 3px solid var(--color-primary, #EA580C); }
+    .so-card-id { font-size: 11px; font-weight: 700; color: var(--color-text-muted, #6b7280); text-transform: uppercase; }
+    .so-card-customer { font-size: 14px; font-weight: 600; margin: 1px 0; }
+    .so-card-product { font-size: 12px; color: var(--color-text-muted, #6b7280); }
+    .so-card-meta { display: flex; gap: 12px; margin-top: 4px; font-size: 11px; color: var(--color-text-muted, #6b7280); }
+    .so-card-meta strong { color: var(--color-text, #111); }
+
+    /* Log table (left panel) */
+    .log-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .log-table th { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; padding: 6px 10px; background: var(--color-surface-alt, #f8f8f8); border-bottom: 1px solid var(--color-border, #e5e7eb); text-align: left; color: var(--color-text-muted, #6b7280); }
+    .log-table td { padding: 8px 10px; border-bottom: 1px solid var(--color-border, #e5e7eb); vertical-align: top; }
+    .log-table .reprint-btn { font-size: 11px; padding: 3px 8px; }
+
+    /* Right panel */
+    .dp-right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .dp-right-filter {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--color-border, #e5e7eb);
+      display: flex;
+      gap: 8px;
+    }
+    .dp-right-filter select, .dp-right-filter input {
+      padding: 6px 8px;
+      border: 1px solid var(--color-border, #e5e7eb);
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .dp-right-filter select { flex: 1; }
+    .dp-right-filter input { flex: 1; }
+    .dp-right-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+      align-content: start;
+    }
+    .dp-right-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--color-text-muted, #6b7280);
+      font-size: 14px;
+    }
+
+    /* FG batch cards */
+    .batch-card {
+      border: 2px solid var(--color-border, #e5e7eb);
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+      transition: border-color .15s, box-shadow .15s, opacity .15s;
+      background: #fff;
+    }
+    .batch-card:hover { border-color: var(--color-primary, #EA580C); box-shadow: 0 2px 8px rgba(234,88,12,.12); }
+    .batch-card.selected { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,.2); }
+    .batch-card.dimmed { opacity: 0.4; }
+    .batch-card.match { border-color: #16a34a; box-shadow: 0 0 0 2px rgba(22,163,74,.15); }
+    .batch-card-no { font-size: 13px; font-weight: 700; font-family: 'Barlow Condensed', sans-serif; }
+    .batch-card-product { font-size: 12px; color: var(--color-text-muted, #6b7280); margin: 2px 0; }
+    .batch-card-qty { font-size: 16px; font-weight: 700; color: var(--color-primary, #EA580C); }
+    .batch-card-qty span { font-size: 11px; font-weight: 400; color: var(--color-text-muted, #6b7280); }
+    .batch-card-meta { font-size: 11px; color: var(--color-text-muted, #6b7280); margin-top: 6px; display: flex; flex-direction: column; gap: 2px; }
+    .oqc-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 600; color: #16a34a; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 1px 7px; margin-top: 4px; }
+
+    /* Dispatch strip */
+    #dispatch-strip {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: #fff;
+      border-top: 2px solid var(--color-primary, #EA580C);
+      box-shadow: 0 -4px 20px rgba(0,0,0,.12);
+      padding: 14px 16px;
+      transform: translateY(100%);
+      transition: transform .25s ease;
+      z-index: 200;
+    }
+    #dispatch-strip.visible { transform: translateY(0); }
+    .strip-summary { font-size: 12px; color: var(--color-text-muted, #6b7280); margin-bottom: 10px; }
+    .strip-summary strong { color: var(--color-text, #111); }
+    .strip-fields { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .strip-field label { display: block; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--color-text-muted, #6b7280); margin-bottom: 3px; }
+    .strip-field input { width: 100%; padding: 7px 9px; border: 1px solid var(--color-border, #e5e7eb); border-radius: 6px; font-size: 13px; }
+    .strip-field input:focus { outline: none; border-color: var(--color-primary, #EA580C); }
+    .strip-actions { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+    .strip-actions .strip-cancel { font-size: 13px; color: var(--color-text-muted, #6b7280); background: none; border: none; cursor: pointer; padding: 0 8px; }
+    .strip-error { font-size: 12px; color: var(--color-error, #c62828); margin-top: 4px; }
+    #btn-confirm-dispatch { flex: 1; }
+
+    /* Mobile stacking */
+    @media (max-width: 600px) {
+      #dispatch-body { flex-direction: column; height: auto; }
+      .dp-left { width: 100%; border-right: none; border-bottom: 1px solid var(--color-border, #e5e7eb); max-height: 50vh; }
+      .strip-fields { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
 </head>
 <body>
 
   <!-- Header -->
   <header class="header">
     <div class="header-flex">
-      <button class="back-btn" id="back-to-app"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
-      <span class="header-title" data-i18n="page.dispatch">Dispatch</span>
+      <button class="back-btn" id="back-to-app">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="header-title">Dispatch</span>
     </div>
     <div class="header-actions">
       <button class="lang-toggle" id="lang-toggle">EN</button>
     </div>
   </header>
 
-  <!-- Tab Bar -->
-  <div class="sub-tab-bar">
-    <button class="sub-tab active" data-tab="so">Sales Orders</button>
-    <button class="sub-tab" data-tab="log">Dispatch Log</button>
-  </div>
+  <!-- Two-column body -->
+  <div id="dispatch-body">
 
-  <!-- Main Content -->
-  <div id="main-content">
+    <!-- LEFT PANEL -->
+    <div class="dp-left">
+      <div class="dp-left-tabs">
+        <button class="dp-left-tab active" data-ltab="orders">Orders</button>
+        <button class="dp-left-tab" data-ltab="log">Log</button>
+      </div>
 
-    <!-- Sales Orders Tab -->
-    <div id="tab-so" class="tab-content">
-      <div class="filter-bar">
-        <select id="filter-status" onchange="Dispatch.loadSOList()">
-          <option value="all">All</option>
-          <option value="Pending">Pending</option>
-          <option value="Partial">Partial</option>
-          <option value="Dispatched">Dispatched</option>
-        </select>
-        <button class="btn-apply" onclick="Dispatch.loadSOList()">Apply</button>
-        <span class="filter-spacer"></span>
-        <button class="btn-primary" id="btn-new-so">+ New SO</button>
-      </div>
-      <div class="so-table-wrap">
-        <table class="so-table">
-          <thead>
-            <tr>
-              <th>SO ID</th>
-              <th>Date</th>
-              <th>Customer</th>
-              <th>Product</th>
-              <th>Qty Ordered</th>
-              <th>Qty Dispatched</th>
-              <th>Remaining</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody id="so-tbody">
-            <tr><td colspan="9" class="td-loading">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Dispatch Log Tab -->
-    <div id="tab-log" class="tab-content hidden">
-      <div class="so-table-wrap" style="padding-top:12px;">
-        <table class="so-table">
-          <thead>
-            <tr>
-              <th>Dispatch ID</th>
-              <th>SO ID</th>
-              <th>Date</th>
-              <th>Qty</th>
-              <th>Vehicle No</th>
-              <th>Driver</th>
-            </tr>
-          </thead>
-          <tbody id="dispatch-tbody">
-            <tr><td colspan="6" class="td-loading">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Form Panel (slide-in) -->
-  <div class="form-panel" id="form-panel">
-    <div class="form-header">
-      <button class="back-btn" id="form-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
-      <span class="form-title" id="form-title">New Sales Order</span>
-    </div>
-    <div class="form-body">
-      <div class="field-group">
-        <label>Date</label>
-        <input type="date" id="field-date">
-      </div>
-      <div class="field-group">
-        <label>Customer</label>
-        <select id="field-customer"><option value="">— select —</option></select>
-      </div>
-      <div class="field-group">
-        <label>Product</label>
-        <select id="field-product"><option value="">— select —</option></select>
-      </div>
-      <div class="field-group">
-        <label>Qty Ordered</label>
-        <input type="number" id="field-qty-ordered" min="1" step="1">
-      </div>
-      <div class="field-group">
-        <label>Invoice No</label>
-        <input type="text" id="field-invoice">
-      </div>
-    </div>
-    <div class="form-actions">
-      <button class="btn-primary" onclick="Dispatch.submitSO()">Save SO</button>
-    </div>
-  </div>
-
-  <!-- Dispatch Action Panel -->
-  <div id="dispatch-action-panel" class="form-panel">
-    <div class="form-header">
-      <button class="back-btn" id="dispatch-action-back-btn" aria-label="Back">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
-      <span class="form-title">Dispatch Sales Order</span>
-    </div>
-    <div class="form-body">
-      <input type="hidden" id="dispatch-so-id">
-      <div class="field-group">
-        <label>SO #</label>
-        <input type="text" id="dispatch-so-display" disabled>
-      </div>
-      <div class="field-group">
-        <label>Customer</label>
-        <input type="text" id="dispatch-customer-display" disabled>
-      </div>
-      <div class="field-group">
-        <label>Product</label>
-        <input type="text" id="dispatch-product-display" disabled>
-      </div>
-      <div class="field-group">
-        <label>SO Qty Ordered</label>
-        <input type="number" id="dispatch-so-qty-display" disabled>
-      </div>
-      <div class="field-group">
-        <label>Dispatch Qty *</label>
-        <input type="number" id="dispatch-qty" placeholder="Qty to dispatch" min="1">
-        <div class="field-error" id="err-dispatch-qty"></div>
-      </div>
-      <div class="field-group">
-        <label>Invoice No</label>
-        <input type="text" id="dispatch-invoice" placeholder="e.g. INV-2024-001">
-      </div>
-      <div class="field-group">
-        <label>Dispatch Date *</label>
-        <input type="date" id="dispatch-date">
-        <div class="field-error" id="err-dispatch-date"></div>
-      </div>
-      <div class="field-group">
-        <label>Vehicle / LR No</label>
-        <input type="text" id="dispatch-vehicle" placeholder="Optional">
-      </div>
-      <div class="field-group">
-        <label>Driver Name</label>
-        <input type="text" id="dispatch-driver-name" placeholder="Optional">
-      </div>
-      <div class="field-group">
-        <label>Batch No</label>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <input type="text" id="dispatch-batch-no" placeholder="Select or type batch" style="flex:1;">
-          <button class="btn btn-secondary btn-sm" onclick="Dispatch.openBatchSelectPanel()" type="button">Browse</button>
+      <!-- Orders tab -->
+      <div id="ltab-orders">
+        <div class="dp-left-filter">
+          <select id="filter-so-status">
+            <option value="active">Pending + Partial</option>
+            <option value="Pending">Pending only</option>
+            <option value="Partial">Partial only</option>
+            <option value="all">All</option>
+          </select>
+        </div>
+        <div class="dp-left-list" id="so-list">
+          <div style="padding:20px;text-align:center;color:#999;font-size:13px;">Loading…</div>
         </div>
       </div>
-      <div class="field-group">
-        <label>Polybag Qty</label>
-        <input type="number" id="dispatch-polybag-qty" placeholder="e.g. 6" min="0">
-      </div>
-      <div class="field-group">
-        <button class="btn btn-secondary btn-full" type="button" onclick="Dispatch.openOQCFromDispatch()" style="margin-top:4px;">
-          Perform OQC Inspection
-        </button>
-      </div>
-      <div class="field-group" id="dispatch-override-row" style="display:none;">
-        <label style="color:var(--color-error,#c62828);font-weight:600;">Director Override</label>
-        <label style="display:flex;align-items:center;gap:8px;font-weight:400;">
-          <input type="checkbox" id="dispatch-override"> Skip OQC clearance check
-        </label>
+
+      <!-- Log tab -->
+      <div id="ltab-log" class="hidden">
+        <div class="dp-left-list" style="padding:0;">
+          <table class="log-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Date</th>
+                <th>Customer</th>
+                <th>Qty</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="log-tbody">
+              <tr><td colspan="5" style="padding:20px;text-align:center;color:#999;">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
-    <div class="form-actions">
-      <button class="btn btn-primary btn-full" onclick="submitDispatchAction()">Confirm Dispatch</button>
+
+    <!-- RIGHT PANEL — FG Batches -->
+    <div class="dp-right">
+      <div class="dp-right-filter">
+        <select id="filter-batch-product">
+          <option value="">All Products</option>
+        </select>
+        <input type="search" id="search-batch" placeholder="Search batch no…">
+      </div>
+      <div class="dp-right-list" id="batch-list">
+        <div class="dp-right-empty">Loading batches…</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- DISPATCH STRIP (slides up) -->
+  <div id="dispatch-strip">
+    <div class="strip-summary" id="strip-summary">—</div>
+    <div class="strip-fields">
+      <div class="strip-field">
+        <label>Dispatch Qty *</label>
+        <input type="number" id="strip-qty" min="1" placeholder="pcs">
+      </div>
+      <div class="strip-field">
+        <label>Date *</label>
+        <input type="date" id="strip-date">
+      </div>
+      <div class="strip-field">
+        <label>Vehicle / LR No</label>
+        <input type="text" id="strip-vehicle" placeholder="Optional">
+      </div>
+      <div class="strip-field">
+        <label>Driver</label>
+        <input type="text" id="strip-driver" placeholder="Optional">
+      </div>
+      <div class="strip-field">
+        <label>Invoice No</label>
+        <input type="text" id="strip-invoice" placeholder="Optional">
+      </div>
+    </div>
+    <div class="strip-error" id="strip-error"></div>
+    <div class="strip-actions">
+      <button class="strip-cancel" id="strip-cancel">✕ Cancel</button>
+      <button class="btn btn-primary" id="btn-confirm-dispatch">Confirm Dispatch ▶</button>
     </div>
   </div>
 
-  <!-- Plan Batch Panel -->
-  <div id="plan-batch-panel" class="form-panel" style="z-index:250;">
-    <div class="form-header">
-      <button class="back-btn" onclick="Dispatch.slidePlanBatchPanelOut()" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
-      <span class="form-title">Plan Batch Order</span>
-    </div>
-    <div class="form-body">
-      <div class="field-group"><label>Sales Order</label><input type="text" id="plan-so-display" disabled></div>
-      <div class="field-group"><label>Product</label><input type="text" id="plan-product-display" disabled></div>
-      <div id="plan-bom-info" style="display:none;background:var(--color-info-bg,#e3f2fd);border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:0.85rem;color:var(--color-info,#1565c0);">
-        <strong>BOM:</strong> <span id="plan-bom-text"></span>
-      </div>
-      <div class="field-group">
-        <label>Machine *</label>
-        <select id="plan-machine"><option value="">— select machine —</option></select>
-      </div>
-      <div class="field-group">
-        <label>Planned Qty *</label>
-        <input type="number" id="plan-qty" min="1">
-      </div>
-      <div class="field-group">
-        <label>Planned Date</label>
-        <input type="date" id="plan-date">
-      </div>
-    </div>
-    <div class="form-actions">
-      <button class="btn btn-primary btn-full" onclick="Dispatch.submitPlanBatch()">Create Batch Order</button>
-    </div>
-  </div>
-
-  <!-- Batch Select Panel -->
-  <div id="batch-select-panel" class="form-panel" style="z-index:300;">
-    <div class="form-header">
-      <button class="back-btn" onclick="document.getElementById('batch-select-panel').classList.remove('slide-in')" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
-      <span class="form-title">Select Batch</span>
-    </div>
-    <div class="form-body">
-      <div class="table-wrap">
-        <table class="data-table">
-          <thead><tr><th>Batch No</th><th>Product</th><th>Date</th><th></th></tr></thead>
-          <tbody id="batch-select-tbody">
-            <tr><td colspan="4" class="text-center text-muted">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- Detail Panel (slide-in) -->
-  <div class="form-panel" id="detail-panel">
-    <div class="form-header">
-      <button class="back-btn" id="detail-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
-      <span class="form-title" id="detail-title">SO Detail</span>
-    </div>
-    <div class="form-body" id="detail-body"></div>
-    <div class="form-actions" id="detail-actions"></div>
-  </div>
-
-  <!-- OQC Inspection Panel -->
-  <div id="oqc-panel" class="form-panel" style="z-index:350;">
-    <div class="form-header">
-      <button class="back-btn" onclick="Dispatch.closeOQCPanel()" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
-      <span class="form-title">OQC Inspection</span>
-    </div>
-    <div class="form-body">
-      <input type="hidden" id="oqc-batch-no">
-      <div class="field-group">
-        <label>Batch No</label>
-        <input type="text" id="oqc-batch-display" disabled>
-      </div>
-      <div class="field-group">
-        <label>Inspection Date</label>
-        <input type="date" id="oqc-insp-date">
-      </div>
-      <div class="field-group">
-        <label>QA Inspector *</label>
-        <select id="oqc-inspector"><option value="">— select —</option></select>
-      </div>
-      <div class="field-group">
-        <label>Sample Size *</label>
-        <input type="number" id="oqc-sample-size" min="1" placeholder="e.g. 20">
-      </div>
-
-      <div style="font-weight:600;font-size:0.85rem;color:var(--color-text-muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.05em;">Visual Inspection</div>
-      <div class="field-group">
-        <label>Overall Visual Result *</label>
-        <select id="oqc-visual-result">
-          <option value="">— select —</option>
-          <option value="Pass">Pass</option>
-          <option value="Fail">Fail</option>
-        </select>
-      </div>
-      <div class="field-group">
-        <label>Defects Found (if any)</label>
-        <input type="text" id="oqc-visual-defects" placeholder="e.g. flash, colour variation">
-      </div>
-
-      <div style="font-weight:600;font-size:0.85rem;color:var(--color-text-muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.05em;">Dimensional Spot Check</div>
-      <div class="field-group">
-        <label>Height OK?</label>
-        <select id="oqc-dim-height">
-          <option value="Pass">Pass</option>
-          <option value="Fail">Fail</option>
-          <option value="NA">N/A</option>
-        </select>
-      </div>
-      <div class="field-group">
-        <label>OD OK?</label>
-        <select id="oqc-dim-od">
-          <option value="Pass">Pass</option>
-          <option value="Fail">Fail</option>
-          <option value="NA">N/A</option>
-        </select>
-      </div>
-      <div class="field-group">
-        <label>Neck OD OK?</label>
-        <select id="oqc-dim-neck">
-          <option value="Pass">Pass</option>
-          <option value="Fail">Fail</option>
-          <option value="NA">N/A</option>
-        </select>
-      </div>
-
-      <div style="font-weight:600;font-size:0.85rem;color:var(--color-text-muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.05em;">Functional Tests</div>
-      <div class="field-group">
-        <label>Leak Test (1 bar / 30 sec)</label>
-        <select id="oqc-leak-test">
-          <option value="Pass">Pass</option>
-          <option value="Fail">Fail</option>
-          <option value="NA">N/A</option>
-        </select>
-      </div>
-      <div class="field-group">
-        <label>Drop Test (1 m)</label>
-        <select id="oqc-drop-test">
-          <option value="Pass">Pass</option>
-          <option value="Fail">Fail</option>
-          <option value="NA">N/A</option>
-        </select>
-      </div>
-      <div class="field-group">
-        <label>Cap Fitment</label>
-        <select id="oqc-cap-fitment">
-          <option value="Pass">Pass</option>
-          <option value="Fail">Fail</option>
-          <option value="NA">N/A</option>
-        </select>
-      </div>
-
-      <div style="font-weight:600;font-size:0.85rem;color:var(--color-text-muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.05em;">AQL Summary</div>
-      <div class="field-group">
-        <label>Defects Found (count)</label>
-        <input type="number" id="oqc-aql-defects" min="0" value="0">
-      </div>
-      <div class="field-group">
-        <label>AQL Decision</label>
-        <select id="oqc-aql-pass">
-          <option value="Pass">Pass</option>
-          <option value="Fail">Fail</option>
-        </select>
-      </div>
-
-      <div style="font-weight:600;font-size:0.85rem;color:var(--color-text-muted);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.05em;">Final Decision</div>
-      <div class="field-group">
-        <label>OQC Decision *</label>
-        <select id="oqc-decision">
-          <option value="OK">OK — Cleared for Dispatch</option>
-          <option value="HOLD">HOLD — Do Not Dispatch</option>
-        </select>
-      </div>
-      <div class="field-group" id="oqc-hold-reason-row" style="display:none;">
-        <label>Hold Reason *</label>
-        <input type="text" id="oqc-hold-reason" placeholder="Reason for hold">
-      </div>
-      <div class="field-group">
-        <label>Remarks</label>
-        <textarea id="oqc-remarks" rows="2" style="width:100%;resize:vertical;"></textarea>
-      </div>
-    </div>
-    <div class="form-actions">
-      <button class="btn btn-primary btn-full" onclick="Dispatch.submitOQC()">Save OQC &amp; Continue</button>
-    </div>
-  </div>
-
-  <!-- Spinner -->
-  <div class="spinner-overlay hidden" id="spinner">
-    <div class="spinner"></div>
-  </div>
-
-  <!-- Toast -->
+  <!-- Spinner + Toast -->
+  <div class="spinner-overlay hidden" id="spinner"><div class="spinner"></div></div>
   <div class="toast" id="toast"></div>
 
   <script src="js/api.js" defer></script>

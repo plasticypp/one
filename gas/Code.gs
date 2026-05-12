@@ -167,6 +167,8 @@ function doGet(e) {
     if (action === 'getQualitySummary') return respond(getQualitySummary());
     if (action === 'getSOList')         return respond(getSOList(e.parameter));
     if (action === 'getDispatchList')   return respond(getDispatchList(e.parameter));
+    if (action === 'getFGBatches')  return respond(getFGBatches());
+    if (action === 'getChallan')    return respond(getChallan(e.parameter));
     if (action === 'getDashboardStats') return respond(getDashboardStats());
     if (action === 'seedAll')           return respond(seedAll());
 
@@ -217,6 +219,9 @@ function doGet(e) {
       if (action === 'saveIPC')               return respond(saveIPC(data));
       if (action === 'saveFQC')               return respond(saveFQC(data));
       if (action === 'saveOQC')               return respond(saveOQC(data));
+      if (action === 'saveMatrixPeriod')      return respond(saveMatrixPeriod(data));
+      if (action === 'saveMatrixSession')     return respond(saveMatrixSession(data));
+      if (action === 'seedQualityParams')     return respond(seedQualityParams());
     }
 
     if (action === 'getQualityParams') return respond(getQualityParams(e.parameter));
@@ -544,10 +549,18 @@ function getQualityParams(params) {
   }
   // Normalise field names to match what the frontend expects
   return { success: true, data: data.map(r => ({
-    id: r.ParamID, parameter: r.Parameter, unit: r.Unit,
-    spec_min: r.SpecMin !== '' && r.SpecMin !== null ? Number(r.SpecMin) : null,
-    spec_max: r.SpecMax !== '' && r.SpecMax !== null ? Number(r.SpecMax) : null,
-    stage: r.Stage, product_id: r.ProductID, active: r.Active
+    param_id: r.ParamID || r.param_id,
+    id: r.ParamID || r.param_id,
+    parameter: r.Parameter || r.parameter,
+    unit: r.Unit || r.unit,
+    type: r.Type || r.type || 'numeric',
+    spec_min: (r.SpecMin !== '' && r.SpecMin !== null) ? Number(r.SpecMin) : ((r.spec_min !== '' && r.spec_min !== null) ? Number(r.spec_min) : null),
+    spec_max: (r.SpecMax !== '' && r.SpecMax !== null) ? Number(r.SpecMax) : ((r.spec_max !== '' && r.spec_max !== null) ? Number(r.spec_max) : null),
+    aql_level: r.AQLLevel || r.aql_level || '',
+    sample_size: r.SampleSize || r.sample_size || '',
+    stage: r.Stage || r.stage,
+    product_id: r.ProductID || r.product_id,
+    active: r.Active || r.active
   })) };
 }
 
@@ -842,8 +855,10 @@ function getGRNList(params) {
       const headers = rows[0];
       rows.slice(1).filter(r => r[0]).forEach(r => {
         const obj = rowToObj(headers, r);
+        const grn_id = obj.grn_id || '';
+        if (!grn_id) return; // skip RMStock-format rows without a grn_id
         data.push({
-          grn_id:      obj.grn_id    || obj.date || '',
+          grn_id,
           date:        obj.date      || '',
           supplier_id: obj.supplier_id || '',
           material:    obj.material  || obj.material_id || '',
@@ -2444,14 +2459,52 @@ function seedComplianceData() {
 // ── Dispatch / Sales Orders ───────────────────────────────────────────────────
 
 function getSOList(params) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ensureSheet('SalesOrders', ['so_id','date','customer_id','product_id','qty_ordered','qty_dispatched','status','invoice_no']);
   const rows = sheet.getDataRange().getValues();
   if (rows.length < 2) return { success: true, data: [] };
   const headers = rows[0];
-  let data = rows.slice(1).filter(row => row[0]).map(row => rowToObj(headers, row));
-  if (params.status && params.status !== 'all') {
-    data = data.filter(r => r.status === params.status);
+
+  // Build customer + product lookup maps
+  const custSheet = ss.getSheetByName('Customers');
+  const custMap = {};
+  if (custSheet) {
+    const cr = custSheet.getDataRange().getValues();
+    const ch = cr[0];
+    const idIdx = ch.indexOf('customer_id'), nameIdx = ch.indexOf('name');
+    cr.slice(1).filter(r => r[idIdx]).forEach(r => { custMap[String(r[idIdx])] = r[nameIdx] || ''; });
   }
+  const prodSheet = ss.getSheetByName('Products');
+  const prodMap = {};
+  if (prodSheet) {
+    const pr = prodSheet.getDataRange().getValues();
+    const ph = pr[0];
+    const idIdx = ph.indexOf('product_id'), nameIdx = ph.indexOf('name');
+    pr.slice(1).filter(r => r[idIdx]).forEach(r => { prodMap[String(r[idIdx])] = r[nameIdx] || ''; });
+  }
+
+  let data = rows.slice(1).filter(row => row[0]).map(row => {
+    const obj = rowToObj(headers, row);
+    const qtyOrdered = Number(obj.qty_ordered) || 0;
+    const qtyDispatched = Number(obj.qty_dispatched) || 0;
+    return {
+      ...obj,
+      customer_name: custMap[String(obj.customer_id)] || obj.customer_id,
+      product_name:  prodMap[String(obj.product_id)]  || obj.product_id,
+      qty_remaining: qtyOrdered - qtyDispatched
+    };
+  });
+
+  // Default filter: Pending + Partial only (unless status param given)
+  const statusParam = params && params.status ? params.status : '';
+  if (!statusParam || statusParam === 'active') {
+    data = data.filter(r => r.status === 'Pending' || r.status === 'Partial');
+  } else if (statusParam !== 'all') {
+    data = data.filter(r => r.status === statusParam);
+  }
+
+  // Sort oldest first by date
+  data.sort((a, b) => String(a.date).localeCompare(String(b.date)));
   return { success: true, data };
 }
 
@@ -2492,73 +2545,53 @@ function saveDispatch(data) {
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  // Enforce OQC clearance — check BatchTraceability first, fall back to OQC_Records sheet
+  // OQC gate: check BatchTraceability only (single source of truth)
   const btSheet = ss.getSheetByName('BatchTraceability');
+  let batchRow = null;
   if (btSheet) {
     const btRows = btSheet.getDataRange().getValues();
     const btHeaders = btRows[0];
-    const batchRow = btRows.slice(1).map(r => rowToObj(btHeaders, r))
+    batchRow = btRows.slice(1).map(r => ({ _row: r, ...rowToObj(btHeaders, r) }))
       .find(r => String(r.batch_no) === String(data.batch_no));
     if (batchRow && batchRow.dispatch_id) return { success: false, error: 'batch_already_dispatched' };
-    if (batchRow && batchRow.oqc_status === 'OK') {
-      // cleared in BatchTraceability — proceed
-    } else {
-      // Check OQC_Records as fallback
-      const oqcSheet = ss.getSheetByName('OQC_Records');
-      let oqcCleared = false;
-      if (oqcSheet) {
-        const oqcRows = oqcSheet.getDataRange().getValues();
-        const oqcHeaders = oqcRows[0];
-        const batchNoIdx = oqcHeaders.indexOf('BatchNo');
-        const decisionIdx = oqcHeaders.indexOf('Decision');
-        oqcCleared = oqcRows.slice(1).some(r =>
-          String(r[batchNoIdx]) === String(data.batch_no) && String(r[decisionIdx]).toUpperCase() === 'OK'
-        );
-        // Back-fill oqc_status in BatchTraceability if found
-        if (oqcCleared && batchRow) {
-          const oqcStatusIdx = btHeaders.indexOf('oqc_status');
-          if (oqcStatusIdx >= 0) {
-            const btAllRows = btSheet.getDataRange().getValues();
-            const batchNoColIdx = btHeaders.indexOf('batch_no');
-            for (let i = 1; i < btAllRows.length; i++) {
-              if (String(btAllRows[i][batchNoColIdx]) === String(data.batch_no)) {
-                btSheet.getRange(i + 1, oqcStatusIdx + 1).setValue('OK');
-                break;
-              }
-            }
-          }
-        }
-      }
-      if (!oqcCleared) {
-        // Director can override with explicit flag
-        if (data.override === 'true') {
-          var roleCheck = requireRole(data, ['director']);
-          if (roleCheck) return { success: false, error: 'batch_not_oqc_cleared' };
-          // override allowed — proceed with warning in response
-        } else {
-          if (!batchRow) return { success: false, error: 'batch_not_found' };
-          return { success: false, error: 'batch_not_oqc_cleared' };
-        }
+    if (!batchRow) return { success: false, error: 'batch_not_found' };
+    if (batchRow.oqc_status !== 'OK') {
+      if (data.override === 'true') {
+        var roleCheck = requireRole(data, ['director']);
+        if (roleCheck) return { success: false, error: 'batch_not_oqc_cleared' };
+      } else {
+        return { success: false, error: 'batch_not_oqc_cleared' };
       }
     }
   }
 
-  // Check available FG stock before writing anything
+  // FG depletion: deduct from the SPECIFIC batch only
   const fgSheet = ss.getSheetByName('FinishedGoods');
   if (fgSheet) {
     const fgRows = fgSheet.getDataRange().getValues();
-    const totalAvailable = fgRows.slice(1)
-      .filter(r => String(r[2]) === String(data.product_id) && r[6] === 'Available')
-      .reduce((sum, r) => sum + (Number(r[3]) || 0), 0);
-    if (totalAvailable < qty) return { success: false, error: 'insufficient_stock' };
+    const fgHeaders = fgRows[0];
+    const batchIdx = fgHeaders.indexOf('batch_no');
+    const qtyIdx   = fgHeaders.indexOf('qty');
+    const statusIdx = fgHeaders.indexOf('status');
+    let found = false;
+    for (let i = 1; i < fgRows.length; i++) {
+      if (String(fgRows[i][batchIdx]) === String(data.batch_no) && fgRows[i][statusIdx] === 'Available') {
+        found = true;
+        const available = Number(fgRows[i][qtyIdx]) || 0;
+        if (available < qty) return { success: false, error: 'insufficient_stock' };
+        const newQty = available - qty;
+        fgSheet.getRange(i + 1, qtyIdx + 1).setValue(newQty);
+        if (newQty === 0) fgSheet.getRange(i + 1, statusIdx + 1).setValue('Depleted');
+        break;
+      }
+    }
+    if (!found) return { success: false, error: 'batch_not_in_fg_stock' };
   }
 
-  const label_url = 'https://plasticypp.github.io/one/batch.html?batch=' + encodeURIComponent(data.batch_no);
-  const DISP_HEADERS = ['dispatch_id','so_id','dispatch_date','qty','vehicle_no','driver_name','dispatched_by','batch_no','polybag_qty','label_url'];
+  const DISP_HEADERS = ['dispatch_id','so_id','dispatch_date','qty','vehicle_no','driver_name','dispatched_by','batch_no','invoice_no'];
   const dispSheet = ensureSheet('Dispatch', DISP_HEADERS);
   const dispRows = dispSheet.getDataRange().getValues();
-  const rowCount = dispRows.length;
-  const dispatch_id = 'DIS' + String(rowCount).padStart(3, '0');
+  const dispatch_id = 'DIS' + String(dispRows.length).padStart(3, '0');
   const today = new Date().toISOString().slice(0, 10);
   dispSheet.appendRow([
     dispatch_id,
@@ -2567,74 +2600,213 @@ function saveDispatch(data) {
     qty,
     data.vehicle_no || '',
     data.driver_name || '',
-    data.dispatched_by || '',
+    data.dispatched_by || data.userId || '',
     data.batch_no,
-    Number(data.polybag_qty) || 0,
-    label_url
+    data.invoice_no || ''
   ]);
 
-  // Write dispatch_id back to BatchTraceability
+  // Mark batch as dispatched in BatchTraceability
   if (btSheet) {
     const btRows2 = btSheet.getDataRange().getValues();
     const btHeaders2 = btRows2[0];
-    const dispIdIdx = btHeaders2.indexOf('dispatch_id');
+    const dispIdIdx  = btHeaders2.indexOf('dispatch_id');
     const batchNoIdx = btHeaders2.indexOf('batch_no');
     for (let i = 1; i < btRows2.length; i++) {
       if (String(btRows2[i][batchNoIdx]) === String(data.batch_no)) {
-        btSheet.getRange(i + 1, dispIdIdx + 1).setValue(dispatch_id);
+        if (dispIdIdx >= 0) btSheet.getRange(i + 1, dispIdIdx + 1).setValue(dispatch_id);
         break;
       }
     }
   }
 
+  // Update SalesOrder qty_dispatched + status
   const soSheet = ss.getSheetByName('SalesOrders');
   if (soSheet) {
     const soRows = soSheet.getDataRange().getValues();
+    const soHeaders = soRows[0];
+    const soIdIdx    = soHeaders.indexOf('so_id');
+    const qtyOrdIdx  = soHeaders.indexOf('qty_ordered');
+    const qtyDispIdx = soHeaders.indexOf('qty_dispatched');
+    const statusIdx  = soHeaders.indexOf('status');
     for (let i = 1; i < soRows.length; i++) {
-      if (String(soRows[i][0]) === String(data.so_id)) {
-        const qtyOrdered    = Number(soRows[i][4]) || 0;
-        const qtyDispatched = (Number(soRows[i][5]) || 0) + qty;
-        soSheet.getRange(i + 1, 6).setValue(qtyDispatched);
-        soSheet.getRange(i + 1, 7).setValue(qtyDispatched >= qtyOrdered ? 'Dispatched' : 'Partial');
+      if (String(soRows[i][soIdIdx]) === String(data.so_id)) {
+        const qtyOrdered    = Number(soRows[i][qtyOrdIdx]) || 0;
+        const qtyDispatched = (Number(soRows[i][qtyDispIdx]) || 0) + qty;
+        soSheet.getRange(i + 1, qtyDispIdx + 1).setValue(qtyDispatched);
+        soSheet.getRange(i + 1, statusIdx  + 1).setValue(qtyDispatched >= qtyOrdered ? 'Dispatched' : 'Partial');
         break;
       }
     }
   }
 
-  const fgSheet2 = ss.getSheetByName('FinishedGoods');
-  if (fgSheet2) {
-    const fgRows2 = fgSheet2.getDataRange().getValues();
-    let remaining = qty;
-    for (let i = 1; i < fgRows2.length && remaining > 0; i++) {
-      if (String(fgRows2[i][2]) === String(data.product_id) && fgRows2[i][6] === 'Available') {
-        const available = Number(fgRows2[i][3]) || 0;
-        if (available <= remaining) {
-          fgSheet2.getRange(i + 1, 4).setValue(0);
-          fgSheet2.getRange(i + 1, 7).setValue('Depleted');
-          remaining -= available;
-        } else {
-          fgSheet2.getRange(i + 1, 4).setValue(available - remaining);
-          remaining = 0;
-        }
-      }
-    }
-  }
-
-  return { success: true, dispatch_id, label_url };
+  return { success: true, dispatch_id };
 }
 
 function getDispatchList(params) {
-  const sheet = getSheet('Dispatch');
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('Dispatch');
+  if (!sheet || sheet.getLastRow() < 2) return { success: true, data: [] };
   const rows = sheet.getDataRange().getValues();
-  if (rows.length < 2) return { success: true, data: [] };
   const headers = rows[0];
-  let data = rows.slice(1).map(row => {
-    return rowToObj(headers, row);
-  });
-  if (params.so_id) {
-    data = data.filter(r => String(r.so_id) === String(params.so_id));
+
+  // Build SO→customer+product lookup
+  const soSheet = ss.getSheetByName('SalesOrders');
+  const soMap = {};
+  if (soSheet) {
+    const sr = soSheet.getDataRange().getValues();
+    const sh = sr[0];
+    sr.slice(1).filter(r => r[0]).forEach(r => {
+      const obj = rowToObj(sh, r);
+      soMap[String(obj.so_id)] = obj;
+    });
   }
+  const custSheet = ss.getSheetByName('Customers');
+  const custMap = {};
+  if (custSheet) {
+    const cr = custSheet.getDataRange().getValues();
+    const ch = cr[0];
+    const idIdx = ch.indexOf('customer_id'), nameIdx = ch.indexOf('name');
+    cr.slice(1).filter(r => r[idIdx]).forEach(r => { custMap[String(r[idIdx])] = r[nameIdx] || ''; });
+  }
+  const prodSheet = ss.getSheetByName('Products');
+  const prodMap = {};
+  if (prodSheet) {
+    const pr = prodSheet.getDataRange().getValues();
+    const ph = pr[0];
+    const idIdx = ph.indexOf('product_id'), nameIdx = ph.indexOf('name');
+    pr.slice(1).filter(r => r[idIdx]).forEach(r => { prodMap[String(r[idIdx])] = r[nameIdx] || ''; });
+  }
+
+  let data = rows.slice(1).filter(r => r[0]).map(r => {
+    const obj = rowToObj(headers, r);
+    const so = soMap[String(obj.so_id)] || {};
+    return {
+      ...obj,
+      customer_name: custMap[String(so.customer_id)] || so.customer_id || '',
+      product_name:  prodMap[String(so.product_id)]  || so.product_id  || ''
+    };
+  });
+
+  // Sort newest first
+  data.sort((a, b) => String(b.dispatch_date).localeCompare(String(a.dispatch_date)));
+  if (params && params.so_id) data = data.filter(r => String(r.so_id) === String(params.so_id));
   return { success: true, data };
+}
+
+function getFGBatches() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // Build product name map
+  const prodSheet = ss.getSheetByName('Products');
+  const prodMap = {};
+  if (prodSheet) {
+    const pr = prodSheet.getDataRange().getValues();
+    const ph = pr[0];
+    const idIdx = ph.indexOf('product_id'), nameIdx = ph.indexOf('name');
+    pr.slice(1).filter(r => r[idIdx]).forEach(r => { prodMap[String(r[idIdx])] = r[nameIdx] || r[idIdx]; });
+  }
+
+  // BatchTraceability: oqc_status = OK and no dispatch_id
+  const btSheet = ss.getSheetByName('BatchTraceability');
+  if (!btSheet || btSheet.getLastRow() < 2) return { success: true, data: [] };
+  const btRows = btSheet.getDataRange().getValues();
+  const btHeaders = btRows[0];
+  const today = new Date();
+
+  const data = btRows.slice(1)
+    .filter(r => r[0])
+    .map(r => rowToObj(btHeaders, r))
+    .filter(r => r.oqc_status === 'OK' && !r.dispatch_id)
+    .map(r => {
+      const prodDate = r.start_date || r.planned_date || '';
+      let ageDays = 0;
+      if (prodDate) {
+        const d = new Date(prodDate);
+        ageDays = Math.floor((today - d) / 86400000);
+      }
+      return {
+        batch_no:      r.batch_no,
+        product_id:    r.product_id,
+        product_name:  prodMap[String(r.product_id)] || r.product_id,
+        qty:           Number(r.qty_produced) || Number(r.planned_qty) || 0,
+        production_date: String(prodDate).slice(0, 10),
+        machine_id:    r.machine_id || '',
+        oqc_status:    r.oqc_status,
+        age_days:      ageDays
+      };
+    });
+
+  return { success: true, data };
+}
+
+function getChallan(params) {
+  if (!params || !params.id) return { success: false, error: 'missing_id' };
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const dispSheet = ss.getSheetByName('Dispatch');
+  if (!dispSheet || dispSheet.getLastRow() < 2) return { success: false, error: 'not_found' };
+  const dr = dispSheet.getDataRange().getValues();
+  const dh = dr[0];
+  const dispRow = dr.slice(1).map(r => rowToObj(dh, r)).find(r => String(r.dispatch_id) === String(params.id));
+  if (!dispRow) return { success: false, error: 'not_found' };
+
+  // SO details
+  const soSheet = ss.getSheetByName('SalesOrders');
+  let soRow = {};
+  if (soSheet) {
+    const sr = soSheet.getDataRange().getValues();
+    const sh = sr[0];
+    soRow = sr.slice(1).map(r => rowToObj(sh, r)).find(r => String(r.so_id) === String(dispRow.so_id)) || {};
+  }
+
+  // Customer details
+  const custSheet = ss.getSheetByName('Customers');
+  let custRow = {};
+  if (custSheet) {
+    const cr = custSheet.getDataRange().getValues();
+    const ch = cr[0];
+    custRow = cr.slice(1).map(r => rowToObj(ch, r)).find(r => String(r.customer_id) === String(soRow.customer_id)) || {};
+  }
+
+  // Product details
+  const prodSheet = ss.getSheetByName('Products');
+  let prodRow = {};
+  if (prodSheet) {
+    const pr = prodSheet.getDataRange().getValues();
+    const ph = pr[0];
+    prodRow = pr.slice(1).map(r => rowToObj(ph, r)).find(r => String(r.product_id) === String(soRow.product_id)) || {};
+  }
+
+  // Dispatcher name from Users
+  const usersSheet = ss.getSheetByName('Users');
+  let dispatcherName = dispRow.dispatched_by || '';
+  if (usersSheet) {
+    const ur = usersSheet.getDataRange().getValues();
+    const uh = ur[0];
+    const nameIdx = uh.indexOf('name'), idIdx = uh.indexOf('user_id');
+    const uRow = ur.slice(1).find(r => String(r[idIdx]) === String(dispRow.dispatched_by));
+    if (uRow) dispatcherName = uRow[nameIdx] || dispatcherName;
+  }
+
+  return {
+    success: true,
+    data: {
+      dispatch_id:    dispRow.dispatch_id,
+      dispatch_date:  String(dispRow.dispatch_date || '').slice(0, 10),
+      so_id:          dispRow.so_id,
+      qty:            dispRow.qty,
+      batch_no:       dispRow.batch_no,
+      vehicle_no:     dispRow.vehicle_no || '',
+      driver_name:    dispRow.driver_name || '',
+      invoice_no:     dispRow.invoice_no || '',
+      dispatched_by:  dispatcherName,
+      customer_name:  custRow.name || soRow.customer_id || '',
+      customer_address: custRow.address || '',
+      customer_gstin: custRow.gstin || '',
+      product_name:   prodRow.name || soRow.product_id || '',
+      unit:           prodRow.unit || 'pcs'
+    }
+  };
 }
 
 function seedDispatchData() {
@@ -3389,6 +3561,85 @@ function getFQCList(params) {
   let data = rows.slice(1).map(r => rowToObj(headers, r));
   if (params && params.result) data = data.filter(r => r.result === params.result);
   return { success: true, data };
+}
+
+// ── Inspection Matrix ─────────────────────────────────────────────────────────
+
+function saveMatrixPeriod(data) {
+  const stage = data.stage || '';
+  const sheetName = stage === 'IPC' ? 'IPC_Matrix_Records' : stage === 'OQC' ? 'OQC_Matrix_Records' : 'Cleaning_Matrix_Records';
+  const headers = ['record_id','session_id','batch_id','machine_id','shift','period_no','started_at','stopped_at','duration_sec','param_id','value','status','action_taken','submitted_by'];
+  const sheet = ensureSheet(sheetName, headers);
+
+  const session_id = [stage, data.batch || data.machine || '', data.shift || ''].join('-');
+  const values = typeof data.values === 'string' ? JSON.parse(data.values) : (data.values || {});
+  const today = new Date().toISOString();
+  let count = 0;
+
+  Object.entries(values).forEach(function(entry) {
+    const paramId = entry[0], v = entry[1];
+    const record_id = sheetName.slice(0,3) + '-' + session_id + '-P' + data.period_no + '-' + paramId;
+    sheet.appendRow([
+      record_id, session_id, data.batch || '', data.machine || '', data.shift || '',
+      data.period_no, data.started_at || today, data.stopped_at || today,
+      data.duration_sec || 0, paramId, v.value, v.status, v.action_taken || '',
+      data.userId || ''
+    ]);
+    count++;
+  });
+
+  return { success: true, records_written: count };
+}
+
+function saveMatrixSession(data) {
+  const headers = ['session_id','stage','batch_id','machine_id','shift','started_at','submitted_at','total_periods','total_duration_sec','oos_count','submitted_by','status'];
+  const sheet = ensureSheet('Matrix_Sessions', headers);
+  const session_id = [data.stage, data.batch || data.machine || '', data.shift || '', new Date().getTime()].join('-');
+  sheet.appendRow([
+    session_id, data.stage, data.batch || '', data.machine || '', data.shift || '',
+    data.started_at || new Date().toISOString(), data.submitted_at || new Date().toISOString(),
+    data.total_periods || 0, data.total_duration_sec || 0, data.oos_count || 0,
+    data.userId || '', 'Submitted'
+  ]);
+  return { success: true, session_id: session_id };
+}
+
+function seedQualityParams() {
+  const sheet = ensureSheet('QualityParams', ['param_id','stage','product_id','parameter','unit','type','spec_min','spec_max','aql_level','sample_size','active']);
+  if (sheet.getLastRow() > 1) return { success: true, message: 'QualityParams already seeded' };
+
+  const rows = [
+    // IPC — numeric
+    ['IP001','IPC','ALL','Parison Weight','g','numeric',115,125,'','','Yes'],
+    ['IP002','IPC','ALL','Wall Thickness — Shoulder','mm','numeric',1.8,2.4,'','','Yes'],
+    ['IP003','IPC','ALL','Wall Thickness — Body','mm','numeric',1.5,2.2,'','','Yes'],
+    ['IP004','IPC','ALL','Wall Thickness — Base','mm','numeric',2.0,3.0,'','','Yes'],
+    ['IP005','IPC','ALL','Height','mm','numeric',240,250,'','','Yes'],
+    ['IP006','IPC','ALL','OD','mm','numeric',97,100,'','','Yes'],
+    ['IP007','IPC','ALL','Neck OD','mm','numeric',38,40,'','','Yes'],
+    // IPC — pass/fail
+    ['IP008','IPC','ALL','Leak Test','','passfail','','','','','Yes'],
+    ['IP009','IPC','ALL','Cap Fitment','','passfail','','','','','Yes'],
+    ['IP010','IPC','ALL','Flash / Fins','','passfail','','','','','Yes'],
+    // OQC — numeric
+    ['OQ001','OQC','ALL','Weight AQL','g','numeric','','','II',20,'Yes'],
+    ['OQ002','OQC','ALL','Height AQL','mm','numeric',238,252,'II',20,'Yes'],
+    ['OQ003','OQC','ALL','OD AQL','mm','numeric',96,101,'II',20,'Yes'],
+    ['OQ004','OQC','ALL','Torque AQL','Nm','numeric',2.5,5.0,'II',20,'Yes'],
+    // OQC — pass/fail
+    ['OQ005','OQC','ALL','Leak AQL','','passfail','','','II',20,'Yes'],
+    ['OQ006','OQC','ALL','Visual Result','','passfail','','','II',20,'Yes'],
+    ['OQ007','OQC','ALL','Label AQL','','passfail','','','II',20,'Yes'],
+    // Cleaning — pass/fail only
+    ['CL001','Cleaning','ALL','Machine Surface','','passfail','','','','','Yes'],
+    ['CL002','Cleaning','ALL','Hopper','','passfail','','','','','Yes'],
+    ['CL003','Cleaning','ALL','Die Head','','passfail','','','','','Yes'],
+    ['CL004','Cleaning','ALL','Cooling System','','passfail','','','','','Yes'],
+    ['CL005','Cleaning','ALL','Floor Area','','passfail','','','','','Yes']
+  ];
+
+  rows.forEach(function(r) { sheet.appendRow(r); });
+  return { success: true, message: 'Seeded ' + rows.length + ' QualityParams rows' };
 }
 
 // ── Supplier Scorecard ────────────────────────────────────────────────────────
