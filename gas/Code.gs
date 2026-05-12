@@ -167,6 +167,7 @@ function doGet(e) {
     if (action === 'getSOList')         return respond(getSOList(e.parameter));
     if (action === 'getDispatchList')   return respond(getDispatchList(e.parameter));
     if (action === 'getDashboardStats') return respond(getDashboardStats());
+    if (action === 'seedAll')           return respond(seedAll());
 
     // Write actions tunnelled via GET to avoid CORS preflight
     if (e.parameter.payload) {
@@ -2365,27 +2366,25 @@ function seedComplianceData() {
 // ── Dispatch / Sales Orders ───────────────────────────────────────────────────
 
 function getSOList(params) {
-  const sheet = getSheet('SalesOrders');
+  const sheet = ensureSheet('SalesOrders', ['so_id','date','customer_id','product_id','qty_ordered','qty_dispatched','status','invoice_no']);
   const rows = sheet.getDataRange().getValues();
   if (rows.length < 2) return { success: true, data: [] };
   const headers = rows[0];
-  let data = rows.slice(1).map(row => {
-    return rowToObj(headers, row);
-  });
+  let data = rows.slice(1).filter(row => row[0]).map(row => rowToObj(headers, row));
   if (params.status && params.status !== 'all') {
-    data = data.filter(r => (r.Status || r.status) === params.status);
+    data = data.filter(r => r.status === params.status);
   }
   return { success: true, data };
 }
 
 function saveSO(data) {
-  var authError = requireRole(data, ['director','store']);
+  var authError = requireRole(data, ['director','supervisor','store']);
   if (authError) return { success: false, error: authError };
 
   var fieldError = validateFields(data, ['customer_id','product_id','qty_ordered','date']);
   if (fieldError) return { success: false, error: fieldError };
 
-  const sheet = getSheet('SalesOrders');
+  const sheet = ensureSheet('SalesOrders', ['so_id','date','customer_id','product_id','qty_ordered','qty_dispatched','status','invoice_no']);
   const rows = sheet.getDataRange().getValues();
   const rowCount = rows.length;
   const so_id = 'SO' + String(rowCount).padStart(3, '0');
@@ -3460,6 +3459,143 @@ function seedFullPMSchedule() {
 
 function _cacheInvalidate(key) {
   _cacheDel(key);
+}
+
+// ── Master + Demo Data Seeding ────────────────────────────────────────────────
+
+function seedMasters() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const log = [];
+
+  function safeWrite(sheetName, headers, rows) {
+    let sheet = ss.getSheetByName(sheetName);
+    if (!sheet) {
+      sheet = ss.insertSheet(sheetName);
+      sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+      sheet.setFrozenRows(1);
+      sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
+    }
+    const existing = sheet.getDataRange().getValues();
+    if (existing.length > 1) { log.push(sheetName + ': skipped (' + (existing.length-1) + ' rows exist)'); return; }
+    rows.forEach(r => sheet.appendRow(r));
+    log.push(sheetName + ': seeded ' + rows.length + ' rows');
+  }
+
+  safeWrite('Products',
+    ['ProductID','SKU','Name','Capacity_ml','Material','HSN','Weight_g','WallThickness_mm','NeckSize_mm','Status'],
+    [
+      ['PRD001','YPP-CAN-5L',  'HDPE Can 5L',    5000, 'HDPE', '3923', 280, 2.2, 38, 'Active'],
+      ['PRD002','YPP-BTL-1L',  'HDPE Bottle 1L', 1000, 'HDPE', '3923', 68,  2.0, 28, 'Active'],
+      ['PRD003','YPP-BTL-200', 'HDPE Bottle 200ml', 200, 'HDPE', '3923', 22, 1.8, 24, 'Active'],
+      ['PRD004','YPP-BTL-100', 'HDPE Bottle 100ml', 100, 'HDPE', '3923', 14, 1.6, 20, 'Active']
+    ]
+  );
+
+  safeWrite('Customers',
+    ['CustomerID','Code','Name','GSTIN','Address','Contact','Phone','Email','ApprovedSince','SpecialNotes','Active'],
+    [
+      ['CUS001','ALCHEM', 'Alchemist Chemicals Pvt Ltd', '27AABCA1234A1Z5', 'Turbhe MIDC, Navi Mumbai', 'Rajesh Kumar',   '9820001111', 'rajesh@alchem.in',    '2023-01-01', '', 'Yes'],
+      ['CUS002','SUNPACK','Sun Packaging Ltd',           '27BBCCS5678B2Z6', 'Taloja MIDC, Navi Mumbai',  'Priya Sharma',   '9820002222', 'priya@sunpack.co.in', '2023-06-01', '', 'Yes'],
+      ['CUS003','MAHALAB','Maharashtra Lab Supplies',    '27CCCML9012C3Z7', 'Turbhe, Navi Mumbai',       'Sunil Patil',    '9820003333', 'sunil@mahalab.in',    '2024-01-01', '', 'Yes']
+    ]
+  );
+
+  safeWrite('Suppliers',
+    ['SupplierID','Code','Name','Category','GSTIN','Contact','Phone','Email','ApprovedStatus'],
+    [
+      ['SUP001','RIL',  'Reliance Industries Ltd',    'RM',        '27AAACR0541A1Z7', 'Sales Dept',   '02267891234', 'hdpe@ril.com',   'Approved'],
+      ['SUP002','GAIL', 'GAIL (India) Ltd',            'RM',        '27AABCG1234B1Z5', 'Sales Dept',   '01126164000', 'hdpe@gail.in',   'Approved'],
+      ['SUP003','MBCOL','Mumbai Colorants Pvt Ltd',    'MB',        '27AABCM5678C2Z3', 'Ramesh Shah',  '9820004444', 'mb@mbcol.in',   'Approved'],
+      ['SUP004','CTNS', 'Navi Mumbai Cartons',          'Packaging', '27AABCN9012D3Z1', 'Vijay More',   '9820005555', 'ctns@nm.in',    'Approved']
+    ]
+  );
+
+  safeWrite('Materials',
+    ['material_id','name','unit','type','active'],
+    [
+      ['MAT001','HDPE Natural (RIL M60)',    'kg',  'RM', 'Yes'],
+      ['MAT002','HDPE Black MB',             'kg',  'MB', 'Yes'],
+      ['MAT003','HDPE Blue MB',              'kg',  'MB', 'Yes'],
+      ['MAT004','Cartons (5L Can, 6-pack)',  'nos', 'Pkg','Yes'],
+      ['MAT005','Cartons (1L Bottle, 12-pk)','nos', 'Pkg','Yes'],
+      ['MAT006','Labels (5L)',               'nos', 'Pkg','Yes'],
+      ['MAT007','Labels (1L)',               'nos', 'Pkg','Yes'],
+      ['MAT008','Cap 38mm',                  'nos', 'Pkg','Yes'],
+      ['MAT009','Cap 28mm',                  'nos', 'Pkg','Yes']
+    ]
+  );
+
+  safeWrite('Equipment',
+    ['EquipID','Name','Type','Location','SerialNo','Commissioned','CalibFreq','LastCalib','NextCalib','Status'],
+    [
+      ['EQ001','Blow Moulding Machine 1','machine','Production Floor','BM-001','2020-01-01','annual','2024-01-01','2025-01-01','Active'],
+      ['EQ002','Blow Moulding Machine 2','machine','Production Floor','BM-002','2021-06-01','annual','2024-06-01','2025-06-01','Active'],
+      ['EQ003','Blow Moulding Machine 3','machine','Production Floor','BM-003','2022-03-01','annual','2024-03-01','2025-03-01','Active'],
+      ['EQ004','Air Compressor',         'utility','Utility Room',    'AC-001','2020-01-01','6-monthly','2024-06-01','2024-12-01','Active'],
+      ['EQ005','Chiller Unit',           'utility','Utility Room',    'CH-001','2020-01-01','annual','2024-01-01','2025-01-01','Active']
+    ]
+  );
+
+  safeWrite('Personnel',
+    ['PersonID','Name','Username','Role','Department','ReportsTo','Phone','Email','DateJoined','Qualification','Active'],
+    [
+      ['P001','Tushar Patil',    'director',  'director',   'Management',  '',     '9820010001','tushar@ypp.in',   '2018-01-01','B.Com','Yes'],
+      ['P002','PL Pradhan',      'qmr',       'qmr',        'Quality',     'P001', '9820010002','plp@ypp.in',      '2019-03-01','B.Sc (Chem)','Yes'],
+      ['P003','Mahesh Sawant',   'supervisor','supervisor',  'Production',  'P001', '9820010003','mahesh@ypp.in',   '2019-06-01','Diploma Mech','Yes'],
+      ['P004','Suresh Kamble',   'operator',  'operator',   'Production',  'P003', '9820010004','suresh@ypp.in',   '2020-01-01','ITI Fitter','Yes'],
+      ['P005','Anjali Desai',    'store',     'store',      'Stores',      'P001', '9820010005','anjali@ypp.in',   '2021-06-01','B.Com','Yes'],
+      ['P006','Ramesh More',     'operator',  'operator2',  'Production',  'P003', '9820010006','ramesh@ypp.in',   '2022-01-01','ITI Turner','Yes']
+    ]
+  );
+
+  safeWrite('BOM',
+    ['BOMID','ProductID','MaterialID','MaterialType','Qty_kg','Unit','RemarkS'],
+    [
+      ['BOM001','PRD001','MAT001','RM',   0.280,'kg','HDPE natural for 5L can'],
+      ['BOM002','PRD001','MAT002','MB',   0.005,'kg','Black MB @ 2%'],
+      ['BOM003','PRD002','MAT001','RM',   0.068,'kg','HDPE natural for 1L bottle'],
+      ['BOM004','PRD002','MAT003','MB',   0.001,'kg','Blue MB @ 2%'],
+      ['BOM005','PRD003','MAT001','RM',   0.022,'kg','HDPE natural for 200ml'],
+      ['BOM006','PRD004','MAT001','RM',   0.014,'kg','HDPE natural for 100ml']
+    ]
+  );
+
+  safeWrite('RMStock',
+    ['StockID','MaterialID','SupplierID','LotNo','ReceivedDate','Qty_kg','UsedQty_kg','BalanceQty_kg','IQCRef','Location','Status'],
+    [
+      ['RMS001','MAT001','SUP001','LOT-RIL-2503','2025-03-10',500,120,380,'IQC001','Store A','Released'],
+      ['RMS002','MAT001','SUP002','LOT-GAIL-2504','2025-04-05',300,0,300,'IQC002','Store A','Released'],
+      ['RMS003','MAT002','SUP003','LOT-MB-2503','2025-03-10',50,5,45,'IQC003','Store B','Released']
+    ]
+  );
+
+  safeWrite('BatchTraceability',
+    ['batch_no','product_id','production_date','machine_id','operator_id','planned_qty','actual_qty','rm_lot','oqc_status','dispatch_id'],
+    [
+      ['YPP-B2503-001','PRD002','2025-03-15','EQ001','operator','3000',2980,'LOT-RIL-2503','OK','DIS001'],
+      ['YPP-B2504-001','PRD001','2025-04-10','EQ002','operator','5000',4850,'LOT-RIL-2503','OK',''],
+      ['YPP-B2505-001','PRD003','2025-05-01','EQ003','operator','2000',1980,'LOT-GAIL-2504','OK','']
+    ]
+  );
+
+  // Also run existing seed functions (they are safe — skip if data exists)
+  try { seedMaintenanceData(); } catch(e) { log.push('seedMaintenance error: ' + e.message); }
+  try { seedProductionData();  } catch(e) { log.push('seedProduction error: ' + e.message);  }
+  try { seedInventoryData();   } catch(e) { log.push('seedInventory error: ' + e.message);   }
+  try { seedDispatchData();    } catch(e) { log.push('seedDispatch error: ' + e.message);    }
+  try { seedPeopleData();      } catch(e) { log.push('seedPeople error: ' + e.message);      }
+  try { seedComplianceData();  } catch(e) { log.push('seedCompliance error: ' + e.message);  }
+  try { seedQualityData();     } catch(e) { log.push('seedQuality error: ' + e.message);     }
+  try { seedFullPMSchedule();  } catch(e) { log.push('seedPM error: ' + e.message);          }
+
+  // Invalidate all dropdown/list caches so fresh data is served immediately
+  try { CacheService.getScriptCache().removeAll(['mdd_Products','mdd_Customers','mdd_Suppliers','mdd_Equipment','mdd_Personnel','mdd_Materials','mlist_Products','mlist_Customers','mlist_Suppliers','mlist_Equipment','mlist_Personnel','mlist_Materials']); } catch(e) {}
+
+  return { success: true, log };
+}
+
+function seedAll() {
+  return seedMasters();
 }
 
 // ── Schema Migration (run once from Apps Script editor) ──────────────────────
