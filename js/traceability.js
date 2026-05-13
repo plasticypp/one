@@ -124,18 +124,41 @@
     return 'status-pending';
   }
 
+  async function loadRecentBatches() {
+    const el = document.getElementById('trace-recent');
+    if (!el) return;
+    try {
+      const res = await Api.get('getBatchList', {});
+      const rows = res.success ? res.data.slice(0, 12) : [];
+      if (!rows.length) { el.innerHTML = ''; return; }
+      el.innerHTML = `<div style="font-size:var(--text-sm);font-weight:600;color:var(--color-text-muted);margin-bottom:8px">Recent Batches</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          ${rows.map(b => `<button onclick="Traceability.searchBatch('${b.batch_id}')"
+            style="padding:6px 12px;border:1px solid var(--color-border);border-radius:6px;background:var(--color-surface);font-size:var(--text-sm);cursor:pointer">
+            ${esc(b.batch_id)} <span style="color:var(--color-text-muted);font-size:var(--text-xs)">${esc(b.status || '')}</span>
+          </button>`).join('')}
+        </div>`;
+    } catch (_) {}
+  }
+
+  async function searchBatch(batchId) {
+    document.getElementById('trace-search').value = batchId;
+    await search();
+  }
+
   async function init() {
     document.getElementById('back-to-app').addEventListener('click', () => { window.location.href = 'app.html'; });
     document.getElementById('trace-search-btn').addEventListener('click', search);
     document.getElementById('trace-search').addEventListener('keydown', e => { if (e.key === 'Enter') search(); });
 
-    // Pre-fill from URL param
     const urlQ = new URLSearchParams(location.search).get('q');
     if (urlQ) {
       document.getElementById('trace-search').value = urlQ;
       await search();
+    } else {
+      await loadRecentBatches();
     }
   }
 
-  return { init };
+  return { init, searchBatch };
 })();

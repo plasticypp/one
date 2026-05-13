@@ -249,10 +249,11 @@
       <div class="detail-row"><span>Remarks</span><strong>${fv(r.remarks)}</strong></div>
     `;
     const canEdit = ['director', 'qmr', 'supervisor'].includes(session.role);
-    document.getElementById('detail-actions').innerHTML = canEdit
+    const traceLink = r.batch_id ? `<a class="btn-sm" style="background:#f3f4f6;color:#374151;text-decoration:none" href="traceability.html?q=${encodeURIComponent(r.batch_id)}" target="_blank">Batch Traceability →</a>` : '';
+    document.getElementById('detail-actions').innerHTML = traceLink + (canEdit
       ? `<button class="btn-primary" onclick="NCR.editNCR('${r.ncr_id}')">Edit</button>
          <button class="btn-deactivate" onclick="NCR.deleteNCR('${r.ncr_id}')">Delete</button>`
-      : '';
+      : '');
     slideDetailIn();
   }
 

@@ -14,6 +14,12 @@
     setupHeader();
     await Promise.all([loadSuppliers(), loadMaterials()]);
     await loadGRNList();
+    // Deep-link: ?tab=iqc or ?tab=stock activates that pane on load
+    const tabParam = new URLSearchParams(window.location.search).get('tab');
+    if (tabParam) {
+      const btn = document.querySelector(`.sub-tab[data-pane="${tabParam}"]`);
+      if (btn) btn.click();
+    }
   }
 
   function setupHeader() {
@@ -170,7 +176,7 @@
       if (res.success) {
         slideFormOut();
         if (res.warning === 'duplicate_lot_no') UI.showToast('Warning: duplicate lot no — saved anyway', 'warning');
-        else UI.showToast('GRN saved — ' + (res.grn_id || ''));
+        else UI.showToast('GRN saved — ' + (res.grn_id || '') + ' · Tap IQC tab to log inspection');
         await loadGRNList();
       } else {
         errEl.textContent = res.error === 'unapproved_supplier' ? 'Supplier not on Approved Supplier List. Contact QMR.' : res.error === 'internal_error' ? 'Save failed. Check Apps Script logs.' : (res.error || 'Save failed');

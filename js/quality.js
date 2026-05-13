@@ -35,8 +35,9 @@
     productCache = pRes.success ? pRes.data : [];
     personnelCache = oRes.success ? oRes.data : [];
     populateInspectorDropdown();
+    const batchParam = params.get('batch');
     if (activeTab === 'summary') await loadSummary();
-    else await loadChecks('', activeStage);
+    else await loadChecks(batchParam || '', activeStage);
   }
 
   // ── Header ────────────────────────────────────────────────────────────────

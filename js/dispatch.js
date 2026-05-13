@@ -80,10 +80,22 @@ const Dispatch = (() => {
       const age = so.date ? Math.floor((Date.now() - new Date(so.date)) / 86400000) : '—';
       const card = document.createElement('div');
       card.className = 'so-card' + (selectedSO && selectedSO.so_id === so.so_id ? ' selected' : '');
+      const qtyOrdered = Number(so.qty_ordered) || 0;
+      const qtyDispatched = Number(so.qty_dispatched) || 0;
+      const pct = qtyOrdered > 0 ? Math.round((qtyDispatched / qtyOrdered) * 100) : 0;
       card.innerHTML = `
         <div class="so-card-id">${esc(so.so_id)}</div>
         <div class="so-card-customer">${esc(so.customer_name || so.customer_id)}</div>
         <div class="so-card-product">${esc(so.product_name || so.product_id)}</div>
+        <div style="margin:6px 0 4px;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;margin-bottom:3px">
+            <span>${qtyDispatched} / ${qtyOrdered} pcs dispatched</span>
+            <span>${pct}%</span>
+          </div>
+          <div style="background:#e5e7eb;border-radius:4px;height:5px;overflow:hidden">
+            <div style="background:${pct >= 100 ? '#16a34a' : '#EA580C'};width:${pct}%;height:100%;border-radius:4px;transition:width .3s"></div>
+          </div>
+        </div>
         <div class="so-card-meta">
           <span>Remaining: <strong>${esc(String(so.qty_remaining ?? so.qty_ordered))}</strong> pcs</span>
           <span>Age: <strong>${age}d</strong></span>

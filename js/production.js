@@ -273,6 +273,7 @@
         <td>${String(r.date || '').slice(0, 10)}</td>
         <td>${productName}</td>
         <td>${machineName}</td>
+        <td>${r.so_id ? `<a href="dispatch.html" style="color:var(--color-primary);font-size:var(--text-xs)">${r.so_id}</a>` : '—'}</td>
         <td>${r.planned_qty || ''}</td>
         <td>${r.actual_qty || '—'}</td>
         <td><span class="${chipClass}">${r.status || ''}</span></td>
@@ -441,10 +442,13 @@
       <div id="detail-issues-section"></div>
     `;
     const canEdit = ['director','supervisor'].includes(session.role) && r.status !== 'Closed';
-    document.getElementById('detail-actions').innerHTML = canEdit
-      ? `<button class="btn-primary" onclick="Production.editBatch('${batchId}')">Edit</button>
-         <button class="btn-deactivate" onclick="Production.deleteBatch('${batchId}')">Delete</button>`
-      : '';
+    document.getElementById('detail-actions').innerHTML = `
+      <a class="btn-sm" style="background:#f3f4f6;color:#374151;text-decoration:none" href="traceability.html?q=${encodeURIComponent(batchId)}" target="_blank">Traceability →</a>
+      <a class="btn-sm" style="background:#f3f4f6;color:#374151;text-decoration:none" href="quality.html?batch=${encodeURIComponent(batchId)}">Quality Checks →</a>
+      <a class="btn-sm" style="background:#f3f4f6;color:#374151;text-decoration:none" href="ncr.html?batch=${encodeURIComponent(batchId)}">NCRs →</a>
+      ${canEdit ? `<button class="btn-primary" onclick="Production.editBatch('${batchId}')">Edit</button>
+         <button class="btn-deactivate" onclick="Production.deleteBatch('${batchId}')">Delete</button>` : ''}
+    `;
     slideDetailIn();
 
     // Async: load material issues

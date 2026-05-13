@@ -136,7 +136,19 @@ const App = (() => {
       if (!res || !res.success) return;
       const stats = res.data;
 
-      // Stat strip
+      // Stat strip — chips are tappable deep-links
+      const STAT_ROUTES = {
+        activeBatches:      'production.html',
+        pendingIQC:         'grn.html?tab=iqc',
+        openBreakdowns:     'maintenance.html',
+        openCapas:          'compliance.html',
+        overdueCompliance:  'compliance.html',
+        lowStockCount:      'grn.html?tab=stock',
+        overduePMs:         'maintenance.html',
+        openComplaints:     'complaints.html',
+        overdueCalibrations:'calibration.html',
+        openGRNs:           'grn.html',
+      };
       const statsEl = document.getElementById('home-stats');
       const defs = ROLE_STATS[role] || [];
       if (statsEl && defs.length) {
@@ -145,10 +157,11 @@ const App = (() => {
           .map(({ key, label, mod }) => {
             const val = stats[key];
             const m = typeof mod === 'function' ? mod(val) : mod;
-            return `<div class="home-stat-chip home-stat-chip--${m}">
+            const href = STAT_ROUTES[key] || '#';
+            return `<a class="home-stat-chip home-stat-chip--${m}" href="${href}" style="text-decoration:none;cursor:pointer">
               <span class="home-stat-chip-value">${val}</span>
               <span class="home-stat-chip-label">${label}</span>
-            </div>`;
+            </a>`;
           }).join('');
       }
 
