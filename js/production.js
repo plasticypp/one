@@ -675,7 +675,7 @@
             <input type="checkbox" class="lot-check" data-lot="${esc(lot.lot_no)}" data-grn="${esc(lot.grn_id)}" data-material="${esc(item.material)}" data-avail="${lot.available_kg}" checked style="width:16px;height:16px">
             <div style="flex:1">
               <div style="font-weight:500">${esc(lot.lot_no)} (${esc(lot.grn_id)})</div>
-              <div style="color:var(--color-text-muted)">${lot.available_kg} kg avail · IQC: ${esc(lot.iqc_status)} · ${esc(lot.date).slice(0,10)}</div>
+              <div style="color:var(--color-text-muted)">${lot.available_kg} kg avail · ${iqcBadge(lot.iqc_status)} · ${esc(lot.date).slice(0,10)}</div>
             </div>
             <input type="number" class="lot-qty" data-lot="${esc(lot.lot_no)}" data-material="${esc(item.material)}" value="${Math.min(lot.available_kg, neededKg)}" max="${lot.available_kg}" min="0" step="0.001" style="width:80px;border:1px solid var(--color-border);border-radius:6px;padding:4px 6px;font-size:var(--text-sm)">
             <span style="color:var(--color-text-muted)">kg</span>
@@ -724,6 +724,18 @@
 
   function esc(s) {
     return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function iqcBadge(status) {
+    const s = String(status || '');
+    const styles = {
+      'Accept':   'background:#d1fae5;color:#065f46',
+      'Received': 'background:#fef3c7;color:#92400e',
+      'Reject':   'background:#fee2e2;color:#991b1b',
+      'Hold':     'background:#e5e7eb;color:#374151'
+    };
+    const style = styles[s] || 'background:#e5e7eb;color:#374151';
+    return `<span style="padding:1px 6px;border-radius:4px;font-size:11px;font-weight:600;${style}">${esc(s)}</span>`;
   }
 
   function slideLotPickerIn() {
