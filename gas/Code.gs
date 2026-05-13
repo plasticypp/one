@@ -2565,18 +2565,52 @@ function saveDispatch(data) {
     }
   }
 
-  // FG depletion: deduct from the SPECIFIC batch only
+  // FG depletion: deduct from the SPECIFIC batch only.
+  // FinishedGoods.batch_id stores the BatchOrders ID (e.g. BO001).
+  // The dispatch panel sends batch_no which may be a YPP-B25xx ID from BatchTraceability.
+  // Resolve: if the batch_no doesn't match directly, look it up via BatchOrders batch_id.
   const fgSheet = ss.getSheetByName('FinishedGoods');
   if (fgSheet) {
     const fgRows = fgSheet.getDataRange().getValues();
     const fgHeaders = fgRows[0];
-    // FinishedGoods uses batch_id column (same value as BatchTraceability batch_no)
-    const batchIdx = fgHeaders.indexOf('batch_id') >= 0 ? fgHeaders.indexOf('batch_id') : fgHeaders.indexOf('batch_no');
-    const qtyIdx   = fgHeaders.indexOf('qty');
+    const batchIdx  = fgHeaders.indexOf('batch_id') >= 0 ? fgHeaders.indexOf('batch_id') : fgHeaders.indexOf('batch_no');
+    const qtyIdx    = fgHeaders.indexOf('qty');
     const statusIdx = fgHeaders.indexOf('status');
+
+    // Build a set of candidate IDs to match: the raw batch_no AND the batch_id from BatchOrders
+    const candidateIds = new Set([String(data.batch_no)]);
+    const boSheet = ss.getSheetByName('BatchOrders');
+    if (boSheet) {
+      const boRows = boSheet.getDataRange().getValues();
+      const boHeaders = boRows[0];
+      const boBatchIdIdx = boHeaders.indexOf('batch_id');
+      // BatchOrders may have a so_id or product_id but we match by batch_id = data.batch_no
+      // Also: getFGBatches returns batch_no from BatchTraceability; BatchOrders.batch_id = BO001
+      // Try to find a BO row whose batch_id matches data.batch_no (direct) — already in set.
+      // Also check if data.batch_no is a BT batch_no and resolve to the linked BO batch_id via bt batch_no
+      if (btSheet) {
+        const btRows2 = btSheet.getDataRange().getValues();
+        const btHeaders2 = btRows2[0];
+        const btBatchNoIdx = btHeaders2.indexOf('batch_no');
+        const btBatchIdIdx = btHeaders2.indexOf('batch_id'); // may not exist
+        btRows2.slice(1).forEach(r => {
+          if (String(r[btBatchNoIdx]) === String(data.batch_no)) {
+            // try batch_id column in BT
+            if (btBatchIdIdx >= 0 && r[btBatchIdIdx]) candidateIds.add(String(r[btBatchIdIdx]));
+          }
+        });
+      }
+      // Also: scan BatchOrders for a row whose batch_id is in candidateIds — add any aliases
+      boRows.slice(1).forEach(r => {
+        if (boBatchIdIdx >= 0 && candidateIds.has(String(r[boBatchIdIdx]))) {
+          candidateIds.add(String(r[boBatchIdIdx]));
+        }
+      });
+    }
+
     let found = false;
     for (let i = 1; i < fgRows.length; i++) {
-      if (String(fgRows[i][batchIdx]) === String(data.batch_no) && fgRows[i][statusIdx] === 'Available') {
+      if (candidateIds.has(String(fgRows[i][batchIdx])) && String(fgRows[i][statusIdx]) === 'Available') {
         found = true;
         const available = Number(fgRows[i][qtyIdx]) || 0;
         if (available < qty) return { success: false, error: 'insufficient_stock' };
